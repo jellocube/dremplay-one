@@ -2,7 +2,20 @@
 
 **Fine Voxel Engine**
 
-Current release: **v0.0.1.0.19.4**
+Current release: **v0.0.1.0.20.0**
+
+## v0.0.1.0.20.0 mathematical detail foundation
+
+- Began the engine-wide unlimited-detail rewrite by making detail bands a single data-driven hierarchy. Geometry is now explicitly treated as a continuous field whose 5 cm, 10 cm, 20 cm, and horizon representations are sampling choices rather than separate object identities; the definitional minimum cell size is zero.
+- Replaced the previous directional-gradient lighting with a Voxlap-inspired occupancy-moment estimator. An isotropic radius-two lattice and local axial samples approximate Ken Silverman's `estnorm()` solid-centroid normal while remaining viable per pixel on WebGL2.
+- Rebuilt lightmode 1 around Voxlap's compressed, non-zero-clamped brightness response. Curves retain readable back-facing light instead of producing black Lambert facets; optional sky openness and cavity response are gentle multiplicative terms, and the unrelated glossy specular pass was removed.
+- Promoted every Resource and prop to Resource Field Schema 2. Each identity now carries a deterministic continuous R3 generator family, symbolic equation, growth seed, material mapping, and an unbounded recursion marker. Existing trees, foliage, flowers, grasses, moss, stones, grains, shrubs, and saplings are automatically mapped to biological or geological equation families.
+- Added `sampleResourceField()` as the resolution-independent Resource evaluation boundary. Current chunks sample it at their active voxel pitch, while future finer clipmap bands can call the same definitions at fractional coordinates without rebaking or changing Resource IDs.
+- Added four mathematical exemplar Resources: a fivefold quasicrystal/pyritohedron-inspired cluster, a seven-sector biomorphic crystal, and bracken and maidenhair recursive ferns. Every crystal shaft is strictly 5- or 7-sided—there is no hexagonal fallback—and uses seeded golden-angle clustering, regular-polygon distance fields, growth bands, tapering terminations, tilt and facet materials; fern fronds use seeded curved rachises with alternating self-similar pinnae.
+- Embedded scientific provenance in the Resource fields and portable transfer IDs. Fivefold geometry references naturally occurring icosahedral quasicrystals and pyrite's pentagonal pyritohedral habit. Sevenfold geometry is explicitly a nonperiodic fantasy mineral growth form, informed by seven-armed sea-star morphogenesis and the negative curvature associated with heptagonal carbon defects—not mislabeled as a periodic sevenfold crystal lattice.
+- Added ecologically conditioned fern recruitment on moist soil and rare crystal growth on exposed mineral fields. Both retain complete Resource provenance and use the same deterministic variation, chunk-overlap, cache, preview, placement, and transfer pipelines as older props.
+- Expanded the Resource Editor with crystal-cluster and frond-graph primitives plus iterated-fern, quasicrystal, superformula, gyroid, and Mandelbulb generator families. Previews and console listings identify the continuous field and unlimited definitional detail rather than presenting a baked model resolution.
+- Extended portable Resource IDs without breaking older IDs. New payloads include the mathematical generator, Resource Field Schema version, and unbounded-detail marker; the compact parameters deterministically reconstruct the equation rather than transferring a voxel array.
 
 ## v0.0.1.0.19.4 smooth kilometer horizon
 

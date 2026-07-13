@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.0.19.4</title>
+<title>Dremplay One v0.0.1.0.20.0</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.0.19.4';
-  const CURRENT_REVISION = 23;
+  const CURRENT_VERSION = '0.0.1.0.20.0';
+  const CURRENT_REVISION = 24;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.0.19.4 · Smooth kilometer horizon</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.0.20.0 · Mathematical detail foundation</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.0.19.4</p>
+  <p>Version 0.0.1.0.20.0</p>
   <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
      A procedural far-field continues the terrain and water horizon as far as 1 km without allocating a cubic kilometer of editable voxels.
@@ -328,10 +328,10 @@
     <canvas id="resourcePreview" width="360" height="360" aria-label="Live Resource preview"></canvas>
     <label>Resource library <select id="resourceLibrary"></select></label>
     <label>Name <input id="resourceName" value="new_resource"></label>
-    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option></select></label>
+    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option><option>crystal cluster</option><option>frond graph</option></select></label>
     <label>Material <select id="resourceMaterial"></select></label>
     <label>Secondary material <select id="resourceSecondary"></select></label>
-    <label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option></select></label>
+    <label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option><option>iterated fern</option><option>quasicrystal</option><option>superformula</option><option>gyroid</option><option>Mandelbulb</option></select></label>
     <label>Growth stage <select id="resourceGrowthStage"><option value="adult">Adult</option><option value="sapling">Sapling</option></select></label>
     <label>Growth seed <span class="resource-seed-row"><input id="resourceSeed" type="number" value="417293" min="0" max="99999999"><button id="resourceRandomSeed" type="button" class="tool-button">New seed</button></span></label>
     <label>Components <select id="resourceComponents" multiple size="3"></select></label>
@@ -359,7 +359,7 @@
       <div class="option-row"><label for="optionNearDetail">Voxel LOD ladder</label><select id="optionNearDetail"><option value="0">Coarse / fastest</option><option value="3">5 cm within 3 m</option><option value="6.096">5 cm within 20 ft</option></select><span id="optionNearDetailValue"></span></div>
       <div class="option-row"><label for="optionPlatformMode">Platform</label><select id="optionPlatformMode"><option value="auto">Auto-detect</option><option value="touch">Touch / iPad</option><option value="desktop">Mouse + keyboard</option></select><span id="optionPlatformValue"></span></div>
       <div class="option-row"><label for="optionViewDistance">View distance</label><input id="optionViewDistance" type="range" min="1000" max="1000" step="1" value="1000" disabled><span id="optionViewDistanceValue"></span></div>
-      <div class="option-row"><label for="optionLightingQuality">Lighting</label><select id="optionLightingQuality"><option value="0">Hard / fastest</option><option value="1">Fast soft</option><option value="2">Full soft</option></select><span></span></div>
+      <div class="option-row"><label for="optionLightingQuality">Lighting</label><select id="optionLightingQuality"><option value="0">Voxed hard faces</option><option value="1">Voxlap smooth centroid</option><option value="2">Voxlap smooth + cavity</option></select><span></span></div>
       <div class="option-row"><label for="optionMaterialQuality">Materials</label><select id="optionMaterialQuality"><option value="0">Solid</option><option value="1">Stable hashed</option><option value="2">Full procedural</option></select><span></span></div>
       <div class="option-row"><label for="optionCloudQuality">Clouds</label><select id="optionCloudQuality"><option value="0">Off</option><option value="1">Coarse weather voxels · 2.4 m</option><option value="2">Fine weather voxels · 0.8 m</option></select><span></span></div>
       <div class="option-row"><label for="optionWaterQuality">Water shader</label><select id="optionWaterQuality"><option value="0">Solid / fastest</option><option value="1">Pixel flow facets</option><option value="2">Reflective voxel water</option></select><span></span></div>
@@ -416,7 +416,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.0.19.4</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Fixed 1 km view · hierarchical horizon tracing · four-range voxel LOD</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.0.20.0</h2><p>A mathematical unlimited-detail voxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Continuous Resource fields · Voxlap centroid lighting · fixed 1 km horizon</p></div>
 </div>
 
 <script>
@@ -1019,6 +1019,21 @@ uint getMaterial(ivec3 p){
 }
 uint getSafeMaterial(ivec3 p){return inBounds(p)?getMaterial(p):0u;}
 
+vec4 voxlapMomentFrame(ivec3 p,vec3 faceNormal){
+  // Voxlap's estnorm() obtains a smooth normal from the moment/centroid of
+  // nearby solid voxels. This isotropic 3x3x3 radius-two lattice plus the six
+  // local axial cells preserves that behavior without a 125-fetch pixel cost.
+  vec3 moment=vec3(0.0);float mass=0.0;
+  for(int z=-1;z<=1;z++)for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+    ivec3 o=ivec3(x,y,z)*2;float d=getDensity(p+o);moment+=vec3(o)*d*.45;mass+=d;
+  }
+  ivec3 axis[6]=ivec3[6](ivec3(1,0,0),ivec3(-1,0,0),ivec3(0,1,0),ivec3(0,-1,0),ivec3(0,0,1),ivec3(0,0,-1));
+  for(int i=0;i<6;i++){float d=getDensity(p+axis[i]);moment+=vec3(axis[i])*d*1.2;mass+=d;}
+  vec3 outward=length(moment)>.001?normalize(-moment):faceNormal;
+  if(dot(outward,faceNormal)<-.10)outward=-outward;
+  return vec4(normalize(outward+faceNormal*.055),mass/33.0);
+}
+
 bool inMergedBounds(ivec3 p){
   ivec3 base=p*2;
   return all(greaterThanEqual(base,ivec3(0)))&&all(lessThan(base,uGrid));
@@ -1297,51 +1312,16 @@ void main(){
     else faceLight=0.40;
     faceLight=floor(faceLight*8.0+0.5)/8.0*mix(0.18,1.0,daylightAmount());
   }else{
-    vec3 grad=vec3(0.0);
-    if(uPerformanceMode==1){
-      // Twelve density reads form a compact spherical kernel: six axial and
-      // six diagonal. This preserves rounded slopes at 40% of the prior cost.
-      grad+=vec3(
-        getDensity(mapPos-ivec3(1,0,0))-getDensity(mapPos+ivec3(1,0,0)),
-        getDensity(mapPos-ivec3(0,1,0))-getDensity(mapPos+ivec3(0,1,0)),
-        getDensity(mapPos-ivec3(0,0,1))-getDensity(mapPos+ivec3(0,0,1))
-      );
-      grad+=0.34*normalize(vec3(1.0,1.0,0.0))*(getDensity(mapPos-ivec3(1,1,0))-getDensity(mapPos+ivec3(1,1,0)));
-      grad+=0.34*normalize(vec3(1.0,0.0,1.0))*(getDensity(mapPos-ivec3(1,0,1))-getDensity(mapPos+ivec3(1,0,1)));
-      grad+=0.34*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,1,1))-getDensity(mapPos+ivec3(0,1,1)));
-    }else{
-      // The full-world quality kernel retains both axial radii and all planar
-      // diagonal directions for the soft Voxlap cave response.
-      grad+=vec3(
-        getDensity(mapPos-ivec3(1,0,0))-getDensity(mapPos+ivec3(1,0,0)),
-        getDensity(mapPos-ivec3(0,1,0))-getDensity(mapPos+ivec3(0,1,0)),
-        getDensity(mapPos-ivec3(0,0,1))-getDensity(mapPos+ivec3(0,0,1))
-      );
-      grad+=0.55*vec3(
-        getDensity(mapPos-ivec3(2,0,0))-getDensity(mapPos+ivec3(2,0,0)),
-        getDensity(mapPos-ivec3(0,2,0))-getDensity(mapPos+ivec3(0,2,0)),
-        getDensity(mapPos-ivec3(0,0,2))-getDensity(mapPos+ivec3(0,0,2))
-      );
-      grad+=0.38*normalize(vec3(1.0,1.0,0.0))*(getDensity(mapPos-ivec3(2,2,0))-getDensity(mapPos+ivec3(2,2,0)));
-      grad+=0.38*normalize(vec3(1.0,-1.0,0.0))*(getDensity(mapPos-ivec3(2,-2,0))-getDensity(mapPos+ivec3(2,-2,0)));
-      grad+=0.38*normalize(vec3(1.0,0.0,1.0))*(getDensity(mapPos-ivec3(2,0,2))-getDensity(mapPos+ivec3(2,0,2)));
-      grad+=0.38*normalize(vec3(1.0,0.0,-1.0))*(getDensity(mapPos-ivec3(2,0,-2))-getDensity(mapPos+ivec3(2,0,-2)));
-      grad+=0.38*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,2,2))-getDensity(mapPos+ivec3(0,2,2)));
-      grad+=0.38*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,2,-2))-getDensity(mapPos+ivec3(0,2,-2)));
-    }
-    shadeNormal=length(grad)>0.05?normalize(grad+normal*0.04):normal;
-    vec3 lightDir=sunDirection();
-    float diffuse=max(dot(shadeNormal,lightDir),0.0);
-    if(uPerformanceMode==0){
-      float localOcc=(
-        getDensity(mapPos+ivec3(1,0,0))+getDensity(mapPos-ivec3(1,0,0))+
-        getDensity(mapPos+ivec3(0,1,0))+getDensity(mapPos-ivec3(0,1,0))+
-        getDensity(mapPos+ivec3(0,0,1))+getDensity(mapPos-ivec3(0,0,1))
-      )/6.0;
-      cavity=1.0-localOcc*0.12;
-    }
-    float day=daylightAmount();
-    faceLight=(mix(0.10,0.26,day)+mix(0.14,0.74,day)*sqrt(diffuse))*cavity;
+    vec4 frame=voxlapMomentFrame(mapPos,normal);shadeNormal=frame.xyz;
+    float day=daylightAmount(),orientation=dot(shadeNormal,sunDirection());
+    // Ken's lightmode 1 stores a compressed estimated-normal brightness, not
+    // a zero-clamped Lambert term. Back-facing curves therefore remain softly
+    // readable instead of breaking into black facets.
+    float directional=.57+.30*orientation,hemisphere=.80+.20*(shadeNormal.y*.5+.5);
+    float skyOpen=(1.0-getDensity(mapPos+ivec3(0,2,0)))*.50+(1.0-getDensity(mapPos+ivec3(0,4,0)))*.30+(1.0-getDensity(mapPos+ivec3(0,7,0)))*.20;
+    cavity=uPerformanceMode==0?mix(.78,1.0,skyOpen)*(1.0-frame.w*.08):1.0;
+    faceLight=mix(.17,directional*hemisphere*cavity,day);
+    faceLight=floor(clamp(faceLight,.16,.94)*32.0+.5)/32.0;
   }
   // Thin reed blades transmit and scatter daylight instead of behaving like
   // opaque cave stone. Keeping a modest material-specific floor prevents the
@@ -1349,11 +1329,6 @@ void main(){
   if(material==18u)faceLight=max(faceLight,mix(0.28,0.62,daylightAmount()));
   vec3 base = materialColor(material, materialPos, fineHit?WORLD_DETAIL:1);
   vec3 lit=base*faceLight;
-  if(uLightMode==1 && uPerformanceMode==0){
-    vec3 lightDir=sunDirection();
-    float spec=pow(max(dot(reflect(-lightDir,shadeNormal),-worldRd),0.0),22.0)*0.16*daylightAmount();
-    lit+=vec3(0.82,0.84,0.90)*spec;
-  }
 
   float distMeters=dist*0.1;
   float fogDistance=max(0.0,distMeters-uFogStart);
@@ -1391,7 +1366,16 @@ let lightMode = 1;
 let gravityAcceleration=-10.0, jumpSpeed=4.5, walkSpeed=4.2;
 let editReachMeters=6, carveRadius=7, placeRadius=4;
 let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
-const FIXED_VIEW_DISTANCE_METERS=1000;
+// Unlimited-detail contract: geometry is a continuous mathematical field;
+// these bands only choose its present sampling rate. Adding a finer band does
+// not change Resource identity, physical scale, materials, edits, or seeds.
+const DETAIL_HIERARCHY=Object.freeze({continuous:true,minimumCellMeters:0,levels:Object.freeze([
+  Object.freeze({name:'micro',cellMeters:.05,endMeters:6.096,source:'analytic subdivision'}),
+  Object.freeze({name:'native',cellMeters:.10,endMeters:15.24,source:'editable sparse authority'}),
+  Object.freeze({name:'merged',cellMeters:.20,endMeters:76.20,source:'deterministic reduction'}),
+  Object.freeze({name:'horizon',cellMeters:10,endMeters:1000,source:'hierarchical mathematical atlas'})
+])});
+const FIXED_VIEW_DISTANCE_METERS=DETAIL_HIERARCHY.levels.at(-1).endMeters;
 let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
 let nearDetailMeters=clampOption(Number(bootOptions.get('nearDetail'))||6.096,0,6.096);
 // A compact working subset of neighboring shades from the official Myara palette.
@@ -2039,8 +2023,35 @@ const resourceDefinitions=new Map([
   ['apple_leaf_fruit_spray',{name:'apple_leaf_fruit_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_RED,fractal:'phyllotaxis',seed:86028193,scale:8,sizeVariance:.24,subsurface:.09,radial:14,angle:43,iterations:6,tropism:.31,influence:6,kill:1,components:[]}],
   ['oak_leaf_spray',{name:'oak_leaf_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_LEAVES,fractal:'phyllotaxis',seed:86028209,scale:9,sizeVariance:.27,subsurface:.10,radial:15,angle:52,iterations:7,tropism:.24,influence:7,kill:1,components:[]}],
   ['fir_needle_spray',{name:'fir_needle_spray',role:'foliage',shape:'branch graph',material:MAT_TEAL,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028221,scale:6,sizeVariance:.22,subsurface:.04,radial:12,angle:71,iterations:6,tropism:.66,influence:5,kill:1,components:[]}],
-  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}]
+  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}],
+  // Reference continuous-field Resources. These are equations sampled onto
+  // the current voxel lattice, not finite meshes, so closer future clipmap
+  // levels reveal more structure from the same identity and growth seed.
+  // These are nature-referenced mathematical growth forms, not claims that
+  // quartz or amethyst have 5/7-fold crystallographic point groups.
+  ['fivefold_quasicrystal_cluster',{name:'fivefold_quasicrystal_cluster',role:'crystal',shape:'crystal cluster',material:MAT_QUARTZ,secondary:MAT_MARBLE,fractal:'quasicrystal',seed:9617489,scale:12,sizeVariance:.38,subsurface:.03,radial:5,angle:18,iterations:7,tropism:.94,influence:7,kill:1,naturalAnalog:'icosahedral quasicrystal; pyrite pyritohedron',symmetryClass:'fivefold nonperiodic growth / pentagonal habit',components:[]}],
+  ['sevenfold_growth_crystal',{name:'sevenfold_growth_crystal',role:'crystal',shape:'crystal cluster',material:MAT_PURPLE,secondary:MAT_QUARTZ,fractal:'quasicrystal',seed:9824516,scale:10,sizeVariance:.34,subsurface:.04,radial:7,angle:22,iterations:8,tropism:.92,influence:7,kill:1,naturalAnalog:'seven-armed sea-star growth; carbon heptagon negative-curvature defect',symmetryClass:'seven-sector biomorphic growth; nonperiodic mineral fantasy',components:[]}],
+  ['bracken_fern',{name:'bracken_fern',role:'fern',shape:'frond graph',material:MAT_GRASS,secondary:MAT_TALL_GRASS,fractal:'iterated fern',seed:7765314,scale:11,sizeVariance:.36,subsurface:.02,radial:5,angle:43,iterations:7,tropism:.78,influence:8,kill:1,components:[]}],
+  ['maidenhair_fern',{name:'maidenhair_fern',role:'fern',shape:'frond graph',material:MAT_MOSS,secondary:MAT_GRASS,fractal:'iterated fern',seed:9617491,scale:8,sizeVariance:.31,subsurface:.02,radial:7,angle:52,iterations:8,tropism:.72,influence:7,kill:1,components:[]}]
 ]);
+
+const RESOURCE_FIELD_SCHEMA=2;
+function resourceFieldKind(def){return def.role==='tree'?'pipe-branch-field':def.role==='foliage'?'phyllotactic-lamina-field':def.role==='fern'?'recursive-frond-field':def.role==='crystal'?'pentagonal-septagonal-prism-union':def.role==='stone'||def.role==='grain'?'warped-superellipsoid-field':def.role==='flower'?'phyllotactic-bell-field':def.role==='grass'?'tropic-bezier-blade-field':def.role==='moss'?'golden-angle-cushion-field':'composed-sdf-field';}
+function mathematicalResource(def){
+  const generator=def.field?.generator||resourceFieldKind(def),equation=def.field?.equation||({
+    'pipe-branch-field':'union(capsule(branch(seed,n),pipeRadius(n))) + phyllotacticLaminae',
+    'phyllotactic-lamina-field':'union(capsule(rachis(seed),r), lamina(goldenAngle*n))',
+    'recursive-frond-field':'union(bezier(rachis_i), leaflet(±normal(t), (1-t)^p))',
+    'pentagonal-septagonal-prism-union':'min_i max(regularPolygonRadius(R_i(p-c_i), sides_i∈{5,7})-r_i(y), axialCap_i(y))',
+    'warped-superellipsoid-field':'superellipsoid(Rp,a,b,c,n)+ridgedFbm(p,seed)+cleavagePlanes',
+    'phyllotactic-bell-field':'min_i bellSdf(p-helix(goldenAngle*i))+tropicStem',
+    'tropic-bezier-blade-field':'capsule(p,bezier(root,wind,tropism),taper(t))',
+    'golden-angle-cushion-field':'min_i ellipsoid(p-vogelDisk(i,seed),r_i)',
+    'composed-sdf-field':'primitiveSdf(p)+domainWarp(fBm(p,seed))'
+  }[generator]);
+  return {...def,field:{schema:RESOURCE_FIELD_SCHEMA,generator,equation,domain:'R3',continuous:true,maxRecursion:null,seed:def.seed>>>0,naturalAnalog:def.naturalAnalog||def.field?.naturalAnalog||'',symmetryClass:def.symmetryClass||def.field?.symmetryClass||''}};
+}
+for(const [name,definition] of resourceDefinitions)resourceDefinitions.set(name,mathematicalResource(definition));
 
 const WOODY_PROFILES=[
   {match:'silver_birch',form:'birch',height:1.55,crownStart:.30,spread:.30,density:1.25,trunk:.72,foliage:'birch_leaf_spray'},
@@ -2085,11 +2096,13 @@ function resourceBounds(def){
   if(def.role==='flower')return {x:Math.ceil(Math.max(5,s*.75)),z:Math.ceil(Math.max(5,s*.75)),y0:-1,y1:Math.ceil(s*1.85)};
   if(def.role==='grass')return {x:Math.ceil(Math.max(2,s*.28)),z:Math.ceil(Math.max(2,s*.28)),y0:0,y1:Math.ceil(s*1.24)};
   if(def.role==='foliage')return {x:Math.ceil(s*.72)+1,z:Math.ceil(s*.72)+1,y0:0,y1:Math.ceil(s*1.18)+1};
+  if(def.role==='fern')return {x:Math.ceil(s*.82)+1,z:Math.ceil(s*.82)+1,y0:0,y1:Math.ceil(s*1.10)+1};
+  if(def.role==='crystal')return {x:Math.ceil(s*.62)+1,z:Math.ceil(s*.62)+1,y0:-Math.ceil(s*.08),y1:Math.ceil(s*1.24)+1};
   if(def.role==='moss')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:0,y1:Math.ceil(s*.5)};
   if(def.role==='stone'||def.role==='grain')return {x:Math.ceil(s*.68),z:Math.ceil(s*.68),y0:-Math.ceil(s*.4),y1:Math.ceil(s*.58)};
   return {x:s,z:s,y0:-s,y1:s*2};
 }
-function resourceVoxelCacheKey(def){return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface].join(':');}
+function resourceVoxelCacheKey(def){return [def.name,def.role,def.field?.schema||0,def.field?.generator||'',def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface].join(':');}
 function leafSprayStrokes(seed,center,rx,ry,rz,count){
   // A crown cluster is a compound Resource: a slim terminal twig surrounded
   // by alternating, golden-angle leaf blades. Blades stay roughly one voxel
@@ -2259,7 +2272,8 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
 function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   const result=[];for(let n=0;n<2;n++){
     const wx=baseX+3+Math.floor(hash3(cx,n,cz,3101)*26),wz=baseZ+3+Math.floor(hash3(cx,n,cz,3103)*26),col=columns[(wx-baseX)+(wz-baseZ)*CHUNK_SIZE];if(!col)continue;
-    const wy=col.h+1,r=hash3(cx,n,cz,3119);if(col.exposedRock||col.snowy||col.terrain.poolMask>.3)continue;
+    const wy=col.h+1,r=hash3(cx,n,cz,3119);if(col.snowy||col.terrain.poolMask>.3)continue;
+    if(col.exposedRock){if(r>.74&&col.stoneField>.22){const crystalName=col.rockMaterial===MAT_QUARTZ||hash3(wx,col.h,wz,3121)>.82?'sevenfold_growth_crystal':'fivefold_quasicrystal_cluster',crystal=resourceDefinitions.get(crystalName);if(crystal)result.push({def:variedResource(crystal,wx,wz,n+191),wx,wy,wz});}continue;}
     if(r>.82&&col.stoneField>.08)result.push({def:{...variedResource(resourceDefinitions.get('field_boulder'),wx,wz,n),material:col.rockMaterial},wx,wy,wz});
     else if(col.grassy&&col.moisture>.72&&r>.68)result.push({def:variedResource(resourceDefinitions.get('moss_cushion'),wx,wz,n),wx,wy,wz});
     else if(r>.91&&col.grassy)result.push({def:variedResource(resourceDefinitions.get('foxglove'),wx,wz,n),wx,wy,wz});
@@ -2268,6 +2282,8 @@ function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUN
       const shrubName=(col.moisture>.72||col.terrain.poolMask>.08)?'elderberry_bush':'blueberry_bush',shrub=resourceDefinitions.get(shrubName);
       if(shrub)result.push({def:variedResource(shrub,wx,wz,n+113),wx,wy,wz});
     }
+    const fernPatch=fbm2(wx*.016-19,wz*.016+47,4,2,.51,3179),fernRoll=hash3(wz,n,wx,3181);
+    if(col.grassy&&col.moisture>.66&&col.slope<4.8&&fernRoll>.76-fernPatch*.13){const fernName=col.moisture>.80?'maidenhair_fern':'bracken_fern',fern=resourceDefinitions.get(fernName);if(fern)result.push({def:variedResource(fern,wx,wz,n+227),wx,wy,wz});}
   }return result;
 }
 function resourceCeilingForChunk(cx,cz,columns){
@@ -2322,7 +2338,33 @@ function foliageResourceVoxel(def,x,y,z){
   for(const stroke of leafSprayStrokes(def.seed|0,center,s*.64,s*.52,s*.64,count))if(pointSegmentDistance(x,y,z,stroke.a,stroke.b)<=stroke.r)return stroke.leaf?def.material:def.secondary;
   return 0;
 }
-function resourceVoxel(def,x,y,z){
+function crystalResourceVoxel(def,x,y,z){
+  const s=Math.max(4,def.scale),seed=def.seed|0,count=Math.max(4,Math.min(12,def.iterations||7)),dominantSides=(def.radial||5)<6?5:7;
+  for(let i=0;i<count;i++){
+    const az=i*GOLDEN_ANGLE+hash3(seed,i,3,7103)*.72,ring=s*(i?(.08+.23*Math.sqrt(i/count)):0),bx=Math.cos(az)*ring,bz=Math.sin(az)*ring;
+    const height=s*(.48+.72*hash3(seed,i,5,7109))*(i?1:1.16),radius=s*(.075+.055*hash3(seed,i,7,7121)),lean=s*(.025+.12*(1-(def.tropism||0)))*hash3(seed,i,11,7127);
+    if(y<-.08*s||y>height)continue;const t=Math.max(0,Math.min(1,y/height)),cx=bx+Math.cos(az)*lean*t,cz=bz+Math.sin(az)*lean*t,turn=az+hash3(seed,i,13,7129)*Math.PI,ct=Math.cos(turn),st=Math.sin(turn),qx=(x-cx)*ct-(z-cz)*st,qz=(x-cx)*st+(z-cz)*ct;
+    // Strict 5/7-only morphology. Fivefold shafts reference quasicrystal and
+    // pyritohedral habits. Sevenfold shafts use a nonperiodic, biomorphic
+    // growth sector with the saddle tendency of heptagonal carbon defects.
+    const sides=(i===0||hash3(seed,i,17,7151)>.28)?dominantSides:(dominantSides===5?7:5),sector=Math.PI*2/sides,localAngle=((Math.atan2(qz,qx)+Math.PI/sides)%sector+sector)%sector-Math.PI/sides;
+    const growthBand=1+.035*Math.sin(y*(2.1+.3*hash3(seed,i,19,7159))+i*1.7),saddle=sides===7?1+.045*Math.cos(2*turn+y*.34)*Math.sin(Math.PI*t):1;
+    const polygonRadius=Math.hypot(qx,qz)*Math.cos(localAngle)/Math.cos(Math.PI/sides),tip=Math.max(.04,radius*growthBand*saddle*(1-Math.max(0,t-.72)/.28));
+    if(polygonRadius<=tip){const cap=t>.82||Math.abs(polygonRadius-tip)<.16;return cap&&def.secondary?def.secondary:def.material;}
+  }
+  return 0;
+}
+function fernResourceVoxel(def,x,y,z){
+  const s=Math.max(4,def.scale),seed=def.seed|0,fronds=Math.max(3,Math.min(9,def.radial||5)),steps=Math.max(6,Math.min(14,(def.iterations||6)+4));
+  const point=(i,t)=>{const az=i*Math.PI*2/fronds+hash3(seed,i,3,7207)*.58,reach=s*(.52+.24*hash3(seed,i,5,7211)),rise=s*(.76+.24*hash3(seed,i,7,7213)),curl=Math.sin(t*Math.PI)*s*(hash3(seed,i,11,7219)-.5)*.18;return {x:Math.cos(az)*reach*t+Math.cos(az+Math.PI*.5)*curl,y:rise*(t-.24*t*t),z:Math.sin(az)*reach*t+Math.sin(az+Math.PI*.5)*curl,az};};
+  for(let i=0;i<fronds;i++)for(let j=0;j<steps;j++){
+    const t0=j/steps,t1=(j+1)/steps,a=point(i,t0),b=point(i,t1);if(pointSegmentDistance(x,y,z,a,b)<.43)return def.secondary;
+    if(j<2||j>=steps-1)continue;const t=(j+.5)/steps,c=point(i,t),leafScale=s*.19*Math.pow(Math.sin(Math.PI*t),.72)*(1-.22*t),side={x:Math.cos(c.az+Math.PI*.5),z:Math.sin(c.az+Math.PI*.5)};
+    for(const sign of [-1,1]){const tip={x:c.x+side.x*leafScale*sign,y:c.y+leafScale*(.06+.10*(def.tropism||0)),z:c.z+side.z*leafScale*sign};if(pointSegmentDistance(x,y,z,c,tip)<.52)return def.material;}
+  }
+  return 0;
+}
+function sampleResourceField(def,x,y,z){
   if(def.role==='tree'){
     const architecture=treeArchitecture(def);
     for(const segment of architecture.segments)if(pointSegmentDistance(x,y,z,segment.a,segment.b)<=segment.r)return def.secondary;
@@ -2332,11 +2374,14 @@ function resourceVoxel(def,x,y,z){
   if(def.role==='flower')return flowerResourceVoxel(def,x,y,z);
   if(def.role==='grass')return grassResourceVoxel(def,x,y,z);
   if(def.role==='foliage')return foliageResourceVoxel(def,x,y,z);
+  if(def.role==='fern')return fernResourceVoxel(def,x,y,z);
+  if(def.role==='crystal')return crystalResourceVoxel(def,x,y,z);
   if(def.role==='moss')return mossResourceVoxel(def,x,y,z);
   if(def.role==='stone'||def.role==='grain')return rockResourceVoxel(def,x,y,z);
   const noise=fbm2((x+(def.seed%97))*.19,(z-y+(def.seed%53))*.19,3,2,.5,3301+(def.seed|0));
   return resourceContains(def,x,y,z)?(noise>.58&&def.secondary?def.secondary:def.material):0;
 }
+function resourceVoxel(def,x,y,z){return sampleResourceField(def,x,y,z);}
 function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const key=chunkKey(cx,cy,cz);let metadata=resourceChunks.get(key);
   const tag=(i,rid)=>{if(!rid)return;if(!metadata){metadata=new Map();resourceChunks.set(key,metadata);}metadata.set(i,rid);};
@@ -2403,13 +2448,13 @@ const resourceWindow=document.getElementById('resourceDesigner'),resourceMateria
 for(let id=1;id<MATERIAL_NAMES.length;id++){resourceMaterial.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));resourceSecondary.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));}
 resourceMaterial.value=String(MAT_GRANITE);
 resourceSecondary.value=String(MAT_LICHEN);
-const RESOURCE_MODEL_DETAIL=2; // 5 cm model lattice over 10 cm physical parents
+const RESOURCE_MODEL_DETAIL=2; // current preview sample; field definition is continuous
 function refreshResourceLibrary(){const selected=resourceLibrary.value;resourceLibrary.replaceChildren();resourceComponents.replaceChildren();for(const name of resourceDefinitions.keys()){resourceLibrary.add(new Option(name.replaceAll('_',' '),name));resourceComponents.add(new Option(name.replaceAll('_',' '),name));}if(resourceDefinitions.has(selected))resourceLibrary.value=selected;}
-function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),role=known?.role||(shape==='branch graph'&&['space colonization','L-system','branching'].includes(fractal)?'tree':fractal==='phyllotaxis'?'flower':shape==='cone'&&fractal==='cluster aggregation'?'grass':'custom');return {name,role,detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
+function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),role=known?.role||(shape==='crystal cluster'?'crystal':shape==='frond graph'?'fern':shape==='branch graph'&&['space colonization','L-system','branching'].includes(fractal)?'tree':fractal==='phyllotaxis'?'flower':shape==='cone'&&fractal==='cluster aggregation'?'grass':'custom');return mathematicalResource({name,role,detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),naturalAnalog:known?.field?.naturalAnalog||known?.naturalAnalog||'',symmetryClass:known?.field?.symmetryClass||known?.symmetryClass||'',components:[...resourceComponents.selectedOptions].map(o=>o.value)});}
 const RESOURCE_TRANSFER_MAGIC=0xd4,RESOURCE_TRANSFER_VERSION=1;
-const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','custom'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation'];
+const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','fern','crystal','custom'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph','crystal cluster','frond graph'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation','iterated fern','quasicrystal','superformula','gyroid','Mandelbulb'];
 function resourceChecksum(bytes){let h=2166136261;for(const byte of bytes)h=Math.imul(h^byte,16777619);return h>>>0;}
-function resourcePayload(def){const rounded=value=>Math.round(Number(value)*10000)/10000,snapshot=id=>[...materialSlots[id],...materialParams[id].map(rounded),materialModes[id]];return {n:def.name,r:def.role,o:def.detail||RESOURCE_MODEL_DETAIL,g:def.growthStage||'adult',h:def.shape,m:def.material,s:def.secondary,f:def.fractal,e:def.seed>>>0,z:def.scale,v:rounded(def.sizeVariance),u:rounded(def.subsurface),d:def.radial,a:rounded(def.angle),i:def.iterations,t:rounded(def.tropism),q:rounded(def.influence),k:rounded(def.kill),c:[...(def.components||[])],x:snapshot(def.material),y:snapshot(def.secondary)};}
+function resourcePayload(def){const rounded=value=>Math.round(Number(value)*10000)/10000,snapshot=id=>[...materialSlots[id],...materialParams[id].map(rounded),materialModes[id]],math=mathematicalResource(def);return {n:def.name,r:def.role,o:def.detail||RESOURCE_MODEL_DETAIL,g:def.growthStage||'adult',h:def.shape,m:def.material,s:def.secondary,f:def.fractal,e:def.seed>>>0,z:def.scale,v:rounded(def.sizeVariance),u:rounded(def.subsurface),d:def.radial,a:rounded(def.angle),i:def.iterations,t:rounded(def.tropism),q:rounded(def.influence),k:rounded(def.kill),c:[...(def.components||[])],w:math.field.generator,b:math.field.naturalAnalog,j:math.field.symmetryClass,l:0,p:RESOURCE_FIELD_SCHEMA,x:snapshot(def.material),y:snapshot(def.secondary)};}
 function resourceTransferId(def){
   const payload=new TextEncoder().encode(JSON.stringify(resourcePayload(def)));if(payload.length>65535)throw new Error('Resource definition is too large to transfer.');
   const bytes=[RESOURCE_TRANSFER_MAGIC,RESOURCE_TRANSFER_VERSION,payload.length>>8,payload.length&255,...payload],sum=resourceChecksum(bytes);bytes.push(sum>>>24,(sum>>>16)&255,(sum>>>8)&255,sum&255);
@@ -2426,7 +2471,7 @@ function parseResourceTransferId(text){
   if(!RESOURCE_ROLES.includes(p.r)||!RESOURCE_SHAPES.includes(p.h)||!RESOURCE_FRACTALS.includes(p.f)||!['adult','sapling'].includes(p.g))throw new Error('Unsupported Resource generator in ID.');
   const components=Array.isArray(p.c)?p.c.map(String).filter(v=>/^[a-zA-Z0-9_-]{1,64}$/.test(v)).slice(0,12):[],material=number(p.m,1,MATERIAL_NAMES.length-1,'material',true),secondary=number(p.s,1,MATERIAL_NAMES.length-1,'secondary material',true);
   const aesthetic=(value,label)=>{if(!Array.isArray(value)||value.length!==7)throw new Error(`Missing ${label} aesthetic in Resource ID.`);return [number(value[0],0,PALETTE.length-1,`${label} base`,true),number(value[1],0,PALETTE.length-1,`${label} light`,true),number(value[2],0,PALETTE.length-1,`${label} dark`,true),number(value[3],0,1,`${label} noise`),number(value[4],1,12,`${label} scale`),number(value[5],0,1,`${label} blur`),number(value[6],0,6,`${label} pattern`,true)];};
-  return {name,role:p.r,detail:number(p.o??RESOURCE_MODEL_DETAIL,1,RESOURCE_MODEL_DETAIL,'model detail',true),growthStage:p.g,shape:p.h,material,secondary,fractal:p.f,seed:number(p.e,0,99999999,'seed',true),scale:number(p.z,2,64,'scale',true),sizeVariance:number(p.v,0,.6,'size variation'),subsurface:number(p.u,0,1,'subsurface'),radial:number(p.d,1,12,'radial mirrors',true),angle:number(p.a,5,85,'branch angle'),iterations:number(p.i,1,8,'iterations',true),tropism:number(p.t,-1,1,'tropism'),influence:number(p.q,2,32,'influence radius'),kill:number(p.k,1,12,'kill radius'),components,transferAesthetic:{primary:aesthetic(p.x,'primary'),secondary:aesthetic(p.y,'secondary')}};
+  return mathematicalResource({name,role:p.r,detail:number(p.o??RESOURCE_MODEL_DETAIL,1,RESOURCE_MODEL_DETAIL,'model detail',true),growthStage:p.g,shape:p.h,material,secondary,fractal:p.f,seed:number(p.e,0,99999999,'seed',true),scale:number(p.z,2,64,'scale',true),sizeVariance:number(p.v,0,.6,'size variation'),subsurface:number(p.u,0,1,'subsurface'),radial:number(p.d,1,12,'radial mirrors',true),angle:number(p.a,5,85,'branch angle'),iterations:number(p.i,1,8,'iterations',true),tropism:number(p.t,-1,1,'tropism'),influence:number(p.q,2,32,'influence radius'),kill:number(p.k,1,12,'kill radius'),naturalAnalog:String(p.b||''),symmetryClass:String(p.j||''),components,field:p.w?{schema:number(p.p??RESOURCE_FIELD_SCHEMA,1,RESOURCE_FIELD_SCHEMA,'field schema',true),generator:String(p.w),continuous:true,maxRecursion:null,seed:number(p.e,0,99999999,'seed',true),naturalAnalog:String(p.b||''),symmetryClass:String(p.j||'')}:undefined,transferAesthetic:{primary:aesthetic(p.x,'primary'),secondary:aesthetic(p.y,'secondary')}});
 }
 function applyResourceAesthetic(def){const apply=(id,snapshot)=>{if(!snapshot)return;materialSlots[id]=snapshot.slice(0,3);materialParams[id]=snapshot.slice(3,6);materialModes[id]=snapshot[6];};apply(def.material,def.transferAesthetic?.primary);apply(def.secondary,def.transferAesthetic?.secondary);syncMaterialSlots();if(designerOpen)loadDesignerMaterial();}
 function refreshResourceTransferId(){try{resourceTransferIdInput.value=resourceTransferId(currentResource());}catch(error){document.getElementById('resourceStatus').textContent=error.message;}}
@@ -2469,14 +2514,14 @@ function renderResourcePreview(){
   points.sort((a,b)=>(a.x+a.z+a.y*.12)-(b.x+b.z+b.y*.12));
   const projected=points.map(p=>({...p,u:(p.x-p.z)*.64,v:-p.y+(p.x+p.z)*.25}));let minU=0,maxU=1,minV=0,maxV=1;for(const p of projected){minU=Math.min(minU,p.u);maxU=Math.max(maxU,p.u);minV=Math.min(minV,p.v);maxV=Math.max(maxV,p.v);}const px=Math.max(.28,Math.min(10,Math.min((c.width-38)/(maxU-minU+1),(c.height-48)/(maxV-minV+1)))),ox=(c.width-(minU+maxU)*px)*.5,oy=28-minV*px;
   for(const p of projected){ctx.fillStyle=PALETTE[materialSlots[p.material][p.shade]][1];ctx.fillRect(ox+p.u*px,oy+p.v*px,Math.max(.34,px*.82),Math.max(.34,px*.82));}
-  ctx.fillStyle='#040818cc';ctx.fillRect(0,0,c.width,20);ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · 5 cm model · ${def.fractal} · seed ${def.seed}`,8,14);
+  const provenance=def.field.naturalAnalog?`Nature: ${def.field.naturalAnalog}`:'';ctx.fillStyle='#040818e8';ctx.fillRect(0,0,c.width,provenance?36:20);ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · continuous math · ${def.field.generator} · ∞ detail`,8,14);if(provenance){ctx.fillStyle='#b8dff3';ctx.fillText(provenance,8,30);}
 }
 let resourcePreviewFrame=0;function scheduleResourcePreview(){if(resourcePreviewFrame)return;resourcePreviewFrame=requestAnimationFrame(()=>{resourcePreviewFrame=0;renderResourcePreview();refreshResourceTransferId();});}
 resourceWindow.querySelectorAll('input,select').forEach(el=>{if(el!==resourceTransferIdInput)el.addEventListener('input',scheduleResourcePreview);});
 document.getElementById('resourceRandomSeed').addEventListener('click',()=>{const bytes=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(bytes);else bytes[0]=(Date.now()^Math.floor(performance.now()*1000))>>>0;document.getElementById('resourceSeed').value=String(bytes[0]%100000000);scheduleResourcePreview();document.getElementById('resourceStatus').textContent='New base growth seed selected; natural instances will derive unique child seeds.';});
 function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));renderResourcePreview();refreshResourceTransferId();}
-resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')} · 5 cm near / 10 cm far LOD`;});
-document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
+resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const def=resourceDefinitions.get(resourceLibrary.value),id=registerResourceName(resourceLibrary.value),analog=def.field.naturalAnalog?` · natural analog: ${def.field.naturalAnalog}`:'';document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${def.field.generator} · continuous R3 field · unlimited definitional detail${analog}`;});
+document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · ${def.field.generator} · ∞-detail identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
 document.getElementById('resourceCopyId').addEventListener('click',async()=>{refreshResourceTransferId();try{await navigator.clipboard.writeText(resourceTransferIdInput.value);document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}catch{resourceTransferIdInput.select();document.execCommand('copy');document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}});
 document.getElementById('resourceLoadId').addEventListener('click',()=>{try{const def=parseResourceTransferId(resourceTransferIdInput.value);applyResourceAesthetic(def);resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;loadResource(def.name);document.getElementById('resourceStatus').textContent=`Loaded ${def.name} · runtime ID ${rid} · geometry and palette aesthetic verified`;}catch(error){document.getElementById('resourceStatus').textContent=error.message;}});
 let manualResourceSerial=0;
@@ -2499,7 +2544,7 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionNearDetailValue').textContent=nearDetailMeters?'20 / 50 / 250 ft':'coarse';document.getElementById('optionViewDistanceValue').textContent=viewDistanceMeters>=1000?'1.00 km':`${viewDistanceMeters.toFixed(0)} m`;document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft · atlas 250 ft+':'10 cm 0–50 ft · 20 cm 50–250 ft · atlas 250 ft+'}\nHorizon 1.00 km fixed · 85.3 KiB max-height skip hierarchy\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft · atlas 250 ft+':'10 cm 0–50 ft · 20 cm 50–250 ft · atlas 250 ft+'}\nContinuous mathematical field · minimum definitional detail: unlimited\nHorizon 1.00 km fixed · 85.3 KiB max-height skip hierarchy\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
@@ -2597,7 +2642,7 @@ resource load <hex>   verify and load a Resource identity`);
   if(name==='palette')return say(PALETTE.map(([n,h],i)=>`${String(i).padStart(2,'0')}  ${h}  ${n}`).join('\n'));
   if(name==='materials')return say(MATERIAL_NAMES.slice(1).map((n,i)=>`${i+1}  ${n}${selectedMaterial===i+1?'  [SELECTED]':''}`).join('\n'));
   if(name==='designer'){setDesigner(true);return say('Material Designer opened. Changes apply live.');}
-  if(name==='resources')return say([...resourceDefinitions.values()].map(r=>`${registerResourceName(r.name)} · ${r.name} · ${r.shape} · ${MATERIAL_NAMES[r.material]} · ${r.fractal}`).join('\n'));
+  if(name==='resources')return say([...resourceDefinitions.values()].map(r=>`${registerResourceName(r.name)} · ${r.name} · ${r.field.generator} · ${MATERIAL_NAMES[r.material]} · ∞ detail`).join('\n'));
   if(name==='resource'){
     const parts=command.split(' ');
     if(parts[1]==='sample'){
@@ -3124,7 +3169,7 @@ function render(){
   gl.uniform1i(uCloudQuality,cloudQuality);
   gl.uniform1i(uWaterQuality,waterRenderQuality);
   gl.uniform1f(uNearDetail,nearDetailMeters/VS);
-  gl.uniform3f(uLodDistances,nearDetailMeters/VS,15.24/VS,76.2/VS);
+  gl.uniform3f(uLodDistances,nearDetailMeters/VS,DETAIL_HIERARCHY.levels[1].endMeters/VS,DETAIL_HIERARCHY.levels[2].endMeters/VS);
   gl.uniform4f(uFarTerrainInfo,farTerrainOriginX,farTerrainOriginZ,FAR_CELL_VOXELS,FAR_MAP_SIZE);
   gl.uniform1f(uHour,timeOfDay);
   if(materialUniformsDirty){
