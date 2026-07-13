@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4</title>
+<title>Dremplay One v0.0.2.0 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4';
-  const CURRENT_REVISION = 25;
+  const CURRENT_VERSION = '0.0.2.0';
+  const CURRENT_REVISION = 26;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4 · Mature engine restoration</span></div>
+<div id="topleft">Dremplay One<span>v0.0.2.0 · Infinite Detail Voxel Engine · remix foundation</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,8 +285,9 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4</p>
-  <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
+  <p>Version 0.0.2.0 · Infinite Detail Voxel Engine</p>
+  <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
+     The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
      A procedural far-field continues the terrain and water horizon as far as 1 km without allocating a cubic kilometer of editable voxels.
      Raymarched per-pixel, no polygons. Walkable ramps &amp; stairs, 
@@ -416,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Fixed 1 km view · hierarchical horizon tracing · four-range voxel LOD</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.2.0</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Voxel octaves · tagged volume conversion · mathematical Resources · adaptive iPad, laptop, and smartphone profiles</p></div>
 </div>
 
 <script>
@@ -1394,6 +1395,33 @@ let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
 const FIXED_VIEW_DISTANCE_METERS=1000;
 let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
 let nearDetailMeters=clampOption(Number(bootOptions.get('nearDetail'))||6.096,0,6.096);
+// Remix architecture: definitions, simulation, rendering and streaming are
+// different tagged volume formats. The current renderer is the first stable
+// conversion target; later targets can be added without changing Resource IDs.
+const VOXEL_OCTAVES=Object.freeze([
+  Object.freeze({level:0,pitch:.05,from:0,to:6.096,format:'microvoxel_overlay',purpose:'close Resource and surface detail'}),
+  Object.freeze({level:1,pitch:.10,from:6.096,to:15.24,format:'resident_grid',purpose:'authoritative editable matter'}),
+  Object.freeze({level:2,pitch:.20,from:15.24,to:76.2,format:'merged_grid',purpose:'stable middle-distance traversal'}),
+  Object.freeze({level:3,pitch:10,from:76.2,to:1000,format:'horizon_atlas',purpose:'kilometer landscape and occlusion'})
+]);
+const VOLUME_FORMATS=Object.freeze([
+  Object.freeze({name:'resource_field',allocation:'definition',tags:'equation, seed, material, provenance',convertsTo:'microvoxel_overlay, resident_grid'}),
+  Object.freeze({name:'ecology_seed',allocation:'sparse CPU',tags:'species, growth, habitat, Resource ID',convertsTo:'resource_field'}),
+  Object.freeze({name:'resident_grid',allocation:'CPU + GPU ring',tags:'material, water, Resource ID, edits',convertsTo:'merged_grid, collision, network'}),
+  Object.freeze({name:'microvoxel_overlay',allocation:'procedural GPU',tags:'parent cell, surface field, palette shade',convertsTo:'fragments'}),
+  Object.freeze({name:'merged_grid',allocation:'procedural GPU',tags:'source coordinate, material, occupancy',convertsTo:'fragments'}),
+  Object.freeze({name:'horizon_atlas',allocation:'compact GPU hierarchy',tags:'height, moisture, water, ridge, max-height',convertsTo:'distant fragments'}),
+  Object.freeze({name:'water_state',allocation:'sparse CPU queue',tags:'level, source, wake state',convertsTo:'resident_grid'}),
+  Object.freeze({name:'edit_csg',allocation:'sparse CPU log',tags:'operation, center, radius, material',convertsTo:'resident_grid, network'})
+]);
+const DEVICE_PROFILE=Object.freeze((()=>{
+  const cores=Math.max(1,navigator.hardwareConcurrency||4),memory=Number(navigator.deviceMemory)||0,touch=navigator.maxTouchPoints||0;
+  const tier=memory&&memory<=4||cores<=4?'mobile':memory>=8&&cores>=8?'high':'balanced';
+  return {tier,cores,memoryGiB:memory||'unreported',touchPoints:touch,preferredFrameBudgetMs:tier==='mobile'?12:tier==='high'?5:8};
+})());
+function voxelOctaveForDistance(distanceMeters){return VOXEL_OCTAVES.find(o=>distanceMeters>=o.from&&distanceMeters<o.to)||VOXEL_OCTAVES[VOXEL_OCTAVES.length-1];}
+function voxelOctaveReport(){return VOXEL_OCTAVES.map(o=>`octave ${o.level} · ${(o.pitch*100).toFixed(o.pitch<.1?0:1)} cm · ${o.from.toFixed(1)}–${o.to.toFixed(1)} m · ${o.format}\n  ${o.purpose}`).join('\n');}
+function volumeFormatReport(){return VOLUME_FORMATS.map(f=>`${f.name}\n  allocation: ${f.allocation}\n  tags: ${f.tags}\n  converts to: ${f.convertsTo}`).join('\n');}
 // A compact working subset of neighboring shades from the official Myara palette.
 // Each three-color run is deliberately close in hue and value.
 const PALETTE=[
@@ -2543,6 +2571,10 @@ function runConsoleCommand(raw){
   if(!command || name==='help')return say(
 `Dremplay One commands
 help                 list commands and descriptions
+octaves              list active voxel resolution bands
+detail <meters>      inspect the octave selected at a distance
+formats              list tagged volume formats and conversions
+device               show the portable device capability profile
 lightmode <0|1>      hard voxel or smooth Voxlap lighting
 respawn              return to the original spawn point
 spawn set            make the current position the spawn point
@@ -2576,6 +2608,10 @@ resource place <name> place a saved Resource at the crosshair
 resource sample       inspect material and Resource provenance
 resource id <name>    show a portable Resource identity
 resource load <hex>   verify and load a Resource identity`);
+  if(name==='octaves')return say(voxelOctaveReport());
+  if(name==='formats')return say(volumeFormatReport());
+  if(name==='device')return say(`device profile ${DEVICE_PROFILE.tier}\nlogical processors ${DEVICE_PROFILE.cores}\nreported memory ${DEVICE_PROFILE.memoryGiB} GiB\ntouch points ${DEVICE_PROFILE.touchPoints}\nstreaming work target ${DEVICE_PROFILE.preferredFrameBudgetMs} ms`);
+  if(name==='detail'&&Number.isFinite(number)&&number>=0){const octave=voxelOctaveForDistance(number);return say(`${number.toFixed(2)} m → octave ${octave.level}\n${(octave.pitch*100).toFixed(1)} cm samples · ${octave.format}\n${octave.purpose}`);}
   if(name==='lightmode' && (arg==='0'||arg==='1')){lightMode=Number(arg);return say(`lightmode ${lightMode} active`);}
   if(name==='respawn'){
     playerPos={...spawnPos};velY=0;grounded=false;

@@ -1,8 +1,18 @@
 # Dremplay One
 
-**Fine Voxel Engine**
+**Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4**
+Current release: **v0.0.2.0**
+
+## v0.0.2.0 architectural remix foundation
+
+- Reframed Dremplay One as a portable Infinite Detail Voxel Engine for iPad, laptop, and modern smartphone browsers while retaining the restored mature renderer as the compatibility target.
+- Added a first-class voxel-octave registry covering the current 5 cm, 10 cm, 20 cm, and 10 m representations. Each octave declares its physical pitch, distance domain, volume format, and purpose.
+- Added a tagged volume-format registry based on allocation, tagging, and conversion rather than one universal world structure. Mathematical Resource fields, ecology seeds, editable matter, fine overlays, merged voxels, horizon data, water, and CSG edits now have explicit roles and conversion routes.
+- Added a conservative device capability profile using portable browser signals. It reports mobile, balanced, or high tier; logical processors; available memory when exposed; touch capability; and a target budget for future streaming work.
+- Added `octaves`, `detail <meters>`, `formats`, and `device` console diagnostics so the architecture is visible and testable in the live engine.
+- Added `ARCHITECTURE.md`, defining the staged migration, performance invariants, mathematical Resource contract, screen-space refinement policy, predictive streaming model, and attribution boundaries.
+- Kept gameplay and the known-compatible WebGL2 renderer unchanged. This release establishes interfaces and terminology before any new traversal or streaming path is allowed to replace stable behavior.
 
 ## v0.0.1.4 mature engine restoration
 
