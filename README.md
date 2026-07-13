@@ -1,6 +1,16 @@
-# Dreamplay One
+# Dremplay One
 
-Current release: **v0.0.1.0.17**
+Current release: **v0.0.1.0.18**
+
+## v0.0.1.0.18 living woodland
+
+- Added species-specific procedural Resources for silver birch, highbush blueberry, American elderberry, apple, white oak, balsam fir, and blue spruce, including juvenile tree forms and separate foliage/fruit/needle provenance Resources.
+- Replaced the shared generic tree silhouette with botanical growth profiles. Birch uses slender apically dominant branching; oak and apple use low decurrent scaffold crowns; fir and spruce use monopodial trunks with tiered whorls; blueberry and elderberry use clonal multi-stem shrub architecture.
+- Crown wood now follows continuous pipe-model-inspired taper. Secondary and tertiary branchlets support layered leaf or needle sprays, making crowns substantially bushier while preserving small sky and light gaps.
+- Natural recruitment now responds to elevation, moisture, slope, pool proximity, and broad low-frequency ecotones. Conifers occupy cool ridges, fir/birch favor moist sites, oak favors warmer mesic ground, rare apples occupy lowland gaps, and berry shrubs form habitat-conditioned patches.
+- Added palette-native apples, blueberries, elderberries, pale birch bark, fir needles, and blue-spruce needles without introducing screen-space color quantization.
+- Added a hybrid two-stage world renderer. The near field uses virtual 5 cm microvoxels over the authoritative sparse 10 cm world, while distant terrain remains 10 cm and the kilometer horizon retains its coarse atlas. The default high-detail radius is 6.1 m / 20 ft.
+- Added Near Voxel Detail graphics settings: Off, 3 m, 20 ft, and 10 m. Performance mode disables the fine pass; quality extends it without increasing voxel texture memory or upload bandwidth.
 
 ## v0.0.1.0.17 live release refresh
 
@@ -232,7 +242,7 @@ Research basis: Runions, Lane & Prusinkiewicz, *Modeling Trees with a Space Colo
 - Image-based material/palette samplers and portable v2 material IDs.
 - First Resource Generator: primitives, material, fractal modifier, subsurface carving, radial mirroring, preview, save and placement.
 
-Release folders may use additional dot-separated build increments, such as `dreamplay-one-v0.0.1.0.1`.
+Release folders may use additional dot-separated build increments, such as `dremplay-one-v0.0.1.0.1`.
 
 A standalone WebGL2 microvoxel prototype. No build step or external dependencies are required.
 
@@ -255,9 +265,9 @@ A standalone WebGL2 microvoxel prototype. No build step or external dependencies
 - A brief bottom-right predictive-cache status appears approximately every twenty seconds
 - Emergency visible generation remains available only if the deeper cache is actually outrun
 
-## v0.8.0 Dreamplay identity and landscape gradients
+## v0.8.0 Dremplay identity and landscape gradients
 
-- Renamed the project from Dremplayor One to **Dreamplay One**
+- Renamed the project from Dremplayor One to **Dremplay One**
 - Replaced horizontal biome bands with slope, moisture, erosion, wind, and patch coverage fields
 - Snow forms tongues, scoured rock faces, melt gaps, and variable-depth deposits
 - Soil mantles vary in thickness and contain warped, interrupted stone lenses
