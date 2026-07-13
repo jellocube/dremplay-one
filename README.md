@@ -1,6 +1,12 @@
 # Dreamplay One
 
-Current release: **v0.0.1.0.16**
+Current release: **v0.0.1.0.17**
+
+## v0.0.1.0.17 live release refresh
+
+- Added a small `version.json` release manifest and a cache-bypassed update check in the document head. Hosted copies check immediately when opened, whenever the tab regains focus or visibility, and once per minute while left open.
+- A newer monotonic release revision replaces the current URL with version and refresh query parameters, forcing the browser and intermediary caches to request the new `index.html`. Matching or older manifests never reload the page.
+- Added document-level no-cache metadata. Offline and direct `file://` play skip the network check and continue normally.
 
 ## v0.0.1.0.16 startup-order recovery
 

@@ -2,7 +2,53 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dreamplay One v0.0.1.0.16</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Dreamplay One v0.0.1.0.17</title>
+<script>
+(() => {
+  'use strict';
+  const CURRENT_VERSION = '0.0.1.0.17';
+  const CURRENT_REVISION = 17;
+  const CHECK_INTERVAL_MS = 60000;
+  let refreshStarted = false;
+
+  async function checkForNewRelease() {
+    if (refreshStarted || location.protocol === 'file:') return;
+    try {
+      const manifestUrl = new URL('version.json', location.href);
+      manifestUrl.searchParams.set('_cache_bust', Date.now().toString(36));
+      const response = await fetch(manifestUrl, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (!response.ok) return;
+
+      const release = await response.json();
+      const nextRevision = Number(release.revision);
+      if (!Number.isFinite(nextRevision) || nextRevision <= CURRENT_REVISION) return;
+
+      refreshStarted = true;
+      const freshUrl = new URL(location.href);
+      freshUrl.searchParams.set('version', String(release.version || nextRevision));
+      freshUrl.searchParams.set('_refresh', Date.now().toString(36));
+      location.replace(freshUrl.href);
+    } catch (_) {
+      // Offline play and file:// builds continue normally without an update check.
+    }
+  }
+
+  checkForNewRelease();
+  addEventListener('pageshow', checkForNewRelease);
+  addEventListener('focus', checkForNewRelease);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkForNewRelease();
+  });
+  setInterval(checkForNewRelease, CHECK_INTERVAL_MS);
+})();
+</script>
 <style>
   @font-face { font-family: 'mono'; src: local('JetBrains Mono'), local('Consolas'); }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -230,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dreamplay One<span>v0.0.1.0.16 · Startup recovery</span></div>
+<div id="topleft">Dreamplay One<span>v0.0.1.0.17 · Live release refresh</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -239,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dreamplay One</h1>
-  <p>Version 0.0.1.0.16</p>
+  <p>Version 0.0.1.0.17</p>
   <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
      A procedural far-field continues the terrain and water horizon as far as 1 km without allocating a cubic kilometer of editable voxels.
@@ -369,7 +415,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dreamplay One v0.0.1.0.16</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Startup recovery · iPad controls · kilometer far-field · flowing water</p></div>
+  <div class="window-body"><h2>Dreamplay One v0.0.1.0.17</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Live release refresh · startup recovery · kilometer far-field · flowing water</p></div>
 </div>
 
 <script>
