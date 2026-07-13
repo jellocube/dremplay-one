@@ -2,7 +2,18 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.2.0**
+Current release: **v0.0.2.1**
+
+## v0.0.2.1 predictive memory and streaming
+
+- Fixed unbounded retention of implicit all-air chunks. The memory recycler now walks every generated chunk record, including records without an allocated voxel array, and releases clean regions outside the directional reserve.
+- Separated authored edits from transient water simulation. Flowing water no longer marks every touched chunk permanently dirty; disposable fluid levels and queue keys are reclaimed with their evicted chunks, while placed Resources, carving, building, and authored springs remain protected.
+- Made the CPU reserve asymmetric: ten chunks are retained in the predicted travel direction and three behind the resident world. This preserves a deep ahead cache while releasing unused regions behind the player much sooner.
+- Moved resident-world handoff to roughly 32 m before the boundary instead of roughly 19 m. Predictive generation now reaches the full ten-chunk/32 m frontier before those sectors enter the visible resident ring.
+- Reduced terrain-planning garbage collection by replacing four full temporary terrain objects per column with scalar height interpolation for slope taps.
+- Converted terrain, Resource voxel, Resource architecture, and Resource ceiling caches to device-tiered bounded LRUs. Mobile retains the smallest working set; high-tier devices retain more reuse without allowing unlimited growth.
+- Added five-second idle memory maintenance and a `memory [clear]` console command reporting allocated versus implicit chunks, derived cache sizes, fluid metadata, and protected authored edits.
+- Kept generation and uploads frame-budgeted. Directional sectors still become authoritative only after all generation and tiled uploads complete, preserving atomic landscape commits.
 
 ## v0.0.2.0 architectural remix foundation
 

@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.2.0 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.2.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.2.0';
-  const CURRENT_REVISION = 26;
+  const CURRENT_VERSION = '0.0.2.1';
+  const CURRENT_REVISION = 27;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.2.0 · Infinite Detail Voxel Engine · remix foundation</span></div>
+<div id="topleft">Dremplay One<span>v0.0.2.1 · Infinite Detail Voxel Engine · predictive memory</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.2.0 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.2.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.2.0</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Voxel octaves · tagged volume conversion · mathematical Resources · adaptive iPad, laptop, and smartphone profiles</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.2.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Early directional prefetch · bounded derived caches · reclaimable simulation memory · adaptive device budgets</p></div>
 </div>
 
 <script>
@@ -515,7 +515,7 @@ function terrainSample(wx,wz){
 const TERRAIN_PLAN_CACHE_KEY='dremplay:terrain-plan:1337:v12';
 const terrainPlanCache=new Map();
 try{if(typeof localStorage!=='undefined'){const saved=JSON.parse(localStorage.getItem(TERRAIN_PLAN_CACHE_KEY)||'[]');for(const row of saved){terrainPlanCache.set(row[0],{height:row[1],rawHeight:row[2],valleyMask:row[3],poolMask:row[4],poolDepth:row[5],riverMask:row[6],continental:row[7],ridges:row[8]});}}}catch{}
-function cachedTerrainSample(wx,wz){const key=`${wx},${wz}`;let value=terrainPlanCache.get(key);if(!value){value=terrainSample(wx,wz);terrainPlanCache.set(key,value);}return value;}
+function cachedTerrainSample(wx,wz){const key=`${wx},${wz}`;let value=terrainPlanCache.get(key);if(value){terrainPlanCache.delete(key);terrainPlanCache.set(key,value);return value;}value=terrainSample(wx,wz);terrainPlanCache.set(key,value);trimOldestMap(terrainPlanCache,cacheLimitForDevice(16000,24000,30000));return value;}
 function persistTerrainPlanCache(){
   if(terrainPlanCache.size>30000)return;
   try{if(typeof localStorage!=='undefined'){const rows=[];for(const [key,v] of terrainPlanCache)rows.push([key,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask||0,v.continental,v.ridges]);localStorage.setItem(TERRAIN_PLAN_CACHE_KEY,JSON.stringify(rows));loadingLog('Plan cache',`${rows.length} shared terrain samples retained for future launches`);}}catch{}
@@ -555,7 +555,7 @@ function worldToChunk(wx, wy, wz) {
   };
 }
 
-function setVoxel(wx, wy, wz, material, resourceId=0) {
+function setVoxel(wx, wy, wz, material, resourceId=0, markDirty=true) {
   const { cx, cy, cz } = worldToChunk(wx, wy, wz);
   const chunk = getChunk(cx, cy, cz, true);
   if (!chunk) return;
@@ -570,7 +570,7 @@ function setVoxel(wx, wy, wz, material, resourceId=0) {
   const key=chunkKey(cx,cy,cz),existing=resourceChunks.get(key);
   if(resourceId){const provenance=existing||new Map();provenance.set(i,resourceId);resourceChunks.set(key,provenance);}
   else if(existing){existing.delete(i);if(!existing.size)resourceChunks.delete(key);}
-  dirtyChunks.add(key);
+  if(markDirty)dirtyChunks.add(key);
 }
 
 function getVoxelResourceId(wx,wy,wz){
@@ -582,17 +582,33 @@ function getVoxelResourceId(wx,wy,wz){
 function evictDistantCleanChunks(){
   const minCX=Math.floor(windowMinX/CHUNK_SIZE), minCZ=Math.floor(windowMinZ/CHUNK_SIZE);
   const maxCX=minCX+LOADED_CHUNKS_XZ-1, maxCZ=minCZ+LOADED_CHUNKS_XZ-1;
-  const keep=PREFETCH_MARGIN; // retain the prestream safety ring, evict beyond it
-  for (const key of chunks.keys()) {
+  const prediction=predictedSectorDirection(),behind=3;
+  const keepMinCX=minCX-(prediction.dx<0?PREFETCH_MARGIN:behind),keepMaxCX=maxCX+(prediction.dx>0?PREFETCH_MARGIN:behind);
+  const keepMinCZ=minCZ-(prediction.dz<0?PREFETCH_MARGIN:behind),keepMaxCZ=maxCZ+(prediction.dz>0?PREFETCH_MARGIN:behind);
+  let released=0;
+  // Iterate generatedChunks, not chunks: implicit all-air chunks have no array
+  // and were previously retained forever during long walks.
+  for (const key of generatedChunks) {
     if (dirtyChunks.has(key)) continue;
     const [cx,,cz]=key.split(',').map(Number);
     // Hard safety invariant: neither the resident window nor its two-chunk
     // guard may ever be evicted. Streaming can recycle only remote CPU cache.
     if(cx>=minCX-2&&cx<=maxCX+2&&cz>=minCZ-2&&cz<=maxCZ+2)continue;
-    if (cx<minCX-keep || cx>maxCX+keep || cz<minCZ-keep || cz>maxCZ+keep) {
-      chunks.delete(key); resourceChunks.delete(key); generatedChunks.delete(key);
+    if (cx<keepMinCX || cx>keepMaxCX || cz<keepMinCZ || cz>keepMaxCZ) {
+      chunks.delete(key); resourceChunks.delete(key); generatedChunks.delete(key);released++;
     }
   }
+  for(const key of terrainColumnPlans.keys()){const [cx,cz]=key.split(',').map(Number);if(cx<keepMinCX||cx>keepMaxCX||cz<keepMinCZ||cz>keepMaxCZ)terrainColumnPlans.delete(key);}
+  for(const key of resourceCeilingCache.keys()){const [cx,cz]=key.split(',').map(Number);if(cx<keepMinCX||cx>keepMaxCX||cz<keepMinCZ||cz>keepMaxCZ)resourceCeilingCache.delete(key);}
+  // Fluid cells generated by simulation are disposable cache state. Authored
+  // springs remain protected by waterSources and their dirty chunk.
+  for(const key of waterLevels.keys()){
+    if(waterSources.has(key))continue;const [x,y,z]=key.split(',').map(Number),ck=chunkKey(Math.floor(x/CHUNK_SIZE),Math.floor(y/CHUNK_SIZE),Math.floor(z/CHUNK_SIZE));
+    if(!generatedChunks.has(ck)){waterLevels.delete(key);waterQueued.delete(key);}
+  }
+  if(waterQueue.length>waterQueued.size*2+512){let write=0;for(const cell of waterQueue){const key=waterKey(cell[0],cell[1],cell[2]);if(waterQueued.has(key))waterQueue[write++]=cell;}waterQueue.length=write;}
+  if(released)loadingLog('Memory recycler',`${released} generated chunk records released · behind reserve ${behind} chunks · ahead reserve ${PREFETCH_MARGIN} chunks`);
+  return released;
 }
 
 function getVoxelA(wx, wy, wz) {
@@ -609,7 +625,7 @@ function getVoxelA(wx, wy, wz) {
 let terrainColumnCacheKey='',terrainColumnCache=null;
 const terrainColumnPlans=new Map();
 function prepareTerrainColumns(cx,cz){
-  const key=`${cx},${cz}`;if(key===terrainColumnCacheKey)return terrainColumnCache;const retained=terrainColumnPlans.get(key);if(retained){terrainColumnCacheKey=key;terrainColumnCache=retained;return retained;}
+  const key=`${cx},${cz}`;if(key===terrainColumnCacheKey)return terrainColumnCache;const retained=terrainColumnPlans.get(key);if(retained){terrainColumnPlans.delete(key);terrainColumnPlans.set(key,retained);terrainColumnCacheKey=key;terrainColumnCache=retained;return retained;}
   const data=new Array(CHUNK_SIZE*CHUNK_SIZE),baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE;let minSurface=Infinity,maxSurface=-Infinity,minSoilBottom=Infinity;
   // One padded height tile supplies the center and all four slope taps. The
   // former implementation recomputed the full terrain stack five times for
@@ -619,15 +635,16 @@ function prepareTerrainColumns(cx,cz){
   // hundreds of repeated multi-octave samples for every streamed chunk.
   const pad=8,sampleStep=8,tileSize=(CHUNK_SIZE+pad*2)/sampleStep+1,heightTile=new Array(tileSize*tileSize);
   for(let tx=-pad,gx=0;tx<=CHUNK_SIZE+pad;tx+=sampleStep,gx++)for(let tz=-pad,gz=0;tz<=CHUNK_SIZE+pad;tz+=sampleStep,gz++)heightTile[gx+gz*tileSize]=cachedTerrainSample(baseX+tx,baseZ+tz);
+  const tileCorners=(x,z)=>{const px=(x+pad)/sampleStep,pz=(z+pad)/sampleStep,ix=Math.floor(px),iz=Math.floor(pz),fx=px-ix,fz=pz-iz;return {a:heightTile[ix+iz*tileSize],b:heightTile[Math.min(tileSize-1,ix+1)+iz*tileSize],c:heightTile[ix+Math.min(tileSize-1,iz+1)*tileSize],d:heightTile[Math.min(tileSize-1,ix+1)+Math.min(tileSize-1,iz+1)*tileSize],fx,fz};};
+  const tileMix=(a,b,c,d,fx,fz,key)=>((a[key]+(b[key]-a[key])*fx)*(1-fz)+(c[key]+(d[key]-c[key])*fx)*fz);
+  const terrainHeightAt=(x,z)=>{const {a,b,c,d,fx,fz}=tileCorners(x,z);return Math.round(tileMix(a,b,c,d,fx,fz,'height'));};
   const terrainAt=(x,z)=>{
-    const px=(x+pad)/sampleStep,pz=(z+pad)/sampleStep,ix=Math.floor(px),iz=Math.floor(pz),fx=px-ix,fz=pz-iz;
-    const a=heightTile[ix+iz*tileSize],b=heightTile[Math.min(tileSize-1,ix+1)+iz*tileSize],c=heightTile[ix+Math.min(tileSize-1,iz+1)*tileSize],d=heightTile[Math.min(tileSize-1,ix+1)+Math.min(tileSize-1,iz+1)*tileSize];
-    const mix=key=>((a[key]+(b[key]-a[key])*fx)*(1-fz)+(c[key]+(d[key]-c[key])*fx)*fz);
+    const {a,b,c,d,fx,fz}=tileCorners(x,z),mix=key=>tileMix(a,b,c,d,fx,fz,key);
     return {height:Math.round(mix('height')),rawHeight:Math.round(mix('rawHeight')),valleyMask:mix('valleyMask'),poolMask:mix('poolMask'),poolDepth:Math.round(mix('poolDepth')),riverMask:mix('riverMask'),continental:mix('continental'),ridges:mix('ridges')};
   };
   for(let lx=0;lx<CHUNK_SIZE;lx++)for(let lz=0;lz<CHUNK_SIZE;lz++){
     const wx=baseX+lx,wz=baseZ+lz,terrain=terrainAt(lx,lz),h=terrain.height;minSurface=Math.min(minSurface,h);maxSurface=Math.max(maxSurface,h);
-    const hx1=terrainAt(lx+2,lz).height,hx0=terrainAt(lx-2,lz).height,hz1=terrainAt(lx,lz+2).height,hz0=terrainAt(lx,lz-2).height;
+    const hx1=terrainHeightAt(lx+2,lz),hx0=terrainHeightAt(lx-2,lz),hz1=terrainHeightAt(lx,lz+2),hz0=terrainHeightAt(lx,lz-2);
     const slope=Math.hypot(hx1-hx0,hz1-hz0)*.25,curvature=(hx1+hx0+hz1+hz0-4*h)*.25;
     const [qx,qz]=warpedCoords(wx,wz);
     const patchMacro=fbm2(qx*.0064,qz*.0064,4,2,.52,1801),patchMeso=fbm2(qx*.019+17,qz*.019-9,3,2.1,.46,1847);
@@ -662,7 +679,7 @@ function prepareTerrainColumns(cx,cz){
   // or allocating throwaway 32 KiB arrays all the way to the world ceiling.
   let maxResourceTop=maxSurface+12;
   for(let n=0;n<2;n++){const tree=naturalTreeCandidate(cx,cz,n,data,baseX,baseZ);if(tree)maxResourceTop=Math.max(maxResourceTop,tree.wy+resourceBounds(tree.def).y1);}
-  data.minSurface=minSurface;data.maxSurface=maxSurface;data.maxResourceTop=maxResourceTop;data.minSoilBottom=minSoilBottom;terrainColumnPlans.set(key,data);if(terrainColumnPlans.size>4096)terrainColumnPlans.delete(terrainColumnPlans.keys().next().value);terrainColumnCacheKey=key;terrainColumnCache=data;return data;
+  data.minSurface=minSurface;data.maxSurface=maxSurface;data.maxResourceTop=maxResourceTop;data.minSoilBottom=minSoilBottom;terrainColumnPlans.set(key,data);trimOldestMap(terrainColumnPlans,cacheLimitForDevice(128,256,512));terrainColumnCacheKey=key;terrainColumnCache=data;return data;
 }
 
 // Generate a single chunk with seamless terrain (using world coordinates for continuity)
@@ -1422,6 +1439,8 @@ const DEVICE_PROFILE=Object.freeze((()=>{
 function voxelOctaveForDistance(distanceMeters){return VOXEL_OCTAVES.find(o=>distanceMeters>=o.from&&distanceMeters<o.to)||VOXEL_OCTAVES[VOXEL_OCTAVES.length-1];}
 function voxelOctaveReport(){return VOXEL_OCTAVES.map(o=>`octave ${o.level} · ${(o.pitch*100).toFixed(o.pitch<.1?0:1)} cm · ${o.from.toFixed(1)}–${o.to.toFixed(1)} m · ${o.format}\n  ${o.purpose}`).join('\n');}
 function volumeFormatReport(){return VOLUME_FORMATS.map(f=>`${f.name}\n  allocation: ${f.allocation}\n  tags: ${f.tags}\n  converts to: ${f.convertsTo}`).join('\n');}
+function cacheLimitForDevice(mobile,balanced,high){return DEVICE_PROFILE.tier==='mobile'?mobile:DEVICE_PROFILE.tier==='high'?high:balanced;}
+function trimOldestMap(map,limit){while(map.size>limit)map.delete(map.keys().next().value);}
 // A compact working subset of neighboring shades from the official Myara palette.
 // Each three-color run is deliberately close in hue and value.
 const PALETTE=[
@@ -2190,7 +2209,7 @@ function voxelizedResource(def){
   // the most recently used forms for adjacent vertical chunks and previews.
   // Tree point lists are large nested arrays. A compact LRU keeps the nearby
   // working set but prevents a long walk from retaining hundreds of crowns.
-  if(resourceVoxelCache.size>64)resourceVoxelCache.delete(resourceVoxelCache.keys().next().value);
+  trimOldestMap(resourceVoxelCache,cacheLimitForDevice(24,40,64));
   return points;
 }
 function pointSegmentDistance(px,py,pz,a,b){
@@ -2258,7 +2277,7 @@ function treeArchitecture(def){
       leaves.push({x:nodes[steps].x,y:nodes[steps].y,z:nodes[steps].z,rx:s*.18,ry:s*.15,rz:s*.18});
     }
   }
-  const result={segments,leaves};resourceArchitectureCache.set(key,result);if(resourceArchitectureCache.size>64)resourceArchitectureCache.delete(resourceArchitectureCache.keys().next().value);return result;
+  const result={segments,leaves};resourceArchitectureCache.set(key,result);trimOldestMap(resourceArchitectureCache,cacheLimitForDevice(32,48,64));return result;
 }
 function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   // Trees use their own jittered candidates, independent from rocks/flowers.
@@ -2303,7 +2322,7 @@ function resourceCeilingForChunk(cx,cz,columns){
   const x0=cx*CHUNK_SIZE,x1=x0+CHUNK_SIZE-1,z0=cz*CHUNK_SIZE,z1=z0+CHUNK_SIZE-1;let top=columns.maxSurface+12;
   const consider=entry=>{if(!entry)return;const b=resourceBounds(entry.def);if(entry.wx+b.x<x0||entry.wx-b.x>x1||entry.wz+b.z<z0||entry.wz-b.z>z1)return;top=Math.max(top,entry.wy+b.y1);};
   for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))consider(entry);for(let n=0;n<2;n++)consider(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));}
-  resourceCeilingCache.set(key,top);if(resourceCeilingCache.size>4096)resourceCeilingCache.delete(resourceCeilingCache.keys().next().value);return top;
+  resourceCeilingCache.set(key,top);trimOldestMap(resourceCeilingCache,cacheLimitForDevice(512,1024,2048));return top;
 }
 function rockResourceVoxel(def,x,y,z){
   const s=Math.max(2,def.scale),seed=def.seed|0,turn=hash3(seed,2,7,5407)*Math.PI,ct=Math.cos(turn),st=Math.sin(turn),rx=x*ct-z*st,rz=x*st+z*ct;
@@ -2561,7 +2580,7 @@ document.getElementById('serverRespawn').addEventListener('click',()=>{if(!spawn
 document.getElementById('serverSetSpawn').addEventListener('click',()=>{if(!playerPos)return;spawnPos={...playerPos};syncServerWindow();serverStatus.textContent='Spawn point set to the player’s current position.';});
 document.getElementById('serverTeleport').addEventListener('click',()=>{const x=Number(serverSpawnX.value),y=Number(serverSpawnY.value),z=Number(serverSpawnZ.value);if(![x,y,z].every(Number.isFinite)){serverStatus.textContent='Spawn coordinates must be finite numbers.';return;}playerPos={x,y,z};velY=0;grounded=false;serverStatus.textContent=`Player moved to ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)} m.`;});
 document.getElementById('serverWakeWater').addEventListener('click',()=>{if(!playerPos)return;wakeWaterNear(Math.floor(playerPos.x/VS),Math.floor(playerPos.y/VY),Math.floor(playerPos.z/VS),32);syncServerWindow();serverStatus.textContent=`Nearby water activated · ${waterQueue.length} cells queued.`;});
-document.getElementById('serverAddSpring').addEventListener('click',()=>{if(!playerPos)return;const cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);if(!hit){serverStatus.textContent='No surface under the crosshair.';return;}setWaterState(hit.px,hit.py,hit.pz,8,true);enqueueWater(hit.px,hit.py,hit.pz);uploadRegion(hit.px-1,hit.py-1,hit.pz-1,hit.px+1,hit.py+1,hit.pz+1);syncServerWindow();serverStatus.textContent=`Renewing spring added at voxel ${hit.px}, ${hit.py}, ${hit.pz}.`;});
+document.getElementById('serverAddSpring').addEventListener('click',()=>{if(!playerPos)return;const cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);if(!hit){serverStatus.textContent='No surface under the crosshair.';return;}setWaterState(hit.px,hit.py,hit.pz,8,true,true);enqueueWater(hit.px,hit.py,hit.pz);uploadRegion(hit.px-1,hit.py-1,hit.pz-1,hit.px+1,hit.py+1,hit.pz+1);syncServerWindow();serverStatus.textContent=`Renewing spring added at voxel ${hit.px}, ${hit.py}, ${hit.pz}.`;});
 function runConsoleCommand(raw){
   const command=raw.trim().toLowerCase().replace(/\s+/g,' ');
   const [name,arg]=command.split(' ');
@@ -2575,6 +2594,7 @@ octaves              list active voxel resolution bands
 detail <meters>      inspect the octave selected at a distance
 formats              list tagged volume formats and conversions
 device               show the portable device capability profile
+memory [clear]       inspect or trim derived CPU caches
 lightmode <0|1>      hard voxel or smooth Voxlap lighting
 respawn              return to the original spawn point
 spawn set            make the current position the spawn point
@@ -2611,6 +2631,7 @@ resource load <hex>   verify and load a Resource identity`);
   if(name==='octaves')return say(voxelOctaveReport());
   if(name==='formats')return say(volumeFormatReport());
   if(name==='device')return say(`device profile ${DEVICE_PROFILE.tier}\nlogical processors ${DEVICE_PROFILE.cores}\nreported memory ${DEVICE_PROFILE.memoryGiB} GiB\ntouch points ${DEVICE_PROFILE.touchPoints}\nstreaming work target ${DEVICE_PROFILE.preferredFrameBudgetMs} ms`);
+  if(name==='memory'){if(arg==='clear')releaseDerivedCaches(true);return say(memoryReport());}
   if(name==='detail'&&Number.isFinite(number)&&number>=0){const octave=voxelOctaveForDistance(number);return say(`${number.toFixed(2)} m → octave ${octave.level}\n${(octave.pitch*100).toFixed(1)} cm samples · ${octave.format}\n${octave.purpose}`);}
   if(name==='lightmode' && (arg==='0'||arg==='1')){lightMode=Number(arg);return say(`lightmode ${lightMode} active`);}
   if(name==='respawn'){
@@ -2802,10 +2823,10 @@ const waterQueued=new Set();
 let waterSpreadStrength=6,naturalWaterSources=true,waterMovedLastFrame=0;
 function waterKey(x,y,z){return `${x},${y},${z}`;}
 function waterLevelAt(x,y,z){if(getVoxelA(x,y,z)!==MAT_WATER)return 0;return waterLevels.get(waterKey(x,y,z))||8;}
-function setWaterState(x,y,z,level,source=false){
+function setWaterState(x,y,z,level,source=false,persistent=false){
   const k=waterKey(x,y,z),amount=Math.max(0,Math.min(8,Math.round(level)));
-  if(amount<=0){if(getVoxelA(x,y,z)===MAT_WATER)setVoxel(x,y,z,MAT_AIR);waterLevels.delete(k);waterSources.delete(k);return;}
-  if(getVoxelA(x,y,z)!==MAT_WATER)setVoxel(x,y,z,MAT_WATER);waterLevels.set(k,amount);if(source)waterSources.add(k);
+  if(amount<=0){if(getVoxelA(x,y,z)===MAT_WATER)setVoxel(x,y,z,MAT_AIR,0,persistent);waterLevels.delete(k);waterSources.delete(k);return;}
+  if(getVoxelA(x,y,z)!==MAT_WATER)setVoxel(x,y,z,MAT_WATER,0,persistent);waterLevels.set(k,amount);if(source)waterSources.add(k);
 }
 function isNaturalWaterSource(x,y,z){
   if(!naturalWaterSources)return false;const col=terrainWeatherColumn(x,z),top=Math.min(WATER_LEVEL,col.h+20);
@@ -2973,6 +2994,7 @@ function loop(now){
   const moving=movementInputActive();if(moving)lastMovementInputAt=now;
   if(streamTask)processStreamTask();
   else processBackgroundPrefetch(now,moving);
+  performIdleMemoryMaintenance(now);
   const farCenterX=farTerrainOriginX+FAR_SPAN_VOXELS*.5,farCenterZ=farTerrainOriginZ+FAR_SPAN_VOXELS*.5,playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS;
   if(!farTerrainTask&&Math.hypot(playerVX-farCenterX,playerVZ-farCenterZ)>FAR_RECENTER_VOXELS)queueFarTerrainRefresh(playerVX,playerVZ);
   if(farTerrainTask&&!streamTask)processFarTerrainRefresh(moving?.55:2.5);
@@ -2995,7 +3017,7 @@ function loop(now){
     frameCount = 0; fpsAccum = 0;
     document.getElementById('stats').textContent =
       `${fps.toFixed(0)} fps · ${resolvedPlatformMode()} · view ${viewDistanceMeters>=1000?'1.00 km':viewDistanceMeters.toFixed(0)+' m'} · lightmode ${lightMode} · ${timeOfDay.toFixed(1)}h${testZoneMode?' · Test zone':''} · ${canvas.width}×${canvas.height}\n`+
-      `${chunks.size} chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB CPU · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\n`+
+      `${chunks.size} allocated / ${generatedChunks.size} known chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB voxel CPU · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\n`+
       `${dirtyChunks.size} edited chunks · ${resourceChunks.size} provenance chunks · water ${waterQueue.length}/${waterMovedLastFrame} · ring ${ringX},${ringZ}\n`+
       `frame ${lastFrameCostMs.toFixed(1)} ms · uploads ${(uploadBytes/1048576).toFixed(2)} MiB · ${uploadMs.toFixed(2)} ms · stream ${streamMs.toFixed(1)} ms\n`+
       `xyz ${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)} m`;
@@ -3065,9 +3087,24 @@ function updatePlayer(dt){
 }
 
 // === DIRECTION-PREDICTED SECTOR STREAMING ===
-const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,STREAM_UPLOAD_TILE_VOXELS=CHUNK_SIZE*2,PREDICT_DEPTH_CHUNKS=Math.min(8,PREFETCH_MARGIN);
+const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,STREAM_UPLOAD_TILE_VOXELS=CHUNK_SIZE*2,PREDICT_DEPTH_CHUNKS=PREFETCH_MARGIN;
 let lastStreamShiftAt=0,streamTask=null,prefetchJobs=[],prefetchSignature='',prefetchSectorLabel='forward';
 let lastPrefetchWorkAt=-Infinity,nextCacheNoticeAt=Infinity,cacheNoticeActive=false,cacheNoticeTotal=0,cacheNoticeHideAt=0;
+let lastMemoryMaintenanceAt=0;
+function releaseDerivedCaches(aggressive=false){
+  const divisor=aggressive?2:1;
+  trimOldestMap(terrainColumnPlans,Math.max(32,Math.floor(cacheLimitForDevice(128,256,512)/divisor)));
+  trimOldestMap(resourceVoxelCache,Math.max(12,Math.floor(cacheLimitForDevice(24,40,64)/divisor)));
+  trimOldestMap(resourceArchitectureCache,Math.max(16,Math.floor(cacheLimitForDevice(32,48,64)/divisor)));
+  trimOldestMap(resourceCeilingCache,Math.max(256,Math.floor(cacheLimitForDevice(512,1024,2048)/divisor)));
+  if(aggressive){terrainColumnCacheKey='';terrainColumnCache=null;}
+}
+function memoryReport(){return `device tier ${DEVICE_PROFILE.tier}\nallocated voxel chunks ${chunks.size} (${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB)\nknown generated chunks ${generatedChunks.size}\nterrain column plans ${terrainColumnPlans.size}\nResource voxel/architecture caches ${resourceVoxelCache.size}/${resourceArchitectureCache.size}\nResource ceiling plans ${resourceCeilingCache.size}\nfluid cells/sources ${waterLevels.size}/${waterSources.size}\ndirty authored chunks ${dirtyChunks.size}`;}
+function performIdleMemoryMaintenance(now){
+  if(now-lastMemoryMaintenanceAt<5000||streamTask||farTerrainTask||prefetchJobs.length||now-lastMovementInputAt<2500)return;
+  lastMemoryMaintenanceAt=now;const released=evictDistantCleanChunks();releaseDerivedCaches(false);
+  if(released)loadingLog('Idle recycler',`${released} obsolete records retired · ${generatedChunks.size} generated records remain`);
+}
 function predictedSectorDirection(){
   let x=movementHeadingX,z=movementHeadingZ,mag=Math.hypot(x,z);if(mag<.18){const cam=getCamBasis();x=cam.forward.x;z=cam.forward.z;mag=Math.hypot(x,z)||1;}
   const threshold=mag*.38;let dx=Math.abs(x)>=threshold?Math.sign(x):0,dz=Math.abs(z)>=threshold?Math.sign(z):0;if(!dx&&!dz)Math.abs(x)>Math.abs(z)?dx=Math.sign(x):dz=Math.sign(z);
@@ -3086,7 +3123,8 @@ function rebuildPrefetchQueue(){
 function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(testZoneMode)return;rebuildPrefetchQueue();
   if(now>=nextCacheNoticeAt){nextCacheNoticeAt=now+20000;cacheNoticeActive=true;cacheNoticeTotal=Math.max(1,prefetchJobs.length);cacheNoticeHideAt=0;showLoading(prefetchJobs.length?`Precomputing ${prefetchSectorLabel} landscape sectors`:'Predictive sector ready',prefetchJobs.length?0:1,true);loadingLog('Vector predictor',prefetchJobs.length?`${prefetchSectorLabel} · ${prefetchJobs.length} chunks ordered into broad sectors`:'current predicted sector is resident');if(!prefetchJobs.length)cacheNoticeHideAt=now+1000;}
-  const started=performance.now(),budget=moving?Math.max(.45,Math.min(1.2,streamingBudgetMs*.5)):Math.max(2,Math.min(6,streamingBudgetMs*2));let worked=false;
+  const profileBudget=DEVICE_PROFILE.tier==='mobile'?.65:DEVICE_PROFILE.tier==='high'?1.5:1.0;
+  const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
   while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){generateChunk(...prefetchJobs.pop());worked=true;lastPrefetchWorkAt=performance.now();}
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
@@ -3118,7 +3156,10 @@ function processStreamTask(){
 }
 function updateLoadedWindow(){
   if(testZoneMode)return;const playerVoxelX=Math.floor(playerPos.x/VS),playerVoxelZ=Math.floor(playerPos.z/VS),now=performance.now();if(now-lastStreamShiftAt<500)return;
-  const centerX=windowMinX+LOADED_SIZE_X*.5,centerZ=windowMinZ+LOADED_SIZE_Z*.5,hysteresis=CHUNK_SIZE*6;let shiftX=0,shiftZ=0;
+  // Start a handoff after only half a sector of travel from center. With the
+  // 76.8 m resident field this leaves about 32 m of world ahead, rather than
+  // waiting until the player is roughly 19 m from the boundary.
+  const centerX=windowMinX+LOADED_SIZE_X*.5,centerZ=windowMinZ+LOADED_SIZE_Z*.5,hysteresis=STREAM_SECTOR_VOXELS*.5;let shiftX=0,shiftZ=0;
   if(playerVoxelX>centerX+hysteresis)shiftX=STREAM_SECTOR_VOXELS;else if(playerVoxelX<centerX-hysteresis)shiftX=-STREAM_SECTOR_VOXELS;
   if(playerVoxelZ>centerZ+hysteresis)shiftZ=STREAM_SECTOR_VOXELS;else if(playerVoxelZ<centerZ-hysteresis)shiftZ=-STREAM_SECTOR_VOXELS;
   if(shiftX||shiftZ){lastStreamShiftAt=now;queueStreamShift(shiftX,shiftZ);}
