@@ -1,6 +1,142 @@
 # Dreamplay One
 
-Current release: **v0.0.1.0.3**
+Current release: **v0.0.1.0.16**
+
+## v0.0.1.0.16 startup-order recovery
+
+- Fixed the desktop startup exception that left the title screen permanently waiting. Automatic platform activation called `clearTouchState()` before `touchMoveKnob` and the other touch-control constants had been initialized, triggering a temporal-dead-zone `ReferenceError` before `initGL()` could begin loading.
+- Platform activation now runs only after every touch-control element, pointer binding, and action button exists. Desktop initialization can safely clear touch state, while iPad auto-detection retains the same behavior.
+- Added a complete startup-order regression harness with a stubbed WebGL2/DOM runtime. It executes synchronous page initialization and the first eight queued terrain batches; the repaired build reaches terrain generation and advances the loading monitor to 2.4% with subsequent work queued.
+
+## v0.0.1.0.15 touch, flowing water, foliage, and kilometer horizons
+
+- Added native iPad/touch controls using independent Pointer Events: a left movement pad, right-side look surface, and hold controls for carve, place, jump, and crawl. Platform selection supports automatic coarse-pointer/iPadOS detection or explicit Touch/Desktop overrides on the title screen and in Options.
+- Added a 25 m–1 km view-distance control. The engine keeps the nearby 10 cm resident microvoxels editable, then continues the exact deterministic terrain model through a compact 256×256, 10 m/sample far-field atlas covering 2.56 km.
+- The far atlas carries height, moisture, water, and ridge data. The fragment shader adaptively ray-intersects it in at most 72 coarse steps, reconstructs terrain normals, uses official-palette landscape colors, and applies distance-scaled atmosphere without allocating distant 3D chunks.
+- Far terrain refreshes only after 180 m of travel, builds incrementally behind a strict frame budget, and swaps into the GPU atomically so the horizon cannot appear as strips or temporarily vanish.
+- Replaced decorative water motion with a sparse eight-level cellular flow system. Gravity has priority, finite cells conserve volume, lateral cells equalize toward the lowest neighbor, and placed/natural springs can renew. Generated lakes remain dormant until nearby terrain is edited or water is explicitly awakened.
+- Added three water-rendering levels: solid palette water, animated pixel-flow facets, and reflective voxel water. The highest setting adds stepped Fresnel sky reflection, quantized moving surface normals, depth tint, and palette-white sun glints while retaining a deliberately pixelated result.
+- Added an F10 Server Options window for gravity, water simulation state/budget/spread, natural spring behavior, water activation, spring placement, spawn coordinates, respawn, spawn capture, and teleportation. Matching console commands add `spawn`, `waterwake`, `spring`, and `view` controls.
+- Replaced filled tree-crown ellipsoids with compound phyllotactic foliage. Each cluster is a fine terminal twig with alternating, roughly one-voxel leaf blades and forked leaflets, leaving visible air and light between leaves.
+- Added `ironbark_leaf_spray` as a standalone editable and transferable foliage Resource. Leaf voxels in natural and manually placed trees retain this foliage provenance separately from the parent tree’s trunk ID; new pebble/foliage definitions are appended so all earlier runtime Resource IDs keep their established numbers.
+- Increased the grass emitter to a jittered 2×2-voxel lattice with denser moisture/slope-aware short and tall grass. Pool and stream beds receive dense, locally varied `stream_pebble` Resource carpets using gravel, native rock, and quartz.
+- Added the title links for [jellocube.me](https://jellocube.me), [Myar](https://jellocube.me/myar), and [jellocube/dremplay-one](https://github.com/jellocube/dremplay-one).
+- Renamed the persistent panel to **AI Loading Monitor** and expanded its immutable conveyor to 17 permanent categories and 136 technical packets. Labels expose the real statistical and predictive work: seeded distributions, multi-octave signal synthesis, landscape classification, Resource growth, cellular water state, tensor assembly, distribution audits, movement prediction, kilometer-field sampling, weather estimation, GPU encoding, and frame-anomaly observation.
+- Added a live AI-observer readout driven by the monitor’s semantic phase classifier and an exponentially weighted progress-rate estimator. It reports the active inference family, exact completion estimate, and EWMA ETA without rebuilding, clearing, resizing, or restarting the conveyor.
+
+## v0.0.1.0.14 orographic voxel weather
+
+- Added an exact terrain-weather texture shared by the world and cloud renderer. Every resident X/Z voxel carries generated surface height and moisture, encoded as a compact RG16UI field that follows the same circular streaming ring as the landscape.
+- Cloud condensation now responds to the actual local surface, exact soil/water moisture, and the change in terrain elevation along the prevailing wind. Windward slopes gain orographic lift; descending lee slopes develop a rain-shadow suppression.
+- Rebuilt cloud shapes as coherent multi-scale banks and billows evaluated only at 3D voxel centers. Coarse and fine options change voxel size without changing the underlying cloud formation's scale or location.
+- Added a continuous formation lifecycle. Humid air parcels advect with the wind, condense, mature, and evaporate over several minutes with spatially offset phases, producing new clouds without global pulsing or abrupt seed resets.
+- Added a seamless deterministic terrain proxy outside the resident weather texture so distant cloud formations do not reveal the square streaming boundary.
+- Lower cloud bases now track relief while retaining at least 10.5 m of terrain clearance. Cloud depth expands in moist uplift and remains physically three-dimensional with distinct top, side, and underside lighting.
+- Clarified Options → Clouds as Off, coarse 2.4 m weather voxels, or fine 0.8 m weather voxels.
+- Fixed the very dark reed-grass voxels. Reeds now use three adjacent official medium greens (`#78A858`, `#60984C`, `#4C843C`), gentler noise, and a thin-blade daylight-transmission floor rather than opaque-stone shadowing.
+- Deterministic field sampling measured 47.6–70.8% cloud-column coverage across a six-minute weather interval, with 36–37% of sampled columns naturally forming or dissipating during each three-minute interval.
+
+## v0.0.1.0.13 Resource transfer, volumetric clouds, and sector streaming
+
+- Added versioned hexadecimal Resource identity/transfer IDs containing the complete procedural definition: name, role, growth stage, primitive, materials, generator, base seed, scale distribution, growth parameters, component references, and snapshots of both materials’ palette/noise aesthetics.
+- Resource IDs include an FNV-1a checksum. The Resource Editor has Copy and Load controls, and the console adds `resource id <name>` and `resource load <hex>`.
+- The official palette canvas is now the color chooser. Base/Light/Dark chooses the target channel, clicking a swatch selects it, and hovering reports its palette number, natural name, and hexadecimal color.
+- Moved the live Resource preview to a large persistent left pane and auto-fitted it from the actual occupied voxel bounds.
+- Replaced conservative tree bounds with bounds measured directly from the generated branch and foliage architecture; flowers receive generous unbounded working margins.
+- Natural props are reconstructed into every neighboring chunk touched by their true bounds, removing the invisible chunk box that cut tree crowns and plants at horizontal borders.
+- Every natural Resource already derives its instance seed from world coordinates; manual placement now derives a fresh seed from its coordinates, base genome, and placement serial. Added a New seed control and changed the ironbark base genome away from 1337.
+- Replaced projected 2D cloud decks with slowly transforming 3D voxel volumes between 50 and 78 meters altitude. Cells have separate top/side/underside lighting.
+- Cloud options now explicitly select Off, a coarse 2.4 m 3D grid with 12 volume samples, or a fine 0.8 m 3D grid with 36 volume samples. Terrain fog uses the atmosphere without retracing clouds.
+- Replaced one-chunk strip relocation with direction-predicted 12.8 m × 12.8 m sectors. The predictor builds an eight-chunk-deep reserve in the current movement/camera direction and continues at a bounded budget while moving.
+- The resident window advances four chunks at once. Incoming data is uploaded as broad square sectors and the world/ring mapping commits only when the entire directional section is ready.
+- Cold full-field generation with cross-chunk Resources benchmarks at 4.43 seconds CPU plus the fixed 12-second loading timeline; Test zone generation benchmarks at 1.16 seconds.
+
+## v0.0.1.0.12 physical-scale wilderness
+
+- Raised the vertical resident volume to 416 true 10 cm voxels (41.6 m), with major mountain relief reaching at least 30.5 m / 100 ft above the valley datum.
+- Added domain-warped watershed rivers with a nominal 4.8 m / 15.7 ft wet core (measured median 5.9 m in the terrain audit) while retaining small erosion pools up to 2 m deep, ordinary hills, and open fields.
+- Adult ironbark Resources now have a 6.1 m / 20 ft minimum generated height. Field boulders are meter-scale, while existing gravel, stone shards, sand grains, and small pools remain.
+- Added ironbark saplings as a separate procedural growth stage and stable Resource ID. Low-frequency recruitment fields cluster adults and saplings naturally in compatible moist, soil-covered habitat.
+- Added Adult/Sapling selection to the Resource Editor; the same branching architecture and material system supports both stages without disguising saplings as undersized adults.
+- Procedural Resources are voxelized once per deterministic instance and reused by every intersecting vertical chunk, avoiding repeated full-volume tree evaluation.
+- Empty high chunks remain implicit using an exact per-column Resource ceiling, preventing both clipped tree crowns and throwaway voxel allocations.
+- Terrain-plan samples are shared across chunk borders and persisted in a compact versioned browser cache for faster later launches; the 234 MiB runtime voxel volume is deliberately not duplicated in browser storage.
+- Full-world cold boot now targets 12 seconds and Test zone 6 seconds, with no artificial one-minute wait. The resident field is loaded first and the predictive frontier remains an idle-time task.
+
+## v0.0.1.0.11 loader recovery
+
+- Fixed the startup exception in the default boulder's Resource Editor preview: radial faceting now uses a mutable radius accumulator.
+- The previous exception occurred before the first terrain-loading frame, making the title loader appear permanently stalled.
+- Verification now executes the page initialization path, Resource preview, and queued loading frames in addition to syntax and isolated generator tests.
+
+## v0.0.1.0.10 natural Resource forms and stable monitor
+
+- Test zone returns to near-full rendering resolution: 0.45 versus the full world's 0.50, while retaining its compact volume and simplified shader path.
+- The Resource library remains exactly ten named definitions with the same stable registration order and provenance IDs.
+- Ironbark trees now use tapered deterministic branch graphs growing toward golden-angle terminal attraction points, upward tropism, secondary twigs, and separate porous foliage clusters.
+- Foxglove bells and leaves use golden-angle phyllotaxis; grasses curve along quadratic wind response with centered height distributions.
+- Boulders and chips combine anisotropic superellipsoids, asymmetric cleavage planes, multi-scale roughness, partial burial, and exposed-face patina.
+- Moss grows as overlapping cushion colonies instead of one perturbed ellipsoid.
+- Natural instances use bounded lognormal-like scale variation plus small architectural parameter variation, eliminating cloned silhouettes without extreme outliers.
+- Terrain relief now nests subordinate ridges within primary mountain masses, and ground-cover patches combine macro and meso ecological scales.
+- The Resource editor exposes Natural size variation so the researched distribution remains editable.
+- Resource previews are now depth-sorted isometric voxel renders rather than misleading single-plane slices; input-driven preview work is frame-coalesced.
+- Loading Monitor now has a true minimize control. It collapses to its title bar without using `display:none`; the conveyor's animation clock continues uninterrupted while minimized.
+- The idle close button minimizes instead of destroying the monitor, eliminating the remaining during-play conveyor reset path.
+- Options now exposes Quality, Balanced, Performance, and Custom profiles plus fixed resolution, live view distance, fog start/density, lighting quality, material detail, cloud detail, water-cell budget, streaming milliseconds, and vegetation geometry detail.
+- View distance and fog are shader uniforms, so they update live without rebuilding terrain. Water and streaming controls directly change their per-frame CPU budgets.
+- Resolution and vegetation geometry are explicit reload-only settings carried in the local file URL; they never resize the framebuffer or regenerate Resources unexpectedly during play.
+- The Options diagnostics show pending framebuffer size, relative fragment count, resident voxel/GPU memory, current renderer size, and measured FPS.
+
+Research basis: Runions, Lane & Prusinkiewicz, *Modeling Trees with a Space Colonization Algorithm* (2007); Pałubicki et al., *Self-organizing Tree Models for Image Synthesis* (2009); Fowler, Prusinkiewicz & Battjes, *A Collision-based Model of Spiral Phyllotaxis* (1992); Sakurai & Miyata, *A Procedural Modeling of Various-Sized Rocks on the Ground* (2011).
+
+## v0.0.1.0.9 continuous loading conveyor
+
+- The conveyor now consists of two permanent, identical master tracks; phase changes never replace its entries, alter its width, or restart its animation.
+- Every loading section has a technical category placard between its task packets: Initialize, Terrain synthesis, Resident assembly, Field audit, GPU transfer, Predictive cache, Frontier recovery, Frame scheduler, and Ready.
+- The current category and its packets are highlighted using color-only class changes, preserving exact layout geometry and smooth compositor motion.
+- Task complete and Ready to play remain on the conveyor instead of clearing it when loading finishes.
+- Per-category packet spacing remains encoded in the permanent track, so serial and sparse tasks still read differently without causing a jump.
+
+## v0.0.1.0.8 fixed 6× performance path
+
+- Test zone now renders at a fixed 0.16 internal scale—16% of v0.0.1.0.7's pixel workload, a 6.25× fragment reduction by itself—with nearest-neighbor presentation for a deliberate microvoxel look.
+- Its lightmode 1 spherical normal kernel uses 12 density reads instead of 30 while retaining axial and adjacent-diagonal smoothing.
+- Its material shading uses one stable world-coordinate palette hash instead of evaluating trilinear 3D noise fields every frame.
+- Its distant clouds use one stable coarse-cell hash instead of the full two-deck cloud field.
+- Its ray traversal has a mathematically safe 640-step ceiling for the compact 384×224×384 resident volume.
+- The performance path is fixed before play: no temporal checkerboarding, alternating frames, dynamic resolution changes, screen dimming, or flashing.
+- Test-zone boot audit is capped at eight seconds after terrain generation completes.
+
+## v0.0.1.0.7 full-speed Test zone
+
+- Test zone now uses a genuinely compact 384×224×384 voxel texture: 31.5 MiB instead of the full world's 126 MiB.
+- The raymarch exits at the Test zone boundary instead of traversing an invisible full-size volume.
+- Test zone uses a fixed performance resolution selected before play; it never dynamically resizes or flashes during movement.
+- Lightmode 1 keeps its adjacent diagonal smoothing with a compact sampling kernel, eliminating redundant wide and body-diagonal texture reads.
+- Predictive generation, resident-window shifts, and material regeneration remain completely disabled inside Test zone.
+- Render-only slow-frame diagnostics no longer rebuild the loading console or conveyor; actual loading work is still identified, while frame cost stays visible in the HUD.
+
+## v0.0.1.0.6 selectable Test zone
+
+- Added a title-menu `Test zone` button available while the full world is loading.
+- Selecting it cancels the full boot job and generates a centered 12×12 horizontal test area—one quarter of the normal resident area.
+- Test zone uses a 15-second progress target and disables predictive expansion so it remains small and quick.
+- The normal full-world loading and Enter world flow remain unchanged.
+
+## v0.0.1.0.5 walking performance and material stability
+
+- Material noise is anchored to absolute world coordinates and no longer changes when the resident ring moves.
+- Material shaders evaluate only the noise functions required by the active pattern.
+- Predictive terrain generation yields completely while the player is moving and resumes during idle, title, and GUI time.
+- Frontier queues use constant-time removal instead of repeatedly shifting large arrays.
+- Material uniform arrays upload only after an editor or console change.
+
+## v0.0.1.0.4 continuous loading progress
+
+- Resident texture assembly is performed chunk-by-chunk during generation instead of blocking after 70%.
+- Boot progress follows the slower of completed work and the one-minute loading timeline.
+- The bar advances continuously through generation, indexing, verification, GPU upload, and readiness without a long 70–74% plateau.
 
 ## v0.0.1.0.3 boot and resident-ring repair
 
