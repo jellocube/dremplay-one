@@ -2,7 +2,7 @@
 
 Every recovered release is preserved here as a self-contained runtime.
 
-Latest release: [v0.0.1.0.16](./dreamplay-one-v0.0.1.0.16/)
+Latest release: [v0.0.1.0.17](./dreamplay-one-v0.0.1.0.17/)
 
 - [v0.8.0](./dreamplay-one-v0.8.0/)
 - [v0.8.1](./dreamplay-one-v0.8.1/)
@@ -31,3 +31,4 @@ Latest release: [v0.0.1.0.16](./dreamplay-one-v0.0.1.0.16/)
 - [v0.0.1.0.14](./dreamplay-one-v0.0.1.0.14/)
 - [v0.0.1.0.15](./dreamplay-one-v0.0.1.0.15/)
 - [v0.0.1.0.16](./dreamplay-one-v0.0.1.0.16/)
+- [v0.0.1.0.17](./dreamplay-one-v0.0.1.0.17/)
