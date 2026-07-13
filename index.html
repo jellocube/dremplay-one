@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
   <meta name="theme-color" content="#080b0c">
-  <title>Dremplay One v0.0.1.0.21.0 — Fine Voxel Engine</title>
+  <title>Dremplay One v0.0.1.1 — Infinite Detail Engine</title>
   <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
@@ -23,7 +23,7 @@
   </nav>
 
   <section id="hud">
-    <div class="brand">Dremplay One <span>v0.0.1.0.21.0 · New continuous-field engine</span></div>
+    <div class="brand">Dremplay One <span>v0.0.1.1 · Infinite Detail Voxel Engine</span></div>
     <div id="telemetry">Starting renderer…</div>
   </section>
 
@@ -32,9 +32,9 @@
 
   <main id="titleScreen">
     <section class="title-card">
-      <p class="kicker">Fine Voxel Engine</p>
+      <p class="kicker">Infinite Detail Engine</p>
       <h1>Dremplay One</h1>
-      <p class="version">v0.0.1.0.21.0 · Continuous World Rewrite</p>
+      <p class="version">v0.0.1.1 · Continuous Voxel World Rewrite</p>
       <p>Mathematical terrain and Resources, evaluated directly by the GPU. Smooth analytic lighting. No walking-time chunk generation.</p>
       <div class="title-actions">
         <button id="play" disabled>Preparing continuous world…</button>
@@ -87,7 +87,7 @@
   <section class="window hidden" id="server" data-window-name="server"><header><span>Server Options</span><button data-close>×</button></header><div class="window-body form-grid"><label>Gravity <input id="gravity" type="number" value="10" min="0" max="40" step="0.5"> m/s²</label><label>Water simulation <select><option>Analytic flow field</option></select></label><label>Spawn ecology <select><option>Natural</option><option>Sparse</option><option>Dense</option></select></label></div></section>
   <section class="window hidden" id="mods" data-window-name="mods"><header><span>Mods</span><button data-close>×</button></header><div class="window-body"><p>No mods loaded. The field API will expose deterministic equations and material functions.</p></div></section>
   <section class="window hidden" id="help" data-window-name="help"><header><span>Help</span><button data-close>×</button></header><div class="window-body"><p>WASD moves. Shift jumps. Ctrl crawls. Space switches between look and cursor control. Slash opens the console.</p><p>Console commands: help, respawn, time, gravity, position, lighting, quality, seed, clear.</p></div></section>
-  <section class="window hidden" id="about" data-window-name="about"><header><span>About Dremplay One</span><button data-close>×</button></header><div class="window-body"><h2>Dremplay One</h2><p>Fine Voxel Engine v0.0.1.0.21.0</p><p>This release begins a clean-room continuous-field architecture: the world is mathematical, detail is a sampling decision, and lighting is derived from smooth geometry rather than voxel occupancy.</p></div></section>
+  <section class="window hidden" id="about" data-window-name="about"><header><span>About Dremplay One</span><button data-close>×</button></header><div class="window-body"><h2>Dremplay One</h2><p>Infinite Detail Engine v0.0.1.1</p><p>A clean continuous-field voxel architecture: the world is mathematical, detail is a sampling decision, and lighting is derived from smooth geometry rather than voxel occupancy.</p></div></section>
 
   <script src="engine.js?v=21"></script>
 </body>

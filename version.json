@@ -1,7 +1,7 @@
 {
   "name": "Dremplay One",
-  "subtitle": "Fine Voxel Engine",
-  "version": "0.0.1.0.21.0",
-  "revision": 25,
+  "subtitle": "Infinite Detail Engine",
+  "version": "0.0.1.1",
+  "revision": 1,
   "architecture": "continuous-field-1"
 }

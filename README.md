@@ -1,12 +1,13 @@
 # Dremplay One
 
-**Fine Voxel Engine**
+**Infinite Detail Engine**
 
-Current release: **v0.0.1.0.21.0**
+Current release: **v0.0.1.1**
 
-## v0.0.1.0.21.0 continuous world rewrite
+## v0.0.1.1 continuous voxel world rewrite
 
-- Replaced the former CPU chunk engine, occupancy texture marcher, chunk cache, streaming frontier, and walking-time procedural rebuild system with a clean GPU-first continuous-field renderer.
+- Replaced the former CPU chunk engine, occupancy texture marcher, chunk cache, streaming frontier, and walking-time procedural rebuild system with a clean GPU-first infinite-detail voxel renderer.
+- Fixed the initial rewrite's renderer compilation failure: the pentagonal/septagonal crystal field now passes its side count to the polygon function, and a reserved GLSL identifier has been removed. Both complete shaders pass independent Khronos glslang compilation.
 - The landscape and every visible Resource are deterministic mathematical fields evaluated directly at the requested position. Walking changes only the camera; it cannot enqueue terrain generation or material-noise work.
 - Implemented screen-error-driven detail sampling over continuous geometry. The presentation retains the established 0–20 ft, 20–50 ft, 50–250 ft, and 250 ft+ bands, but close detail can refine below the nominal 5 cm pitch because the underlying definition has no cell-size limit.
 - Replaced occupancy-derived normals with central gradients of the same continuous field used for intersections. Wrapped sunlight, hemispheric fill, a strict nonblack illumination floor, palette-bound materials, and smooth atmospheric blending eliminate isolated black voxel facets.

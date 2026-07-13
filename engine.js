@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const VERSION='0.0.1.0.21.0';
+const VERSION='0.0.1.1';
 const canvas=document.getElementById('world');
 const telemetry=document.getElementById('telemetry');
 const gl=canvas.getContext('webgl2',{alpha:false,antialias:false,depth:false,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
@@ -119,7 +119,7 @@ vec2 resourceField(vec3 p,float terrainAtP){
     }else{
       float sides=hash21(cell+121.0)<.5?5.0:7.0;
       float height=(3.0+hash21(cell+2.0)*5.0)*scale;
-      float radial=regularPolygonRadius(q.xz);
+      float radial=regularPolygonRadius(q.xz,sides);
       float taper=mix(.72,.05,smoothstep(.65,1.0,q.y/height));
       float crystal=max(radial-taper,abs(q.y-height*.48)-height*.52);
       if(crystal<best.x)best=vec2(crystal,5.0);
@@ -139,8 +139,8 @@ vec2 resourceField(vec3 p,float terrainAtP){
 vec2 mapField(vec3 p){
   float h=terrainHeight(p.xz);
   vec2 terrain=vec2((p.y-h)*.68,1.0);
-  vec2 resource=resourceField(p,h);
-  return resource.x<terrain.x?resource:terrain;
+  vec2 propSample=resourceField(p,h);
+  return propSample.x<terrain.x?propSample:terrain;
 }
 
 float detailPitch(float distanceFromEye){
