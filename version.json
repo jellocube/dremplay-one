@@ -1,5 +1,7 @@
 {
   "name": "Dremplay One",
-  "version": "0.0.1.0.20.0",
-  "revision": 24
+  "subtitle": "Fine Voxel Engine",
+  "version": "0.0.1.0.21.0",
+  "revision": 25,
+  "architecture": "continuous-field-1"
 }
