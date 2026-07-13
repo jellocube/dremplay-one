@@ -3,7 +3,7 @@ import { CHUNK_SIZE, LOADED_CHUNKS_XZ, LOADED_CHUNKS_Y, PREFETCH_MARGIN, LOADED_
 import { mod, chunkKey } from './coords.js';
 import { generateChunk, generatedChunks, evictDistantCleanChunks, windowState } from './world.js';
 import { uploadLocalBox, perfState } from './renderer.js';
-import { showLoading, hideLoading, loadingLog } from './loading-ui.js';
+import { loadingLog } from './loading-ui.js';
 
 export const streamState = {
   task: null,
@@ -35,22 +35,11 @@ function rebuildPrefetchQueue(){
 }
 export function processBackgroundPrefetch(){
   rebuildPrefetchQueue();
-  const now=performance.now();
-  if(now>=streamState.nextCacheNoticeAt){
-    streamState.nextCacheNoticeAt=now+20000;streamState.cacheNoticeActive=true;streamState.cacheNoticeTotal=Math.max(1,streamState.prefetchJobs.length);streamState.cacheNoticeHideAt=0;
-    showLoading(streamState.prefetchJobs.length?'Precomputing frontier sectors':'Predictive cache ready',streamState.prefetchJobs.length?0:1,true);
-    loadingLog('Motion predictor',streamState.prefetchJobs.length?`${streamState.prefetchJobs.length} frontier chunks queued by proximity`:'frontier ring is current');
-    if(!streamState.prefetchJobs.length)streamState.cacheNoticeHideAt=now+1000;
-  }
+  // Silently pre-generate frontier chunks within a small per-frame time budget so
+  // streaming shifts have little left to do. No periodic status overlay is shown;
+  // the predictive cache works quietly in the background while the player walks.
   const started=performance.now();
   while(streamState.prefetchJobs.length&&performance.now()-started<2){generateChunk(...streamState.prefetchJobs.shift());}
-  if(streamState.cacheNoticeActive){
-    if(streamState.prefetchJobs.length)showLoading('Precomputing frontier sectors',1-streamState.prefetchJobs.length/streamState.cacheNoticeTotal,true);
-    else{
-      showLoading('Predictive cache ready',1,true);if(!streamState.cacheNoticeHideAt){streamState.cacheNoticeHideAt=performance.now()+700;loadingLog('Frontier commit','next resident sectors available before boundary crossing');}
-      if(performance.now()>=streamState.cacheNoticeHideAt){streamState.cacheNoticeActive=false;hideLoading();}
-    }
-  }
 }
 export function queueStreamShift(shiftX,shiftZ){
   const newMinX=windowState.minX+shiftX,newMinZ=windowState.minZ+shiftZ,unique=new Set(),jobs=[];
@@ -59,9 +48,11 @@ export function queueStreamShift(shiftX,shiftZ){
   if(shiftX){const cx=minCX+(shiftX>0?LOADED_CHUNKS_XZ-1:0);for(let cz=0;cz<LOADED_CHUNKS_XZ;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(cx,minCY+cy,minCZ+cz);}
   if(shiftZ){const cz=minCZ+(shiftZ>0?LOADED_CHUNKS_XZ-1:0);for(let cx=0;cx<LOADED_CHUNKS_XZ;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(minCX+cx,minCY+cy,cz);}
   streamState.task={shiftX,shiftZ,newMinX,newMinZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],uploadDone:0,lastLoggedSlice:-1};
-  showLoading(jobs.length?'Generating missing frontier chunks':'Preparing resident frontier slices',0,true);
   loadingLog('Stream request',`${shiftX},${shiftZ} voxel ring shift · ${jobs.length} cache misses`);
 }
+// Upload work per frame during a streaming shift. Kept small so crossing a chunk
+// boundary while walking never produces a single large GPU spike.
+const STREAM_UPLOAD_BUDGET_MS=3;
 const STREAM_UPLOAD_SLICE=32;
 function buildStreamUploadBoxes(task){
   const boxes=[];
@@ -79,24 +70,24 @@ export function processStreamTask(){
   const task=streamState.task,started=performance.now();
   if(task.phase==='generate'){
     while(task.done<task.jobs.length&&performance.now()-started<2)generateChunk(...task.jobs[task.done++]);
-    if(task.done<task.jobs.length){showLoading('Generating missing frontier chunks',0.15*task.done/task.jobs.length,true);return;}
+    if(task.done<task.jobs.length)return;
     windowState.minX=task.newMinX;windowState.minZ=task.newMinZ;
     windowState.ringX=mod(windowState.ringX+task.shiftX,LOADED_SIZE_X);windowState.ringZ=mod(windowState.ringZ+task.shiftZ,LOADED_SIZE_Z);
     task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='upload';
     loadingLog('Ring remap',`${task.uploadBoxes.length} bounded GPU slices queued; ${STREAM_UPLOAD_SLICE}-voxel strip width`);
   }
-  if(task.phase==='upload'&&task.uploadDone<task.uploadBoxes.length){
+  if(task.phase==='upload'){
     const uploadStarted=performance.now();
-    // Row-copy staging makes the complete slab cheap enough to install before
-    // the next render. Never expose a partly replaced resident edge.
-    while(task.uploadDone<task.uploadBoxes.length){
+    // Spread the edge upload across frames within a small time budget so crossing
+    // a chunk boundary never causes a visible frame spike. The frontier edge is
+    // far away and fog-covered, so the few frames before it finishes are not seen.
+    while(task.uploadDone<task.uploadBoxes.length&&performance.now()-uploadStarted<STREAM_UPLOAD_BUDGET_MS){
       const box=task.uploadBoxes[task.uploadDone++];uploadLocalBox(...box);
     }
-    const batchMs=performance.now()-uploadStarted;
-    loadingLog('Atomic ring swap',`${task.uploadDone} slices · ${(perfState.uploadBytes/1048576).toFixed(2)} MiB cumulative · ${batchMs.toFixed(1)} ms`);
-    showLoading('Uploading resident-ring slices',0.15+0.84*task.uploadDone/task.uploadBoxes.length,true);
+    if(task.uploadDone<task.uploadBoxes.length)return; // resume next frame
+    loadingLog('Ring swap',`${task.uploadDone} slices · ${(perfState.uploadBytes/1048576).toFixed(2)} MiB cumulative`);
   }
-  evictDistantCleanChunks();perfState.streamMs+=performance.now()-task.started;loadingLog('Stream commit',`${task.uploadBoxes.length} slices installed in ${perfState.streamMs.toFixed(1)} ms accumulated`);streamState.task=null;hideLoading();streamState.lastStreamShiftAt=performance.now();
+  evictDistantCleanChunks();perfState.streamMs+=performance.now()-task.started;loadingLog('Stream commit',`${task.uploadBoxes.length} slices installed in ${perfState.streamMs.toFixed(1)} ms accumulated`);streamState.task=null;streamState.lastStreamShiftAt=performance.now();
 }
 export function updateLoadedWindow(playerVoxelX, playerVoxelZ) {
   let shiftX = 0, shiftZ = 0;
