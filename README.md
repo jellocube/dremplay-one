@@ -2,7 +2,15 @@
 
 **Fine Voxel Engine**
 
-Current release: **v0.0.1.0.19.3**
+Current release: **v0.0.1.0.19.4**
+
+## v0.0.1.0.19.4 smooth kilometer horizon
+
+- Locked landscape view distance to 1.00 km in every graphics preset, Test Zone, Options, and the `view` console command. Performance settings may simplify expensive foreground effects but can no longer shorten the world horizon.
+- Replaced the former 72-iteration far-heightfield loop with a hierarchical tracer. A nine-level max-reduction pyramid proves broad ray intervals empty, skips them in increasing strides, and descends to exact 10 m terrain samples only near possible relief.
+- Kept the hierarchy to 85.3 KiB of R8 data derived from the existing far atlas. It adds no distant chunks, editable voxels, material regeneration, procedural Resources, or resident 3D-world uploads.
+- Refreshes now build the height hierarchy from the completed offscreen atlas and commit both together. The existing 180 m recenter threshold retains at least 1.10 km of atlas coverage in every direction during movement.
+- Added technical loading-monitor entries for hierarchy construction and GPU transfer, plus Options diagnostics showing the fixed kilometer contract and skip-pyramid memory cost.
 
 ## v0.0.1.0.19.3 four-range voxel LOD fix
 

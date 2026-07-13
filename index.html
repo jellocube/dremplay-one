@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.0.19.3</title>
+<title>Dremplay One v0.0.1.0.19.4</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.0.19.3';
-  const CURRENT_REVISION = 22;
+  const CURRENT_VERSION = '0.0.1.0.19.4';
+  const CURRENT_REVISION = 23;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.0.19.3 · Four-range voxel LOD fix</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.0.19.4 · Smooth kilometer horizon</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.0.19.3</p>
+  <p>Version 0.0.1.0.19.4</p>
   <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
      A procedural far-field continues the terrain and water horizon as far as 1 km without allocating a cubic kilometer of editable voxels.
@@ -358,7 +358,7 @@
       <div class="option-row"><label for="optionResolution">Resolution</label><select id="optionResolution"><option value="0.35">70% of standard</option><option value="0.45">90% of standard</option><option value="0.50">Standard</option><option value="0.65">High</option><option value="0.80">Very high</option><option value="1.00">Native</option></select><span id="optionResolutionValue"></span></div>
       <div class="option-row"><label for="optionNearDetail">Voxel LOD ladder</label><select id="optionNearDetail"><option value="0">Coarse / fastest</option><option value="3">5 cm within 3 m</option><option value="6.096">5 cm within 20 ft</option></select><span id="optionNearDetailValue"></span></div>
       <div class="option-row"><label for="optionPlatformMode">Platform</label><select id="optionPlatformMode"><option value="auto">Auto-detect</option><option value="touch">Touch / iPad</option><option value="desktop">Mouse + keyboard</option></select><span id="optionPlatformValue"></span></div>
-      <div class="option-row"><label for="optionViewDistance">View distance</label><input id="optionViewDistance" type="range" min="25" max="1000" step="25"><span id="optionViewDistanceValue"></span></div>
+      <div class="option-row"><label for="optionViewDistance">View distance</label><input id="optionViewDistance" type="range" min="1000" max="1000" step="1" value="1000" disabled><span id="optionViewDistanceValue"></span></div>
       <div class="option-row"><label for="optionLightingQuality">Lighting</label><select id="optionLightingQuality"><option value="0">Hard / fastest</option><option value="1">Fast soft</option><option value="2">Full soft</option></select><span></span></div>
       <div class="option-row"><label for="optionMaterialQuality">Materials</label><select id="optionMaterialQuality"><option value="0">Solid</option><option value="1">Stable hashed</option><option value="2">Full procedural</option></select><span></span></div>
       <div class="option-row"><label for="optionCloudQuality">Clouds</label><select id="optionCloudQuality"><option value="0">Off</option><option value="1">Coarse weather voxels · 2.4 m</option><option value="2">Fine weather voxels · 0.8 m</option></select><span></span></div>
@@ -416,7 +416,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.0.19.3</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">5 cm to 20 ft · 10 cm to 50 ft · 20 cm to 250 ft · kilometer far-field</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.0.19.4</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Fixed 1 km view · hierarchical horizon tracing · four-range voxel LOD</p></div>
 </div>
 
 <script>
@@ -797,14 +797,25 @@ function buildFarTerrainMap(centerX,centerZ){
   farTerrainOriginX=alignedFarOrigin(centerX);farTerrainOriginZ=alignedFarOrigin(centerZ);farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4);
   for(let row=0;row<FAR_MAP_SIZE;row++)fillFarTerrainRow(farTerrainGrid,farTerrainOriginX,farTerrainOriginZ,row);
 }
+function buildFarMaxHeightLevels(grid){
+  let size=FAR_MAP_SIZE,source=new Uint8Array(size*size);for(let i=0;i<source.length;i++)source[i]=grid[i*4];
+  const levels=[source];
+  while(size>1){const nextSize=Math.max(1,size>>1),next=new Uint8Array(nextSize*nextSize);for(let y=0;y<nextSize;y++)for(let x=0;x<nextSize;x++){const sx=x*2,sy=y*2,i=sx+sy*size;next[x+y*nextSize]=Math.max(source[i],source[Math.min(i+1,source.length-1)],source[Math.min(i+size,source.length-1)],source[Math.min(i+size+1,source.length-1)]);}levels.push(next);source=next;size=nextSize;}
+  return levels;
+}
+function uploadFarHeightPyramid(grid){
+  const levels=buildFarMaxHeightLevels(grid);gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
+  for(let level=0,size=FAR_MAP_SIZE;level<levels.length;level++,size=Math.max(1,size>>1))gl.texImage2D(gl.TEXTURE_2D,level,gl.R8,size,size,0,gl.RED,gl.UNSIGNED_BYTE,levels[level]);
+  gl.activeTexture(gl.TEXTURE0);return levels.reduce((bytes,level)=>bytes+level.byteLength,0);
+}
 function queueFarTerrainRefresh(centerX,centerZ){
   if(farTerrainTask)return;const originX=alignedFarOrigin(centerX),originZ=alignedFarOrigin(centerZ);farTerrainTask={originX,originZ,grid:new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),row:0,started:performance.now()};loadingLog('Far horizon',`queued 2.56 km terrain atlas at ${originX},${originZ}`);
 }
 function processFarTerrainRefresh(budgetMs=1){
   if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.row<FAR_MAP_SIZE&&performance.now()-started<budgetMs)fillFarTerrainRow(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,farTerrainTask.row++);
   if(farTerrainTask.row<FAR_MAP_SIZE)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
-  gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,farTerrainGrid);gl.activeTexture(gl.TEXTURE0);
-  loadingLog('Far horizon',`atomic atlas commit completed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
+  gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,farTerrainGrid);const hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
+  loadingLog('Far horizon',`atomic atlas + ${(hierarchyBytes/1024).toFixed(1)} KiB max-height hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
 }
 
 function copyChunkToLoadedGrid(worldCX,worldCY,worldCZ){
@@ -877,6 +888,7 @@ uniform ivec3 uWorldOrigin;
 uniform usampler3D uVoxels;
 uniform highp usampler2D uTerrainWeather;
 uniform sampler2D uFarTerrain;
+uniform sampler2D uFarMaxHeight;
 uniform vec4 uFarTerrainInfo; // origin x/z, cell size, map size
 uniform float uTime;
 uniform int uLightMode;
@@ -925,6 +937,11 @@ vec4 farTerrainAt(vec2 worldXZ){
   vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return vec4(-1.0);
   vec4 packed=texture(uFarTerrain,uv);return vec4(packed.r*400.0,packed.gba);
+}
+float farMaxHeightAt(vec2 worldXZ,float lod){
+  vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
+  if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return -1.0;
+  return textureLod(uFarMaxHeight,uv,lod).r*400.0;
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
   // Inside the resident ring this is the exact height/moisture pair produced
@@ -1139,11 +1156,30 @@ bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface
   if(uViewDistance<=650.0||startT>=uViewDistance||rd.y>.35)return false;
   // The compact height/material atlas is the 250 ft+ LOD. It cannot replace
   // nearer Resource silhouettes, so it is deliberately gated behind tier 3.
-  float t=max(startT,uLodDistances.z),previousT=t,previousDelta=1e6;
-  for(int i=0;i<72;i++){
-    if(t>uViewDistance)break;vec3 p=ro+rd*t;vec4 data=farTerrainAt(p.xz);if(data.x<0.0)break;float delta=p.y-data.x;
-    if(delta<=0.0&&previousDelta>0.0){float lo=previousT,hi=t;for(int refine=0;refine<5;refine++){float mid=(lo+hi)*.5;vec3 q=ro+rd*mid;float d=q.y-farTerrainAt(q.xz).x;if(d>0.0)lo=mid;else hi=mid;}hitT=(lo+hi)*.5;hitP=ro+rd*hitT;surface=farTerrainAt(hitP.xz);return true;}
-    previousDelta=delta;previousT=t;t+=max(20.0,t*.06);
+  float t=max(startT,uLodDistances.z),stepLen=300.0;
+  vec3 startP=ro+rd*t;vec4 startData=farTerrainAt(startP.xz);if(startData.x<0.0)return false;
+  float startDelta=startP.y-startData.x;
+  if(startDelta<=0.0){hitT=t;hitP=startP;surface=startData;return true;}
+  for(int i=0;i<40;i++){
+    if(t>=uViewDistance)break;
+    float nextT=min(t+stepLen,uViewDistance),midT=(t+nextT)*.5,footprint=max((nextT-t)*length(rd.xz),1.0);
+    // One extra mip level makes a hierarchy cell at least twice the projected
+    // interval length; endpoint + midpoint maxima cover boundary crossings.
+    float lod=clamp(ceil(log2(footprint/uFarTerrainInfo.z))+1.0,0.0,8.0);
+    vec3 a=ro+rd*t,b=ro+rd*midT,c=ro+rd*nextT;
+    float maxHeight=max(farMaxHeightAt(a.xz,lod),max(farMaxHeightAt(b.xz,lod),farMaxHeightAt(c.xz,lod)));
+    float lowestRayY=min(a.y,min(b.y,c.y));
+    // A max-reduction pyramid proves that an entire interval is empty. Only
+    // intervals close to possible relief descend to the exact 10 m atlas.
+    if(lowestRayY>maxHeight+40.0){t=nextT;stepLen=min(1200.0,stepLen*1.6);continue;}
+    if(lod>0.0){stepLen=max(uFarTerrainInfo.z,stepLen*.5);continue;}
+    vec4 midData=farTerrainAt(b.xz),endData=farTerrainAt(c.xz);if(midData.x<0.0||endData.x<0.0)break;
+    float midDelta=b.y-midData.x,endDelta=c.y-endData.x,lo=t,hi=nextT;
+    if(midDelta<=0.0){hi=midT;}
+    else if(endDelta<=0.0){lo=midT;}
+    else{t=nextT;stepLen=min(1200.0,max(uFarTerrainInfo.z,stepLen*1.6));continue;}
+    for(int refine=0;refine<4;refine++){float probe=(lo+hi)*.5;vec3 q=ro+rd*probe;float d=q.y-farTerrainAt(q.xz).x;if(d>0.0)lo=probe;else hi=probe;}
+    hitT=(lo+hi)*.5;hitP=ro+rd*hitT;surface=farTerrainAt(hitP.xz);return true;
   }
   return false;
 }
@@ -1339,7 +1375,7 @@ void main(){
   fragColor = vec4(finalCol, 1.0);
 }`;
 
-let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uTerrainWeather, uFarTerrain, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, terrainWeatherTex, farTerrainTex, paletteTex, vao;
+let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uTerrainWeather, uFarTerrain, uFarMaxHeight, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, terrainWeatherTex, farTerrainTex, farMaxHeightTex, paletteTex, vao;
 let playerPos, yaw=Math.PI*0.25, pitch=-0.15;
 let spawnPos;
 // Fixed per-mode internal resolution: never adapt it during play (which caused
@@ -1355,7 +1391,8 @@ let lightMode = 1;
 let gravityAcceleration=-10.0, jumpSpeed=4.5, walkSpeed=4.2;
 let editReachMeters=6, carveRadius=7, placeRadius=4;
 let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
-let viewDistanceMeters=125,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
+const FIXED_VIEW_DISTANCE_METERS=1000;
+let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
 let nearDetailMeters=clampOption(Number(bootOptions.get('nearDetail'))||6.096,0,6.096);
 // A compact working subset of neighboring shades from the official Myara palette.
 // Each three-color run is deliberately close in hue and value.
@@ -1551,6 +1588,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);
   gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,farTerrainGrid);
+  const hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);loadingLog('GPU transfer',`${(hierarchyBytes/1024).toFixed(1)} KiB hierarchical max-height atlas enables empty-distance skipping to 1 km`);
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
@@ -1638,7 +1676,7 @@ function initGL(){
   uWorldOrigin = gl.getUniformLocation(prog,'uWorldOrigin');
   uVoxels = gl.getUniformLocation(prog,'uVoxels');
   uTerrainWeather = gl.getUniformLocation(prog,'uTerrainWeather');
-  uFarTerrain = gl.getUniformLocation(prog,'uFarTerrain');uFarTerrainInfo=gl.getUniformLocation(prog,'uFarTerrainInfo');
+  uFarTerrain = gl.getUniformLocation(prog,'uFarTerrain');uFarMaxHeight=gl.getUniformLocation(prog,'uFarMaxHeight');uFarTerrainInfo=gl.getUniformLocation(prog,'uFarTerrainInfo');
   uTime = gl.getUniformLocation(prog,'uTime');
   uLightMode = gl.getUniformLocation(prog,'uLightMode');
   uPerformanceMode = gl.getUniformLocation(prog,'uPerformanceMode');
@@ -1676,6 +1714,8 @@ function initGL(){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   farTerrainTex=gl.createTexture();gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  farMaxHeightTex=gl.createTexture();gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
   paletteTex=gl.createTexture();
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,paletteTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
@@ -2452,22 +2492,23 @@ renderResourcePreview();
 
 const optionFov=document.getElementById('optionFov'),optionTime=document.getElementById('optionTime'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionNearDetail=document.getElementById('optionNearDetail'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics');
 function syncOptionsWindow(){
+  viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;
   optionFov.value=String(fovDegrees);optionTime.value=String(timeOfDay||24);
   optionResolution.value=Number(pendingRenderScale).toFixed(2);optionNearDetail.value=String(nearDetailMeters);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionNearDetailValue').textContent=nearDetailMeters?'20 / 50 / 250 ft':'coarse';document.getElementById('optionViewDistanceValue').textContent=viewDistanceMeters>=1000?'1.00 km':`${viewDistanceMeters.toFixed(0)} m`;document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft · atlas 250 ft+':'10 cm 0–50 ft · 20 cm 50–250 ft · atlas 250 ft+'}\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft · atlas 250 ft+':'10 cm 0–50 ft · 20 cm 50–250 ft · atlas 250 ft+'}\nHorizon 1.00 km fixed · 85.3 KiB max-height skip hierarchy\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
 function applyLiveOptions(){
-  nearDetailMeters=Number(optionNearDetail.value);viewDistanceMeters=Number(optionViewDistance.value);lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Number(optionFogStart.value);fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
+  nearDetailMeters=Number(optionNearDetail.value);viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Number(optionFogStart.value);fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
 }
 function applyOptionsPreset(name){
-  const presets={quality:{resolution:.65,nearDetail:6.096,view:350,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:24,fogDensity:.008,stream:3,vegetation:2},balanced:{resolution:.50,nearDetail:6.096,view:125,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:12,fogDensity:.018,stream:2,vegetation:2},performance:{resolution:.35,nearDetail:0,view:75,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:7,fogDensity:.032,stream:1,vegetation:1}};
-  const p=presets[name];if(!p)return;pendingRenderScale=p.resolution;pendingVegetationDetail=p.vegetation;nearDetailMeters=p.nearDetail;viewDistanceMeters=p.view;lightingQuality=p.lighting;lightMode=p.lighting===0?0:1;materialQuality=p.materials;cloudQuality=p.clouds;waterRenderQuality=p.waterShader;fogEnabled=true;fogStartMeters=p.fogStart;fogDensity=p.fogDensity;streamingBudgetMs=p.stream;syncOptionsWindow();optionPreset.value=name;
+  const presets={quality:{resolution:.65,nearDetail:6.096,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:24,fogDensity:.008,stream:3,vegetation:2},balanced:{resolution:.50,nearDetail:6.096,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:12,fogDensity:.018,stream:2,vegetation:2},performance:{resolution:.35,nearDetail:0,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:7,fogDensity:.032,stream:1,vegetation:1}};
+  const p=presets[name];if(!p)return;pendingRenderScale=p.resolution;pendingVegetationDetail=p.vegetation;nearDetailMeters=p.nearDetail;viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=p.lighting;lightMode=p.lighting===0?0:1;materialQuality=p.materials;cloudQuality=p.clouds;waterRenderQuality=p.waterShader;fogEnabled=true;fogStartMeters=p.fogStart;fogDensity=p.fogDensity;streamingBudgetMs=p.stream;syncOptionsWindow();optionPreset.value=name;
 }
 optionPreset.addEventListener('change',()=>applyOptionsPreset(optionPreset.value));
 optionResolution.addEventListener('change',()=>{pendingRenderScale=Number(optionResolution.value);markOptionsCustom();syncOptionsWindow();});
@@ -2515,7 +2556,7 @@ brush <voxels>       set carve/place ball radius (1–12)
 waterflow <on|off>   run or freeze water simulation
 waterwake            activate nearby dormant water
 spring               add a renewing spring at the crosshair
-view <25–1000>       set near + far landscape distance in meters
+view                 report the fixed one-kilometer horizon
 fov <degrees>        set field of view (40–110)
 where                show current world coordinates
 palette              list the official palette colors
@@ -2550,7 +2591,7 @@ resource load <hex>   verify and load a Resource identity`);
   if(name==='waterflow' && (arg==='on'||arg==='off')){waterFlowEnabled=arg==='on';syncServerWindow();return say(`water flow ${arg}`);}
   if(name==='waterwake'){wakeWaterNear(Math.floor(playerPos.x/VS),Math.floor(playerPos.y/VY),Math.floor(playerPos.z/VS),32);return say(`${waterQueue.length} nearby water cells queued`);}
   if(name==='spring'){document.getElementById('serverAddSpring').click();return say(serverStatus.textContent);}
-  if(name==='view'&&Number.isFinite(number)&&number>=25&&number<=1000){viewDistanceMeters=number;syncOptionsWindow();return say(`view distance ${number.toFixed(0)} m`);}
+  if(name==='view'){viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;syncOptionsWindow();return say('view distance locked at 1.00 km · hierarchical horizon active');}
   if(name==='fov' && Number.isFinite(number) && number>=40 && number<=110){fovDegrees=number;return say(`field of view ${number.toFixed(1)}°`);}
   if(name==='where')return say(`xyz ${playerPos.x.toFixed(2)}, ${playerPos.y.toFixed(2)}, ${playerPos.z.toFixed(2)} m`);
   if(name==='palette')return say(PALETTE.map(([n,h],i)=>`${String(i).padStart(2,'0')}  ${h}  ${n}`).join('\n'));
@@ -3099,6 +3140,7 @@ function render(){
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,paletteTex);gl.uniform1i(uPaletteTex,1);
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);gl.uniform1i(uTerrainWeather,2);
   gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.uniform1i(uFarTerrain,3);
+  gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);gl.uniform1i(uFarMaxHeight,4);
 
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
