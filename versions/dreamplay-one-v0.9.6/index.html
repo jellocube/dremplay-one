@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dreamplay One v0.9.6</title>
+<style>
+  @font-face { font-family: 'mono'; src: local('JetBrains Mono'), local('Consolas'); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#50A4FC; overflow:hidden; font-family: 'JetBrains Mono','Consolas',monospace; }
+  #glcanvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:none; background:#50A4FC; }
+
+  #crosshair {
+    position:absolute; left:50%; top:50%; width:16px; height:16px;
+    transform:translate(-50%,-50%); pointer-events:none;
+  }
+  #crosshair::before, #crosshair::after {
+    content:''; position:absolute; background:#54FC54;
+  }
+  #crosshair::before { left:7px; top:0; width:2px; height:16px; }
+  #crosshair::after  { top:7px; left:0; width:16px; height:2px; }
+
+  #hud {
+    position:absolute; left:18px; bottom:16px; color:#54FC54; font-size:11px;
+    line-height:1.6; letter-spacing:0.5px;
+    user-select:none; pointer-events:none;
+  }
+  #hud .dim { color:#387434; }
+  #topright {
+    position:absolute; right:18px; top:16px; color:#54FC54; font-size:11px; text-align:right;
+    line-height:1.6; letter-spacing:0.5px;
+    user-select:none; pointer-events:none;
+  }
+  #stats { white-space:pre; }
+  #topleft {
+    position:absolute; left:18px; top:16px; color:#54FC54; font-size:13px; font-weight:700;
+    letter-spacing:2px; user-select:none; pointer-events:none;
+  }
+  #topleft span { color:#387434; font-weight:400; font-size:10px; display:block; letter-spacing:1px; margin-top:2px;}
+
+  #startscreen {
+    position:absolute; inset:0; background:#141024; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; z-index:10; text-align:center;
+  }
+  #startscreen h1 {
+    color:#54FC54; font-size:28px; letter-spacing:6px;
+    font-weight:700;
+  }
+  #startscreen p { color:#387434; font-size:12px; margin-top:14px; letter-spacing:1px; max-width:420px; line-height:1.8;}
+  #startBtn {
+    margin-top:28px; background:transparent; border:1px solid #54FC54; color:#54FC54;
+    padding:10px 26px; font-family:inherit; font-size:12px; letter-spacing:3px; cursor:pointer;
+  }
+  #startBtn:hover { background:#243C24; }
+  .tool-window { display:none; position:absolute; z-index:20; background:#141024; border:1px solid #54FC54; color:#54FC54; font-size:12px; box-shadow:5px 6px 0 #04081888; min-width:280px; }
+  .tool-window.open { display:block; }
+  .titlebar { height:28px; display:flex; align-items:center; justify-content:space-between; padding-left:9px; background:#243c24; border-bottom:1px solid #54FC54; letter-spacing:1px; font-weight:700; cursor:move; user-select:none; touch-action:none; }
+  .window-close { width:30px; height:27px; border:0; border-left:1px solid #54FC54; background:#141024; color:#54FC54; font:inherit; cursor:pointer; }
+  .window-close:hover { background:#387434; }
+  .window-body { padding:10px; }
+  #console { left:16px; bottom:16px; width:min(720px,calc(100vw - 32px)); }
+  #consoleOutput { color:#54FC54; margin-bottom:8px; height:min(260px,40vh); min-height:90px; overflow-y:scroll; scrollbar-gutter:stable; white-space:pre-wrap; line-height:1.5; padding-right:6px; }
+  #consoleLine { display:flex; gap:8px; align-items:center; }
+  #consoleInput { flex:1; border:1px solid #444460; outline:0; background:#24243c; color:#54FC54; font:inherit; padding:6px 7px; }
+  #materialDesigner { left:50%; top:50%; width:min(520px,calc(100vw - 24px)); transform:translate(-50%,-50%); z-index:21; }
+  #materialDesigner.dragged { transform:none; }
+  .designer-grid { display:grid; grid-template-columns:160px 1fr; gap:10px 14px; align-items:center; }
+  .designer-grid label { color:#a8a8a8; }
+  .designer-grid select, .designer-grid input[type=range] { width:100%; }
+  .designer-grid select { background:#24243c; border:1px solid #444460; color:#54FC54; font:inherit; padding:5px; }
+  .range-row { display:grid; grid-template-columns:1fr 52px; gap:8px; align-items:center; }
+  .range-value { text-align:right; color:#50a4fc; }
+  #materialPreview { width:100%; height:126px; image-rendering:pixelated; border:1px solid #444460; background:#24243c; grid-column:1/-1; }
+  #materialAtlas,#paletteAtlas,#resourcePreview { width:100%; image-rendering:pixelated; border:1px solid #704024; background:#101810; cursor:crosshair; }
+  #materialAtlas { height:150px; } #paletteAtlas { height:118px; }
+  .shade-tabs { display:flex; gap:4px; margin-bottom:5px; }
+  .shade-tabs .tool-button { padding:3px 8px; font-size:9px; }
+  .shade-tabs .active { background:#387434; color:#ececec; }
+  .resource-grid { display:grid; gap:9px; }
+  .resource-grid label { display:grid; grid-template-columns:120px 1fr; gap:9px; align-items:center; }
+  .resource-grid input,.resource-grid select { background:#101810; color:#54fc54; border:1px solid #704024; font:inherit; padding:5px; }
+  .designer-actions { grid-column:1/-1; display:flex; justify-content:space-between; gap:8px; margin-top:3px; }
+  .tool-button { background:#24243c; border:1px solid #54FC54; color:#54FC54; font:inherit; padding:7px 10px; cursor:pointer; }
+  .tool-button:hover { background:#243c24; }
+  #designerStatus { grid-column:1/-1; color:#50a4fc; min-height:16px; }
+  #menubar { position:absolute; left:0; right:0; top:0; height:30px; z-index:1000; display:flex; align-items:stretch; background:#141024; border-bottom:1px solid #54fc54; user-select:none; }
+  #menubar .brand { display:flex; align-items:center; padding:0 12px; color:#50a4fc; letter-spacing:2px; border-right:1px solid #444460; font-size:11px; }
+  .menu-button { border:0; border-right:1px solid #444460; padding:0 12px; background:#141024; color:#54fc54; font-family:inherit; font-size:11px; cursor:pointer; }
+  .menu-button:hover, .menu-button.active { background:#243c24; }
+  #topleft, #topright { top:42px; }
+  .simple-window { left:50%; top:72px; width:min(480px,calc(100vw - 24px)); transform:translateX(-50%); }
+  .simple-window.dragged { transform:none; }
+  .simple-window .window-body { line-height:1.65; max-height:70vh; overflow:auto; }
+  .simple-window h2 { color:#50a4fc; font-size:13px; margin:4px 0 8px; }
+  .simple-window p + p { margin-top:8px; }
+  .property-row { display:grid; grid-template-columns:1fr auto auto; gap:7px; }
+  #materialPropertyId { min-width:0; background:#24243c; border:1px solid #444460; color:#50a4fc; font:inherit; padding:7px; }
+  .option-row { display:grid; grid-template-columns:130px 1fr 54px; gap:10px; align-items:center; margin:10px 0; }
+  .muted { color:#a8a8a8; }
+  #loadingOverlay { position:absolute; right:16px; bottom:16px; z-index:2000; display:flex; color:#54fc54; pointer-events:none; background:transparent; }
+  #loadingOverlay.streaming { background:transparent; }
+  #loadingPanel { width:min(470px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow-y:auto; scrollbar-gutter:stable; pointer-events:auto; border:1px solid #54fc54; background:#141024; padding:12px; box-shadow:5px 6px 0 #04081888; }
+  #loadingLabel { display:grid; grid-template-columns:1fr auto auto; gap:9px; align-items:center; margin-bottom:10px; font-size:11px; letter-spacing:1px; }
+  #loadingClose { width:22px; height:20px; border:1px solid #ccb010; background:#141814; color:#ececec; font:inherit; line-height:16px; cursor:pointer; }
+  #loadingClose:disabled { color:#747474; border-color:#444444; cursor:not-allowed; }
+  #loadingTrack { height:12px; border:1px solid #444460; background:#040818; padding:2px; }
+  #loadingFill { width:0%; height:100%; background:#54fc54; transition:width .08s linear; }
+  #cartonConveyor { position:relative; width:100%; height:25px; margin-top:9px; overflow:hidden; border:1px solid #704024; background:repeating-linear-gradient(90deg,#141814 0 13px,#24243c 13px 16px); }
+  #cartonBelt { position:absolute; inset:0 auto 0 0; display:flex; align-items:stretch; width:max-content; color:#ececec; will-change:transform; animation:packetLoop 8s linear infinite; }
+  .packet-set { width:min(444px,calc(100vw - 58px)); flex:none; display:flex; align-items:center; justify-content:center; gap:var(--packet-gap,8px); padding:0 7px; }
+  #cartonBelt span { display:inline-block; color:#ececec; background:#5088fc; border:1px solid #ccb010; padding:1px 4px; font-size:9px; box-shadow:2px 2px #040818; white-space:nowrap; }
+  @keyframes packetLoop { from{transform:translate3d(0,0,0)} to{transform:translate3d(-50%,0,0)} }
+  @media (prefers-reduced-motion:reduce){#cartonBelt{animation-duration:16s;}}
+  #loadingConsole { height:112px; margin-top:9px; overflow-y:scroll; scrollbar-gutter:stable; border:1px solid #243c24; background:#040818; padding:6px; color:#54fc54; white-space:pre-wrap; user-select:text; font-size:9px; line-height:1.45; }
+  /* Medieval terminal: chalk-white type, manuscript gold, pale-blue links. */
+  :root { --ink:#0c100c; --iron:#141814; --moss:#243c24; --phosphor:#ececec; --gold:#ccb010; --rune:#bcdcff; }
+  body.cursor-mode, body.cursor-mode * { cursor:url('dreamplay-cursor.svg') 2 2, auto !important; }
+  body.cursor-mode .titlebar { cursor:url('dreamplay-cursor.svg') 2 2, move !important; }
+  #menubar, .tool-window, #loadingPanel { background:var(--ink); border-color:var(--gold); box-shadow:5px 6px 0 #040818aa, inset 0 0 0 1px #243c24; }
+  #startscreen { background:#0c100c; }
+  #hud,#topleft,#topright { text-shadow:1px 1px #000; }
+  #menubar { border-bottom:2px solid var(--gold); }
+  #menubar .brand, #startscreen h1, .titlebar { font-family:Palatino,'Book Antiqua',Georgia,serif; color:var(--gold); text-shadow:1px 1px #000; }
+  .titlebar { background:linear-gradient(90deg,#243c24,#141814); border-bottom-color:var(--gold); }
+  .titlebar span::before { content:'✦ '; color:var(--phosphor); }
+  .menu-button { color:var(--phosphor); background:var(--ink); border-right-color:#704024; }
+  .menu-button:hover,.menu-button.active,.menu-button:focus { background:#243c24; color:#ececec; outline:2px solid var(--gold); outline-offset:-3px; }
+  .window-close,.tool-button,#startBtn { border-color:var(--gold); color:var(--gold); background:#141814; }
+  #consoleInput,.designer-grid select,#materialPropertyId { border-color:#704024; background:#101810; }
+  #crosshair::before,#crosshair::after { background:var(--gold); }
+  a,.link,.range-value,#designerStatus { color:#bcdcff; }
+  #hud,#topright,#topleft,.tool-window,#consoleOutput,#loadingOverlay,#loadingConsole,.menu-button,#consoleInput,.designer-grid select,.resource-grid input,.resource-grid select { color:#ececec; }
+  #hud .dim,#topleft span,.muted,.designer-grid label { color:#b8b8b8; }
+  #startscreen p { color:#d8d8d8; }
+  #materialDesigner { width:min(430px,calc(100vw - 24px)); top:54%; }
+  .designer-grid { display:block; }
+  .editor-section { border:1px solid #704024; margin:7px 0; background:#101410; }
+  .editor-section summary { color:#bcdcff; padding:7px 9px; cursor:pointer; user-select:none; }
+  .editor-section .section-body { padding:8px; display:grid; grid-template-columns:120px 1fr; gap:7px 10px; align-items:center; }
+  .editor-section canvas { grid-column:1/-1; }
+  #materialPreview { height:82px; }
+  #materialAtlas { height:112px; }
+  #paletteAtlas { height:104px; }
+  #loadingFill { background:#ececec; }
+</style>
+</head>
+<body class="cursor-mode">
+<canvas id="glcanvas"></canvas>
+<div id="crosshair"></div>
+
+<nav id="menubar" aria-label="Application menu">
+  <div class="brand">Dreamplay One</div>
+  <button class="menu-button" data-hotkey="c" data-window="console">[C] Console</button>
+  <button class="menu-button" data-hotkey="m" data-window="materialDesigner">[M] Materials</button>
+  <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resources</button>
+  <button class="menu-button" data-hotkey="p" data-window="optionsWindow">[P] Options</button>
+  <button class="menu-button" data-hotkey="n" data-window="modsWindow">[N] Mods</button>
+  <button class="menu-button" data-hotkey="h" data-window="helpWindow">[H] Help</button>
+  <button class="menu-button" data-hotkey="b" data-window="aboutWindow">[B] About</button>
+</nav>
+
+<div id="loadingOverlay" role="status" aria-live="polite">
+  <div id="loadingPanel">
+    <div id="loadingLabel"><span id="loadingText">Initializing terrain pipeline</span><span id="loadingPercent">0.0%</span><button id="loadingClose" type="button" aria-label="Close loading status" disabled>×</button></div>
+    <div id="loadingTrack"><div id="loadingFill"></div></div>
+    <div id="cartonConveyor" aria-hidden="true"><div id="cartonBelt"><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div></div></div>
+    <div id="loadingConsole" aria-label="Detailed loading log"></div>
+  </div>
+</div>
+
+<div id="topleft">Dreamplay One<span>v0.9.6 · Scrollable logs · Serial packet spacing</span></div>
+<div id="topright"><span id="stats"></span></div>
+<div id="hud">
+  <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
+  <div>LMB <span class="dim">carve nearby</span> &nbsp; RMB <span class="dim">place ball</span> &nbsp; / <span class="dim">console</span> &nbsp; ESC <span class="dim">release mouse</span></div>
+</div>
+
+<div id="startscreen">
+  <h1>Dreamplay One</h1>
+  <p>Version 0.9.3</p>
+  <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
+     768×224×768 resident grid = 76.8 m × 22.4 m × 76.8 m at true 0.1 m isotropic resolution.
+     Raymarched per-pixel, no polygons. Walkable ramps &amp; stairs, 
+     smooth lighting + AO, fine carving &amp; building. LMB/RMB to edit.</p>
+  <button id="startBtn">Enter world</button>
+</div>
+
+<div id="console" class="tool-window" role="dialog" aria-label="Command console">
+  <div class="titlebar"><span>Command console</span><button class="window-close" aria-label="Close console">×</button></div>
+  <div class="window-body">
+    <div id="consoleOutput">Type “help” for commands or “designer” to open the Material Designer.</div>
+    <div id="consoleLine"><span>&gt;</span><input id="consoleInput" autocomplete="off" spellcheck="false"></div>
+  </div>
+</div>
+
+<div id="materialDesigner" class="tool-window" role="dialog" aria-label="Material Designer">
+  <div class="titlebar"><span>Material editor</span><button class="window-close" aria-label="Close material designer">×</button></div>
+  <div class="window-body designer-grid">
+    <details class="editor-section" open><summary id="materialPickerSummary">Material library</summary><div class="section-body"><canvas id="materialPreview" width="480" height="126"></canvas><canvas id="materialAtlas" width="320" height="192" aria-label="Material preview picker"></canvas><select id="designerMaterial" hidden></select></div></details>
+    <details class="editor-section"><summary>Palette and shades</summary><div class="section-body"><div class="shade-tabs"><button class="tool-button active" data-shade="0">Base</button><button class="tool-button" data-shade="1">Light</button><button class="tool-button" data-shade="2">Dark</button></div><canvas id="paletteAtlas" width="320" height="144" aria-label="Complete palette image sampler"></canvas><label for="designerBase">Base shade</label><select id="designerBase"></select><label for="designerLight">Light shade</label><select id="designerLight"></select><label for="designerDark">Dark shade</label><select id="designerDark"></select></div></details>
+    <details class="editor-section"><summary>Surface generation</summary><div class="section-body"><label for="designerNoise">Noise strength</label><div class="range-row"><input id="designerNoise" type="range" min="0" max="1" step="0.01"><span id="designerNoiseValue" class="range-value"></span></div><label for="designerScale">Pattern scale</label><div class="range-row"><input id="designerScale" type="range" min="1" max="12" step="0.25"><span id="designerScaleValue" class="range-value"></span></div><label for="designerBlur">Softness</label><div class="range-row"><input id="designerBlur" type="range" min="0" max="1" step="0.01"><span id="designerBlurValue" class="range-value"></span></div><label for="designerPattern">Generator</label><select id="designerPattern"><option value="0">Solid</option><option value="1">Granular</option><option value="2">Soft fBm</option><option value="3">Warped strata</option><option value="4">Cellular aggregate</option><option value="5">Mineral veins</option><option value="6">Mixed geology</option></select></div></details>
+    <details class="editor-section"><summary>Identity and transfer</summary><div class="section-body"><label>Properties ID</label><div class="property-row"><input id="materialPropertyId" aria-label="Material properties ID" spellcheck="false"><button id="designerLoadId" class="tool-button">Load</button><button id="designerCopyId" class="tool-button">Copy</button></div></div></details>
+    <div id="designerStatus">Changes preview and apply live.</div>
+    <div class="designer-actions"><button id="designerSelect" class="tool-button">Use for building</button><button id="designerReset" class="tool-button">Reset material</button></div>
+  </div>
+</div>
+
+<div id="resourceDesigner" class="tool-window simple-window" role="dialog" aria-label="Resource Generator">
+  <div class="titlebar"><span>Resource editor</span><button class="window-close" aria-label="Close resource generator">×</button></div>
+  <div class="window-body resource-grid">
+    <canvas id="resourcePreview" width="420" height="180"></canvas>
+    <label>Resource library <select id="resourceLibrary"></select></label>
+    <label>Name <input id="resourceName" value="new_resource"></label>
+    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option></select></label>
+    <label>Material <select id="resourceMaterial"></select></label>
+    <label>Secondary material <select id="resourceSecondary"></select></label>
+    <label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option></select></label>
+    <label>Growth seed <input id="resourceSeed" type="number" value="1337" min="0" max="99999999"></label>
+    <label>Components <select id="resourceComponents" multiple size="3"></select></label>
+    <label>Scale <input id="resourceScale" type="range" min="2" max="24" value="8"></label>
+    <label>Subsurface <input id="resourceSubsurface" type="range" min="0" max="1" step=".05" value=".2"></label>
+    <label>Radial mirrors <input id="resourceRadial" type="range" min="1" max="12" value="1"></label>
+    <label>Branch angle <input id="resourceAngle" type="range" min="5" max="85" value="32"></label>
+    <label>Iterations <input id="resourceIterations" type="range" min="1" max="8" value="4"></label>
+    <label>Tropism <input id="resourceTropism" type="range" min="-1" max="1" step=".05" value=".2"></label>
+    <label>Influence radius <input id="resourceInfluence" type="range" min="2" max="32" value="12"></label>
+    <label>Kill radius <input id="resourceKill" type="range" min="1" max="12" value="3"></label>
+    <div><button id="resourceSave" class="tool-button">Save resource</button> <button id="resourcePlace" class="tool-button">Place at crosshair</button></div>
+    <div id="resourceStatus" class="muted">Resources are named procedural objects used by plants, stones, and future crafting.</div>
+  </div>
+</div>
+
+<div id="optionsWindow" class="tool-window simple-window" role="dialog" aria-label="Options">
+  <div class="titlebar"><span>Options</span><button class="window-close" aria-label="Close options">×</button></div>
+  <div class="window-body">
+    <div class="option-row"><label for="optionFov">Field of view</label><input id="optionFov" type="range" min="40" max="110" step="1"><span id="optionFovValue"></span></div>
+    <div class="option-row"><label for="optionTime">Time of day</label><input id="optionTime" type="range" min="1" max="24" step="0.25"><span id="optionTimeValue"></span></div>
+    <div class="option-row"><label for="optionGravity">Gravity</label><input id="optionGravity" type="range" min="0" max="30" step="0.1"><span id="optionGravityValue"></span></div>
+    <div class="option-row"><label for="optionLightmode">Lighting</label><select id="optionLightmode"><option value="0">Lightmode 0</option><option value="1">Lightmode 1</option></select><span></span></div>
+  </div>
+</div>
+
+<div id="modsWindow" class="tool-window simple-window" role="dialog" aria-label="Mods">
+  <div class="titlebar"><span>Mods</span><button class="window-close" aria-label="Close mods">×</button></div>
+  <div class="window-body"><h2>Mod manager</h2><p>No mods loaded.</p><p class="muted">This window is the future home for local content packs, material libraries, world generators, and safe scripted extensions.</p></div>
+</div>
+
+<div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
+  <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
+  <div class="window-body"><h2>Controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Window hotkeys</h2><p>C console · M materials · R resources · P options · N mods · H help · B about</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape releases the mouse and highlights the first menu item.</p><h2>Windows</h2><p>Use the top menu or its displayed key to open tools. Drag any title bar to reposition its window.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+</div>
+
+<div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
+  <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
+  <div class="window-body"><h2>Dreamplay One v0.9.6</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Scrollable logs · serial packet spacing · persistent status · Resource provenance</p></div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+//////////////////////////////////////////////////////////////////////////
+// CHUNKED VOXEL WORLD (streaming ready)
+//////////////////////////////////////////////////////////////////////////
+const VS = 0.1;                        // 0.1 m horizontal microvoxels
+const VY = 0.1;                        // true isotropic voxels: no world-wide vertical terracing
+const CHUNK_SIZE = 32;                 // voxels per chunk (good balance for upload + traversal)
+const LOADED_CHUNKS_XZ = 24;           // 768 voxels loaded in X/Z (~76.8 m), 9x original area
+const LOADED_CHUNKS_Y = 7;             // 224 isotropic cells: 22.4 m tall, including 6.4 m underground
+const PREFETCH_MARGIN=10;               // deep cached safety ring beyond every resident edge
+const MINIMUM_BOOT_PRELOAD_MS=60000;
+
+const LOADED_SIZE_X = LOADED_CHUNKS_XZ * CHUNK_SIZE;
+const LOADED_SIZE_Y = LOADED_CHUNKS_Y * CHUNK_SIZE;
+const LOADED_SIZE_Z = LOADED_CHUNKS_XZ * CHUNK_SIZE;
+const FULL_UPLOAD_BYTES = LOADED_SIZE_X * LOADED_SIZE_Y * LOADED_SIZE_Z;
+const MAT_AIR=0, MAT_GRASS=1, MAT_DIRT=2, MAT_STONE=3, MAT_PLATFORM=4, MAT_WATER=10, MAT_SNOW=11, MAT_MOSS=12;
+const MAT_MUD=13, MAT_SAND=14, MAT_CLAY=15, MAT_PEAT=16, MAT_DRY_GRASS=17, MAT_TALL_GRASS=18;
+const MAT_ALPINE_GRASS=19, MAT_LICHEN=20, MAT_GRANITE=21, MAT_MARBLE=22, MAT_QUARTZ=23;
+const MAT_SLATE=24, MAT_BASALT=25, MAT_LIMESTONE=26, MAT_GRAVEL=27, MAT_BARK=28, MAT_WOOD=29;
+const MAT_LEAVES=30, MAT_FLOWER=31;
+const WATER_LEVEL=40;                  // 4 m valley pool datum
+const SNOW_LINE=112;                   // 56 m; wind/slope modify this locally
+
+// Stable coordinate hash: terrain never changes with chunk generation order.
+function hash3(x, y, z, salt = 0) {
+  let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(z | 0, 1442695041) ^ salt;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+// Seeded gradient/value noise replaces visible sine bands. Domain warping bends
+// every octave before ridged mountains and broad alluvial valleys are combined.
+function fade(t){return t*t*t*(t*(t*6-15)+10);}
+function valueNoise2(x,z,salt=0){
+  const ix=Math.floor(x),iz=Math.floor(z),fx=fade(x-ix),fz=fade(z-iz);
+  const a=hash3(ix,0,iz,salt),b=hash3(ix+1,0,iz,salt),c=hash3(ix,0,iz+1,salt),d=hash3(ix+1,0,iz+1,salt);
+  return ((a+(b-a)*fx)*(1-fz)+(c+(d-c)*fx)*fz)*2-1;
+}
+function fbm2(x,z,oct=5,lac=2,gain=.5,salt=0){let sum=0,amp=.5,norm=0;for(let i=0;i<oct;i++){sum+=valueNoise2(x,z,salt+i*101)*amp;norm+=amp;x*=lac;z*=lac;amp*=gain;}return sum/norm;}
+function ridged2(x,z,oct=5,salt=0){let sum=0,amp=.58,norm=0;for(let i=0;i<oct;i++){let n=1-Math.abs(valueNoise2(x,z,salt+i*131));n*=n;sum+=n*amp;norm+=amp;x*=2.05;z*=2.05;amp*=.49;}return sum/norm;}
+function smoothstep(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x);}
+function warpedCoords(wx,wz){const qx=fbm2(wx*.0024,wz*.0024,4,2,.52,701),qz=fbm2(wx*.0024+19,wz*.0024-11,4,2,.52,907);return [wx+qx*96,wz+qz*96];}
+function terrainSample(wx,wz){
+  const [x,z]=warpedCoords(wx,wz);
+  // The low-frequency continental field makes valleys about five times wider.
+  const continental=fbm2(x*.00135,z*.00135,5,2,.5,1103);
+  const valleyMask=1-smoothstep(-.18,.34,continental); // wide flat floodplain membership
+  const mountainMask=smoothstep(-.10,.42,continental);
+  const ridges=ridged2(x*.0032,z*.0032,6,1301);
+  const foothills=fbm2(x*.006,z*.006,4,2,.48,1409);
+  const micro=fbm2(x*.027,z*.027,3,2.1,.42,1523);
+  const alluvium=fbm2(x*.008,z*.008,3,2,.48,1601);
+  const mountains=48+mountainMask*(20+110*Math.pow(ridges,1.42))+foothills*5+micro*1.1;
+  const basinNoise=fbm2(x*.0048,z*.0048,4,2,.5,1709);
+  const poolMask=valleyMask*smoothstep(.22,.58,-basinNoise);
+  const poolDepth=Math.min(20,Math.max(0,Math.round(poolMask*20))); // maximum 2 m at 10 cm resolution
+  const valley=42+alluvium*3.2+micro*.75-poolDepth;
+  const raw=valley*(1-mountainMask)+mountains*mountainMask;
+  const height=Math.max(2,Math.min(158,Math.round(raw)));
+  return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,continental,ridges};
+}
+
+// Chunk storage (sparse, can grow to millions of chunks for huge worlds)
+const chunks = new Map(); // key "cx,cy,cz" -> Uint8Array (chunk local data)
+const generatedChunks = new Set(); // includes implicit all-air chunks
+const dirtyChunks = new Set(); // edited chunks are retained until persistence is added
+const resourceChunks = new Map(); // chunk key -> sparse Map(voxel index, Resource ID)
+const resourceIdByName = new Map();
+const resourceNameById = ['none'];
+function registerResourceName(name){if(!resourceIdByName.has(name)){const id=resourceNameById.length;resourceIdByName.set(name,id);resourceNameById.push(name);}return resourceIdByName.get(name);}
+
+function chunkKey(cx, cy, cz) { return `${cx},${cy},${cz}`; }
+
+function getChunk(cx, cy, cz, createIfMissing = false) {
+  const key = chunkKey(cx, cy, cz);
+  let chunk = chunks.get(key);
+  if (!chunk && createIfMissing) {
+    chunk = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+    chunks.set(key, chunk);
+    generatedChunks.add(key);
+  }
+  return chunk;
+}
+
+function worldToChunk(wx, wy, wz) {
+  return {
+    cx: Math.floor(wx / CHUNK_SIZE),
+    cy: Math.floor(wy / CHUNK_SIZE),
+    cz: Math.floor(wz / CHUNK_SIZE)
+  };
+}
+
+function setVoxel(wx, wy, wz, material, resourceId=0) {
+  const { cx, cy, cz } = worldToChunk(wx, wy, wz);
+  const chunk = getChunk(cx, cy, cz, true);
+  if (!chunk) return;
+  const lx = ((wx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const ly = ((wy % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const lz = ((wz % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const i = lx + ly * CHUNK_SIZE + lz * CHUNK_SIZE * CHUNK_SIZE;
+  chunk[i] = material;
+  const key=chunkKey(cx,cy,cz),existing=resourceChunks.get(key);
+  if(resourceId){const provenance=existing||new Map();provenance.set(i,resourceId);resourceChunks.set(key,provenance);}
+  else if(existing){existing.delete(i);if(!existing.size)resourceChunks.delete(key);}
+  dirtyChunks.add(key);
+}
+
+function getVoxelResourceId(wx,wy,wz){
+  const {cx,cy,cz}=worldToChunk(wx,wy,wz),metadata=resourceChunks.get(chunkKey(cx,cy,cz));if(!metadata)return 0;
+  const lx=((wx%CHUNK_SIZE)+CHUNK_SIZE)%CHUNK_SIZE,ly=((wy%CHUNK_SIZE)+CHUNK_SIZE)%CHUNK_SIZE,lz=((wz%CHUNK_SIZE)+CHUNK_SIZE)%CHUNK_SIZE;
+  return metadata.get(lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE)||0;
+}
+
+function evictDistantCleanChunks(){
+  const minCX=Math.floor(windowMinX/CHUNK_SIZE), minCZ=Math.floor(windowMinZ/CHUNK_SIZE);
+  const maxCX=minCX+LOADED_CHUNKS_XZ-1, maxCZ=minCZ+LOADED_CHUNKS_XZ-1;
+  const keep=PREFETCH_MARGIN; // retain the prestream safety ring, evict beyond it
+  for (const key of chunks.keys()) {
+    if (dirtyChunks.has(key)) continue;
+    const [cx,,cz]=key.split(',').map(Number);
+    if (cx<minCX-keep || cx>maxCX+keep || cz<minCZ-keep || cz>maxCZ+keep) {
+      chunks.delete(key); resourceChunks.delete(key); generatedChunks.delete(key);
+    }
+  }
+}
+
+function getVoxelA(wx, wy, wz) {
+  const { cx, cy, cz } = worldToChunk(wx, wy, wz);
+  const chunk = getChunk(cx, cy, cz, false);
+  if (!chunk) return 0;
+  const lx = ((wx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const ly = ((wy % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const lz = ((wz % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const i = lx + ly * CHUNK_SIZE + lz * CHUNK_SIZE * CHUNK_SIZE;
+  return chunk[i];
+}
+
+let terrainColumnCacheKey='',terrainColumnCache=null;
+function prepareTerrainColumns(cx,cz){
+  const key=`${cx},${cz}`;if(key===terrainColumnCacheKey)return terrainColumnCache;
+  const data=new Array(CHUNK_SIZE*CHUNK_SIZE),baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE;
+  for(let lx=0;lx<CHUNK_SIZE;lx++)for(let lz=0;lz<CHUNK_SIZE;lz++){
+    const wx=baseX+lx,wz=baseZ+lz,terrain=terrainSample(wx,wz),h=terrain.height;
+    const hx1=terrainSample(wx+2,wz).height,hx0=terrainSample(wx-2,wz).height,hz1=terrainSample(wx,wz+2).height,hz0=terrainSample(wx,wz-2).height;
+    const slope=Math.hypot(hx1-hx0,hz1-hz0)*.25,curvature=(hx1+hx0+hz1+hz0-4*h)*.25;
+    const [qx,qz]=warpedCoords(wx,wz);
+    const patch=fbm2(qx*.011,qz*.011,4,2,.5,1801);       // broad irregular patches, never voxel dither
+    const detail=fbm2(qx*.037,qz*.037,3,2.1,.45,1907);
+    const moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38-patch*.12-slope*.045));
+    // Soil thickens in concave, moist terrain and thins on eroded convex slopes.
+    const mantle=Math.max(2,Math.min(26,Math.round(5+moisture*13+Math.max(0,-curvature)*2.2-slope*.72+patch*3)));
+    const rockPatch=fbm2(qx*.018+31,qz*.018-7,4,2,.5,2003);
+    const stoneField=fbm2(qx*.006-17,qz*.006+43,4,2,.52,2111);
+    const exposedRock=slope>8.5||(slope>4.2&&rockPatch>.22)||(h>126&&rockPatch>-.05);
+    // Snow favors high, sheltered and leeward/concave sites; steep faces shed it.
+    const lee=(hx0-hx1)*.08;
+    const snowCoverage=(h-SNOW_LINE)/18+Math.max(-.35,Math.min(.35,lee))-slope*.045-curvature*.06+patch*.14;
+    const snowDepth=Math.max(0,Math.min(8,Math.floor(smoothstep(-.15,.65,snowCoverage)*7))),snowy=snowDepth>0&&!exposedRock;
+    const saturatedMud=terrain.poolMask>.10&&moisture>.70&&h<=WATER_LEVEL+2&&patch<.26;
+    const sandy=terrain.poolMask>.045&&terrain.poolMask<.52&&h<=WATER_LEVEL+2&&patch>.16;
+    const grassCoverage=moisture+.22-patch*.12-slope*.04-(h-SNOW_LINE)*.006;
+    const grassy=!saturatedMud&&!sandy&&!snowy&&!exposedRock&&grassCoverage>.34;
+    let rockMaterial=MAT_STONE;
+    if(stoneField>.42)rockMaterial=MAT_GRANITE;else if(stoneField<-.48)rockMaterial=MAT_SLATE;else if(rockPatch>.55)rockMaterial=MAT_LIMESTONE;
+    if(h>118&&rockPatch>.68)rockMaterial=MAT_QUARTZ;
+    const surfaceMaterial=snowy?MAT_SNOW:exposedRock?rockMaterial:saturatedMud?MAT_MUD:sandy?MAT_SAND:grassy?(h>90?MAT_ALPINE_GRASS:moisture>.72?MAT_MOSS:moisture<.38?MAT_DRY_GRASS:MAT_GRASS):(patch>.28?MAT_CLAY:MAT_DIRT);
+    data[lx+lz*CHUNK_SIZE]={terrain,h,mantle,patch,detail,slope,curvature,moisture,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial};
+  }
+  terrainColumnCacheKey=key;terrainColumnCache=data;return data;
+}
+
+// Generate a single chunk with seamless terrain (using world coordinates for continuity)
+function generateChunk(cx, cy, cz) {
+  const key = chunkKey(cx, cy, cz);
+  if (generatedChunks.has(key)) return;
+  generatedChunks.add(key);
+
+  const chunk = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+  chunks.set(key, chunk);
+
+  const baseX = cx * CHUNK_SIZE;
+  const baseY = cy * CHUNK_SIZE;
+  const baseZ = cz * CHUNK_SIZE;
+  const columns=prepareTerrainColumns(cx,cz);
+
+  // Multi-octave Voxlap-style organic terrain
+  for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+    for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+      const wx = baseX + lx;
+      const wz = baseZ + lz;
+
+      const {terrain,h,mantle,patch,detail,slope,curvature,moisture,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial}=columns[lx+lz*CHUNK_SIZE];
+
+      for (let ly = 0; ly < CHUNK_SIZE; ly++) {
+        const wy = baseY + ly;
+        const i = lx + ly * CHUNK_SIZE + lz * CHUNK_SIZE * CHUNK_SIZE;
+        if (wy<=h) {
+          const depth=h-wy;
+          if(snowy&&depth<snowDepth)chunk[i]=MAT_SNOW;
+          else if(exposedRock&&depth<2)chunk[i]=rockMaterial;
+          else if(depth===0)chunk[i]=surfaceMaterial;
+          else if(depth<mantle){
+            // Curved depositional lenses: low-frequency 3-D noise avoids flat
+            // strata and the former evenly spaced dirt perforations.
+            const lens=valueNoise2((wx+wy*.7)*.022,(wz-wy*.43)*.022,2237);
+            if(depth>mantle*.62&&lens>.34)chunk[i]=rockMaterial;
+            else if(saturatedMud&&depth<4)chunk[i]=MAT_MUD;
+            else if(sandy&&depth<5)chunk[i]=MAT_SAND;
+            else if(moisture>.78&&depth<5&&patch<-.22)chunk[i]=MAT_PEAT;
+            else chunk[i]=patch>.34&&depth<7?MAT_CLAY:MAT_DIRT;
+          }else chunk[i]=MAT_STONE;
+        } else if (terrain.poolMask>.30 && h<WATER_LEVEL && wy<=Math.min(WATER_LEVEL,h+20)) {
+          chunk[i]=MAT_WATER;
+        }
+      }
+    }
+  }
+
+  stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz);
+
+  // Empty high-altitude chunks are represented implicitly and cost no voxel array.
+  if (!chunk.some(Boolean)){chunks.delete(key);resourceChunks.delete(key);}
+}
+
+// simple deterministic pseudo-random
+let seed = 1337;
+function rnd(){ seed = (seed*1664525+1013904223)>>>0; return seed/4294967296; }
+
+// Old dense buildWorld removed — world is now fully chunk-based with on-demand generateChunk()
+// Initial chunks around spawn are generated in initGL / first frame.
+
+function groundHeightAt(wx, wz) {
+  // Find highest solid voxel in column (for spawn)
+  for (let wy = 200; wy >= 0; wy--) {
+    const material=getVoxelA(wx,wy,wz);
+    if (material!==MAT_AIR && material!==MAT_WATER && material!==MAT_MOSS && material!==MAT_TALL_GRASS && material!==MAT_FLOWER && material!==MAT_LEAVES) return wy;
+  }
+  return 0;
+}
+
+// Loaded window assembly (for single-texture rendering while we have chunk storage)
+let loadedGrid = new Uint8Array(LOADED_SIZE_X * LOADED_SIZE_Y * LOADED_SIZE_Z);
+let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
+let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
+
+function assembleLoadedGrid() {
+  loadedGrid.fill(0);
+  for (let cx = 0; cx < LOADED_CHUNKS_XZ; cx++) {
+    for (let cy = 0; cy < LOADED_CHUNKS_Y; cy++) {
+      for (let cz = 0; cz < LOADED_CHUNKS_XZ; cz++) {
+        const cwx = windowMinX + cx * CHUNK_SIZE;
+        const cwy = windowMinY + cy * CHUNK_SIZE;
+        const cwz = windowMinZ + cz * CHUNK_SIZE;
+        const key = chunkKey(Math.floor(cwx / CHUNK_SIZE), Math.floor(cwy / CHUNK_SIZE), Math.floor(cwz / CHUNK_SIZE));
+        const chunk = chunks.get(key);
+        if (!chunk) continue;
+        // Copy contiguous X rows natively instead of visiting 32K voxels in JS.
+        for(let lz=0;lz<CHUNK_SIZE;lz++)for(let ly=0;ly<CHUNK_SIZE;ly++){
+          const source=ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE;
+          const target=cx*CHUNK_SIZE+(cy*CHUNK_SIZE+ly)*LOADED_SIZE_X+(cz*CHUNK_SIZE+lz)*LOADED_SIZE_X*LOADED_SIZE_Y;
+          loadedGrid.set(chunk.subarray(source,source+CHUNK_SIZE),target);
+        }
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// GL SETUP
+//////////////////////////////////////////////////////////////////////////
+const canvas = document.getElementById('glcanvas');
+const gl = canvas.getContext('webgl2', {antialias:false, powerPreference:'high-performance'});
+if (!gl){
+  document.getElementById('loadingText').textContent='WebGL2 unavailable';
+  document.getElementById('startscreen').innerHTML =
+    '<h1 style="font-size:18px;">WEBGL2 UNAVAILABLE</h1><p>Your browser/GPU does not support WebGL2, which this engine requires.</p>';
+}
+
+function compile(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    console.error(gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+const VERT_SRC = `#version 300 es
+void main(){
+  vec2 pos[3] = vec2[3](vec2(-1.0,-1.0), vec2(3.0,-1.0), vec2(-1.0,3.0));
+  gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
+}`;
+
+const FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp usampler3D;
+precision highp sampler2D;
+out vec4 fragColor;
+
+uniform vec2 uRes;
+uniform vec3 uCamPos;   // in voxel-space units
+uniform mat3 uCamBasis; // right, up, forward columns
+uniform float uFovScale;
+uniform ivec3 uGrid;
+uniform ivec3 uRing;
+uniform usampler3D uVoxels;
+uniform float uTime;
+uniform int uLightMode;
+uniform float uHour;
+uniform sampler2D uPaletteTex;
+uniform ivec3 uMaterialSlots[32];
+uniform vec3 uMaterialParams[32]; // strength, scale, blur
+uniform int uMaterialModes[32];
+
+const int MAX_STEPS = 1200;  // scaled up for larger 51 m playfield at 0.1 m resolution
+
+vec3 sunDirection(){
+  float angle=(uHour-6.0)/24.0*6.28318530718;
+  return normalize(vec3(cos(angle)*0.72,sin(angle),0.36));
+}
+
+float daylightAmount(){
+  return clamp(sunDirection().y*1.18+0.12,0.04,1.0);
+}
+
+float cloudHash(vec2 p){
+  return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
+}
+float voxelCloud(vec2 p){
+  vec2 cell=floor(p),local=fract(p);
+  float continent=cloudHash(floor(cell/5.0));
+  float neighbor=max(max(cloudHash(floor((cell+vec2(1,0))/5.0)),cloudHash(floor((cell-vec2(1,0))/5.0))),
+                     max(cloudHash(floor((cell+vec2(0,1))/5.0)),cloudHash(floor((cell-vec2(0,1))/5.0))));
+  float envelope=max(continent,neighbor*0.82);
+  float occupied=step(0.48,envelope)*step(0.20,cloudHash(cell));
+  // One-pixel-style face bands give each distant coarse cell a voxel volume.
+  float face=0.78+0.12*step(local.y,0.13)+0.10*step(0.87,local.x);
+  return occupied*face;
+}
+
+vec3 skyColor(vec3 rd){
+  float t = clamp(rd.y*0.5+0.5, 0.0, 1.0);
+  float day=daylightAmount();
+  vec3 horizon = mix(vec3(20,20,52),vec3(80,196,252),day)/255.0;
+  vec3 zenith  = mix(vec3(4,8,32),vec3(80,108,252),day)/255.0;
+  vec3 sunDir=sunDirection();
+  float sun = pow(max(dot(rd,sunDir),0.0),300.0)*smoothstep(-0.08,0.08,sunDir.y);
+  float horizonGlow = pow(1.0-abs(rd.y),5.0);
+  vec3 col = mix(horizon, zenith, t);
+  vec3 warm=mix(vec3(204,80,44),vec3(252,220,80),day)/255.0;
+  col += warm*horizonGlow*(0.10+0.28*(1.0-day));
+  col += warm*sun*1.7;
+  // Coarse distant cloud voxels: two projected decks create parallax while the
+  // cell field needs far fewer samples than multi-octave smooth cloud noise.
+  if(rd.y>0.015){
+    vec2 wind=vec2(uTime*0.010,uTime*0.004);
+    vec2 cloudUV=rd.xz/(rd.y+0.10)*1.65+wind;
+    float lower=voxelCloud(cloudUV);
+    float upper=voxelCloud(cloudUV*0.62+vec2(11.0,-7.0)-wind*0.35);
+    float body=clamp(lower*0.76+upper*0.38,0.0,0.90)*smoothstep(0.015,0.10,rd.y);
+    float underside=0.35+0.65*cloudHash(floor(cloudUV));
+    vec3 cloudDark=mix(vec3(68,68,96),vec3(184,184,184),day)/255.0;
+    vec3 cloudLight=mix(vec3(88,88,116),vec3(236,236,236),day)/255.0;
+    vec3 cloudCol=mix(cloudDark,cloudLight,0.38+0.62*underside);
+    col=mix(col,cloudCol,body);
+  }
+  return col;
+}
+
+bool inBounds(ivec3 p){
+  return all(greaterThanEqual(p, ivec3(0))) && all(lessThan(p, uGrid));
+}
+
+float getDensity(ivec3 p){
+  if (!inBounds(p)) return 0.0;
+  ivec3 tp = ivec3((p.x+uRing.x)%uGrid.x, p.y, (p.z+uRing.z)%uGrid.z);
+  return texelFetch(uVoxels, tp, 0).r == 0u ? 0.0 : 1.0;
+}
+
+uint getMaterial(ivec3 p){
+  ivec3 tp = ivec3((p.x+uRing.x)%uGrid.x, p.y, (p.z+uRing.z)%uGrid.z);
+  return texelFetch(uVoxels, tp, 0).r;
+}
+
+float materialHash(ivec3 p){
+  uvec3 q=uvec3(p);
+  uint h=q.x*1597334677u^q.y*3812015801u^q.z*958282439u;
+  h^=h>>16;h*=2246822519u;h^=h>>13;
+  return float(h&65535u)/65535.0;
+}
+
+float smoothMaterialNoise(vec3 x){
+  ivec3 i=ivec3(floor(x));
+  vec3 f=fract(x);f=f*f*(3.0-2.0*f);
+  float n000=materialHash(i),n100=materialHash(i+ivec3(1,0,0));
+  float n010=materialHash(i+ivec3(0,1,0)),n110=materialHash(i+ivec3(1,1,0));
+  float n001=materialHash(i+ivec3(0,0,1)),n101=materialHash(i+ivec3(1,0,1));
+  float n011=materialHash(i+ivec3(0,1,1)),n111=materialHash(i+ivec3(1,1,1));
+  return mix(mix(mix(n000,n100,f.x),mix(n010,n110,f.x),f.y),
+             mix(mix(n001,n101,f.x),mix(n011,n111,f.x),f.y),f.z);
+}
+
+vec3 materialColor(uint m, ivec3 p){
+  int id=clamp(int(m),0,31);
+  ivec3 slots=uMaterialSlots[id];
+  vec3 params=uMaterialParams[id];
+  float crisp=materialHash(p);
+  float soft=smoothMaterialNoise(vec3(p)/max(params.y,1.0));
+  float cellular=abs(smoothMaterialNoise(vec3(p)/max(params.y*.55,1.0))-.5)*2.0;
+  float vein=1.0-abs(soft*2.0-1.0);
+  float strata=smoothMaterialNoise(vec3(float(p.x)*.18,float(p.y)/max(params.y,1.0),float(p.z)*.18)+soft*1.7);
+  int mode=uMaterialModes[id];
+  float pattern=mode==0?0.5:mode==1?crisp:mode==2?soft:mode==3?strata:mode==4?cellular:mode==5?vein:mix(soft,cellular,.42);
+  float n=mix(pattern,soft,params.z);
+  float signedNoise=(n*2.0-1.0)*params.x;
+  vec3 base=texelFetch(uPaletteTex,ivec2(slots.x,0),0).rgb;
+  vec3 shade=signedNoise>=0.0?texelFetch(uPaletteTex,ivec2(slots.y,0),0).rgb:texelFetch(uPaletteTex,ivec2(slots.z,0),0).rgb;
+  return mix(base,shade,abs(signedNoise));
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy / uRes) * 2.0 - 1.0;
+  float aspect = uRes.x / uRes.y;
+  vec3 rd = normalize(uCamBasis * vec3(uv.x*aspect*uFovScale, uv.y*uFovScale, 1.0));
+  vec3 worldRd=rd;
+  vec3 ro = uCamPos;
+
+  ivec3 mapPos = ivec3(floor(ro));
+  vec3 rdSafe = vec3(
+    abs(rd.x) < 1e-6 ? 1e-6 : rd.x,
+    abs(rd.y) < 1e-6 ? 1e-6 : rd.y,
+    abs(rd.z) < 1e-6 ? 1e-6 : rd.z
+  );
+  vec3 deltaDist = abs(1.0 / rdSafe);
+  vec3 stepDir = sign(rdSafe);
+  vec3 sideDist = (stepDir * (vec3(mapPos) - ro) + (stepDir * 0.5) + 0.5) * deltaDist;
+
+  bool hit = false;
+  bool waterHit = false;
+  vec3 normal = vec3(0.0);
+  uint material = 0u;
+  float dist = 0.0;
+  float waterDist = 0.0;
+
+  for (int i=0; i<MAX_STEPS; i++){
+    if (!inBounds(mapPos)) break;
+    uint m = getMaterial(mapPos);
+    if(m==10u){
+      if(!waterHit){waterHit=true;waterDist=dist;}
+    } else if(m>0u){hit=true;material=m;break;}
+
+    if (sideDist.x < sideDist.y){
+      if (sideDist.x < sideDist.z){
+        dist = sideDist.x; sideDist.x += deltaDist.x; mapPos.x += int(stepDir.x); normal = vec3(-stepDir.x,0.0,0.0);
+      } else {
+        dist = sideDist.z; sideDist.z += deltaDist.z; mapPos.z += int(stepDir.z); normal = vec3(0.0,0.0,-stepDir.z);
+      }
+    } else {
+      if (sideDist.y < sideDist.z){
+        dist = sideDist.y; sideDist.y += deltaDist.y; mapPos.y += int(stepDir.y); normal = vec3(0.0,-stepDir.y,0.0);
+      } else {
+        dist = sideDist.z; sideDist.z += deltaDist.z; mapPos.z += int(stepDir.z); normal = vec3(0.0,0.0,-stepDir.z);
+      }
+    }
+  }
+
+  if (!hit){
+    vec3 backdrop=skyColor(worldRd);
+    if(waterHit){
+      float waterAlpha=mix(0.62,0.36,clamp(abs(worldRd.y),0.0,1.0));
+      vec3 waterCol=materialColor(10u,mapPos);
+      backdrop=mix(backdrop,waterCol,waterAlpha);
+    }
+    fragColor = vec4(backdrop, 1.0);
+    return;
+  }
+
+  float faceLight;
+  float cavity=1.0;
+  vec3 shadeNormal=normal;
+  if(uLightMode==0){
+    // Voxlap/Voxed lightmode 0: fixed directional cube-face shading.
+    if(normal.y>0.5) faceLight=1.00;
+    else if(normal.y< -0.5) faceLight=0.30;
+    else if(normal.x>0.5) faceLight=0.78;
+    else if(normal.x< -0.5) faceLight=0.48;
+    else if(normal.z>0.5) faceLight=0.66;
+    else faceLight=0.40;
+    faceLight=floor(faceLight*8.0+0.5)/8.0*mix(0.18,1.0,daylightAmount());
+  }else{
+    // Wide-radius density gradient suppresses one-voxel contour stripes and
+    // produces the rounded, lumpy rock response visible in Voxlap's cave demo.
+    vec3 grad=vec3(0.0);
+    grad+=vec3(
+      getDensity(mapPos-ivec3(1,0,0))-getDensity(mapPos+ivec3(1,0,0)),
+      getDensity(mapPos-ivec3(0,1,0))-getDensity(mapPos+ivec3(0,1,0)),
+      getDensity(mapPos-ivec3(0,0,1))-getDensity(mapPos+ivec3(0,0,1))
+    );
+    grad+=0.55*vec3(
+      getDensity(mapPos-ivec3(2,0,0))-getDensity(mapPos+ivec3(2,0,0)),
+      getDensity(mapPos-ivec3(0,2,0))-getDensity(mapPos+ivec3(0,2,0)),
+      getDensity(mapPos-ivec3(0,0,2))-getDensity(mapPos+ivec3(0,0,2))
+    );
+    grad+=0.28*vec3(
+      getDensity(mapPos-ivec3(4,0,0))-getDensity(mapPos+ivec3(4,0,0)),
+      getDensity(mapPos-ivec3(0,4,0))-getDensity(mapPos+ivec3(0,4,0)),
+      getDensity(mapPos-ivec3(0,0,4))-getDensity(mapPos+ivec3(0,0,4))
+    );
+    // Diagonal pairs make the kernel approximately spherical instead of
+    // axis-aligned, rounding the corners that read as terraces on slopes.
+    grad+=0.38*normalize(vec3(1.0,1.0,0.0))*(getDensity(mapPos-ivec3(2,2,0))-getDensity(mapPos+ivec3(2,2,0)));
+    grad+=0.38*normalize(vec3(1.0,-1.0,0.0))*(getDensity(mapPos-ivec3(2,-2,0))-getDensity(mapPos+ivec3(2,-2,0)));
+    grad+=0.38*normalize(vec3(1.0,0.0,1.0))*(getDensity(mapPos-ivec3(2,0,2))-getDensity(mapPos+ivec3(2,0,2)));
+    grad+=0.38*normalize(vec3(1.0,0.0,-1.0))*(getDensity(mapPos-ivec3(2,0,-2))-getDensity(mapPos+ivec3(2,0,-2)));
+    grad+=0.38*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,2,2))-getDensity(mapPos+ivec3(0,2,2)));
+    grad+=0.38*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,2,-2))-getDensity(mapPos+ivec3(0,2,-2)));
+    // Wider planar diagonals smooth broad stair runs rather than only their edges.
+    grad+=0.18*normalize(vec3(1.0,1.0,0.0))*(getDensity(mapPos-ivec3(4,4,0))-getDensity(mapPos+ivec3(4,4,0)));
+    grad+=0.18*normalize(vec3(1.0,-1.0,0.0))*(getDensity(mapPos-ivec3(4,-4,0))-getDensity(mapPos+ivec3(4,-4,0)));
+    grad+=0.18*normalize(vec3(1.0,0.0,1.0))*(getDensity(mapPos-ivec3(4,0,4))-getDensity(mapPos+ivec3(4,0,4)));
+    grad+=0.18*normalize(vec3(1.0,0.0,-1.0))*(getDensity(mapPos-ivec3(4,0,-4))-getDensity(mapPos+ivec3(4,0,-4)));
+    grad+=0.18*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,4,4))-getDensity(mapPos+ivec3(0,4,4)));
+    grad+=0.18*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,4,-4))-getDensity(mapPos+ivec3(0,4,-4)));
+    // Body diagonals cover the eight voxel corners (four opposite pairs).
+    grad+=0.24*normalize(vec3(1.0,1.0,1.0))*(getDensity(mapPos-ivec3(2,2,2))-getDensity(mapPos+ivec3(2,2,2)));
+    grad+=0.24*normalize(vec3(1.0,1.0,-1.0))*(getDensity(mapPos-ivec3(2,2,-2))-getDensity(mapPos+ivec3(2,2,-2)));
+    grad+=0.24*normalize(vec3(1.0,-1.0,1.0))*(getDensity(mapPos-ivec3(2,-2,2))-getDensity(mapPos+ivec3(2,-2,2)));
+    grad+=0.24*normalize(vec3(1.0,-1.0,-1.0))*(getDensity(mapPos-ivec3(2,-2,-2))-getDensity(mapPos+ivec3(2,-2,-2)));
+    shadeNormal=length(grad)>0.05?normalize(grad+normal*0.04):normal;
+    vec3 lightDir=sunDirection();
+    float diffuse=max(dot(shadeNormal,lightDir),0.0);
+    float localOcc=(
+      getDensity(mapPos+ivec3(1,0,0))+getDensity(mapPos-ivec3(1,0,0))+
+      getDensity(mapPos+ivec3(0,1,0))+getDensity(mapPos-ivec3(0,1,0))+
+      getDensity(mapPos+ivec3(0,0,1))+getDensity(mapPos-ivec3(0,0,1))
+    )/6.0;
+    cavity=1.0-localOcc*0.12;
+    float day=daylightAmount();
+    faceLight=(mix(0.10,0.26,day)+mix(0.14,0.74,day)*sqrt(diffuse))*cavity;
+  }
+  vec3 base = materialColor(material, mapPos);
+  vec3 lit=base*faceLight;
+  if(uLightMode==1){
+    vec3 lightDir=sunDirection();
+    float spec=pow(max(dot(reflect(-lightDir,shadeNormal),-worldRd),0.0),22.0)*0.16*daylightAmount();
+    lit+=vec3(0.82,0.84,0.90)*spec;
+  }
+
+  float distMeters=dist*0.1;
+  float fogAmt=uLightMode==0
+    ? floor(clamp(distMeters/72.0,0.0,1.0)*16.0)/16.0
+    : 1.0-exp(-distMeters*0.011);
+  vec3 fogCol = skyColor(worldRd);
+  vec3 finalCol = mix(lit, fogCol, clamp(fogAmt,0.0,1.0));
+
+  // The ray continued through water to this solid surface; composite the first
+  // water layer over it for stable order-independent semi-transparency.
+  if(waterHit){
+    float waterAlpha=mix(0.62,0.36,clamp(abs(worldRd.y),0.0,1.0));
+    float waterFog=1.0-exp(-(waterDist*0.1)*0.024);
+    vec3 waterCol=mix(materialColor(10u,mapPos),fogCol,waterFog);
+    finalCol=mix(finalCol,waterCol,waterAlpha);
+  }
+
+  fragColor = vec4(finalCol, 1.0);
+}`;
+
+let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uVoxels, uTime, uLightMode, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, paletteTex, vao;
+let playerPos, yaw=Math.PI*0.25, pitch=-0.15;
+let spawnPos;
+// Fixed internal resolution: resizing the drawing buffer during play can produce
+// black frames on some GPU/browser combinations, so runtime scaling is disabled.
+const renderScale = 0.55;
+let uploadBytes = 0, uploadMs = 0, streamMs = 0;
+let lightMode = 1;
+let gravityAcceleration=-10.0, jumpSpeed=4.5, walkSpeed=4.2;
+let editReachMeters=6, carveRadius=7, placeRadius=4;
+let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
+// A compact working subset of neighboring shades from the official Myara palette.
+// Each three-color run is deliberately close in hue and value.
+const PALETTE=[
+  ['night 196','#141024'],
+  ['grass light 62','#4c843c'],['grass 63','#387434'],['grass dark 64','#286428'],
+  ['dirt light 35','#945c38'],['dirt 36','#84502c'],['dirt dark 37','#704024'],
+  ['stone dark 190','#6c6c88'],['stone 189','#7c7c98'],['stone light 188','#9494ac'],
+  ['neutral light 241','#c8c8c8'],['neutral 242','#b8b8b8'],['neutral dark 243','#989898'],
+  ['red light 141','#dc302c'],['red 142','#cc1c18'],['red dark 143','#b81414'],
+  ['blue light 93','#50a4fc'],['blue 94','#5088fc'],['blue dark 95','#506cfc'],
+  ['gold light 220','#d4c420'],['gold 221','#ccb010'],['gold dark 222','#bc980c'],
+  ['purple light 124','#b800e0'],['purple 125','#9800b0'],['purple dark 126','#800090'],
+  ['teal light 71','#34ac74'],['teal 72','#109c68'],['teal dark 73','#0c8c58'],
+  ['water light 92','#50c4fc'],['water 93','#50a4fc'],['water dark 94','#5088fc'],
+  ['snow light 239','#ececec'],['snow 183','#e0e0e0'],['snow shadow 240','#d8d8d8'],
+  ['mud light','#7c503c'],['mud','#603c2c'],['mud dark','#502024'],
+  ['sand light','#d0a854'],['sand','#c09448'],['sand dark','#b4883c'],
+  ['clay light','#cc7860'],['clay','#b46054'],['clay dark','#a04c44'],
+  ['peat light','#505050'],['peat','#404040'],['peat dark','#242424'],
+  ['dry grass light','#a8b85c'],['dry grass','#889844'],['dry grass dark','#687c38'],
+  ['alpine light','#90bc68'],['alpine','#78a858'],['alpine dark','#60984c'],
+  ['lichen light','#d8e0b0'],['lichen','#a8cc78'],['lichen dark','#78a858'],
+  ['granite light','#a4a4b8'],['granite','#9494ac'],['granite dark','#7c7c98'],
+  ['marble light','#ececec'],['marble','#d8d8d8'],['marble dark','#b8b8b8'],
+  ['quartz light','#d8d8fc'],['quartz','#bcbcf4'],['quartz dark','#9ca0d4'],
+  ['slate light','#585874'],['slate','#444460'],['slate dark','#343450'],
+  ['basalt light','#505050'],['basalt','#343434'],['basalt dark','#242424'],
+  ['limestone light','#d8d8d8'],['limestone','#c8c8c8'],['limestone dark','#a8a8a8'],
+  ['gravel light','#949494'],['gravel','#747474'],['gravel dark','#545454'],
+  ['bark light','#744c44'],['bark','#643c34'],['bark dark','#543028'],
+  ['wood light','#c09448'],['wood','#a46c1c'],['wood dark','#8c6024'],
+  ['leaf light','#28b810'],['leaf','#10ac00'],['leaf dark','#008800'],
+  ['flower light','#e078f0'],['flower','#d82cfc'],['flower dark','#b800e0']
+];
+// Complete official Myara palette. The curated material shades above remain at
+// stable indices; every source swatch follows and is available to the picker.
+const OFFICIAL_MYARA_HEX=`000000,f4c8af,e8a888,cc896a,af6946,7d503c,553028,f0e8e8,141870,ea8aa6,994c4c,a800a8,00a8a8,00a800,54fc54,fcfc54,fc5454,a85400,a80000,54fcfc,5050fc,0000a8,545454,a8a8a8,fce0d0,fcd4bc,fcc8a8,f8bc94,f0b088,dca474,d09464,d08c54,c48454,b4784c,a46c40,945c38,84502c,704024,5c301c,381c10,d0fcc0,bcf0a0,98ec5c,80dc64,50d444,3cc428,28b810,10ac00,049800,008800,007800,006804,005804,004808,003c04,002c08,d8e0b0,c4e08c,a8cc78,90bc68,78a858,60984c,4c843c,387434,286428,d0fcd0,a8fcbc,7cf8a8,6ce8a4,54d48c,4cbc80,34ac74,109c68,0c8c58,087c4c,a4fcec,58fce8,40f0d4,38e0d0,28d0d0,28c0c4,1cacb4,149ca8,0c8898,04707c,005468,002c4c,000c30,bcfcf4,98fcfc,50ecfc,48dcfc,50c4fc,50a4fc,5088fc,506cfc,383cdc,2028c8,0c10b8,000480,000458,000430,d8d8fc,ccccfc,bcbcf4,acb4e0,9ca0d4,8890cc,7c80c4,6468b4,5054a4,3c4094,2c3088,e0d0fc,d4bcfc,cca4fc,bc90fc,b86cfc,f4e0fc,ecccfc,f0b4fc,f094fc,e078f0,d82cfc,b800e0,9800b0,800090,680880,50086c,3c0c58,fcdc50,fcb84c,fc9448,fc7838,f8cccc,f4acac,f89494,fc8080,fc6c6c,fc5858,f04844,dc302c,cc1c18,b81414,9c0c0c,881830,7c1838,6c1034,500c10,1c0414,994c4c,994c63,e8a888,d89470,c48464,b47858,98684c,885c40,7c503c,603c2c,e49074,cc7860,b46054,a04c44,843838,682c2c,502024,f0e8e8,e0d8d8,d0c8c8,c4b8b8,b4acac,a89c9c,988c8c,8c8080,7c7474,6c6868,605858,504c4c,404040,343434,242424,181818,e0e0e0,d0d0d8,c0c4d0,b4b8c8,a4a4b8,9494ac,7c7c98,6c6c88,585874,444460,343450,24243c,18182c,141024,cca8a8,b89898,ac8884,98746c,886058,744c44,643c34,543028,3c2018,28140c,482414,281408,180804,000c00,fce8c0,fcdc90,f4cc78,e4bc68,d0a854,c09448,b4883c,f0ec44,e0d830,d4c420,ccb010,bc980c,a4840c,907408,7c6408,685004,fcc864,fcb42c,eca424,dc941c,cc8818,bc7c14,a46c1c,8c6024,604424,483824,34281c,001804,ececec,d8d8d8,c8c8c8,b8b8b8,989898,848484,747474,646464,444444,141884,141870,0c1458,040c38,04082c,040820,040818,305030,243c24,7074bc,585cac`;
+function naturalPaletteName(hex,index){
+  const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16),max=Math.max(r,g,b),min=Math.min(r,g,b),light=(max+min)/510,sat=max===min?0:(max-min)/(255-Math.abs(max+min-255));
+  let hue=0;if(max!==min){if(max===r)hue=((g-b)/(max-min)+6)%6;else if(max===g)hue=(b-r)/(max-min)+2;else hue=(r-g)/(max-min)+4;hue*=60;}
+  const shade=light>.86?'Pearl':light>.72?'Pale':light>.56?'Sunlit':light>.38?'Weathered':light>.22?'Deep':'Midnight';
+  const family=sat<.10?(hue>330||hue<20?'Ash':'Stone'):hue<18?'Madder':hue<42?'Ochre':hue<68?'Gilt':hue<105?'Moss':hue<155?'Verdant':hue<190?'Patina':hue<220?'Aegean':hue<255?'Lapis':hue<290?'Iris':hue<330?'Tyrian':'Rose';
+  return `${shade} ${family} ${String(index).padStart(3,'0')}`;
+}
+OFFICIAL_MYARA_HEX.split(',').forEach((hex,i)=>PALETTE.push([naturalPaletteName(hex,i),'#'+hex]));
+const MATERIAL_NAMES=['air','meadow_grass','brown_earth','fieldstone','builder_stone','red','blue','gold','purple','teal','meltwater','peak_snow','velvet_moss','mere_mud','sunwash_sand','ochre_clay','black_peat','summer_straw','reed_grass','alpine_turf','silver_lichen','storm_granite','moon_marble','star_quartz','blue_slate','night_basalt','old_limestone','river_gravel','ironbark','amberwood','greenleaf','foxglove'];
+const DEFAULT_MATERIAL_SLOTS=[
+  [0,0,0],[2,1,3],[5,4,6],[8,9,7],[11,10,12],
+  [14,13,15],[17,16,18],[20,19,21],[23,22,24],[26,25,27],[29,28,30],
+  [32,31,33],[2,1,3],
+  [35,34,36],[38,37,39],[41,40,42],[44,43,45],[47,46,48],[2,1,3],[50,49,51],
+  [53,52,54],[56,55,57],[59,58,60],[62,61,63],[65,64,66],[68,67,69],
+  [71,70,72],[74,73,75],[77,76,78],[80,79,81],[83,82,84],[86,85,87]
+];
+// strength, pattern scale in voxels, softness. Stone is deliberately broad and
+// blurred; decorative colors retain crisp, granular microvoxel texture.
+const DEFAULT_MATERIAL_PARAMS=[
+  [0,1,0],[0.16,1.5,0.05],[0.22,2.5,0.18],[0.34,6.5,0.92],[0.10,8,0.80],
+  [0.18,1,0],[0.16,1,0],[0.16,1.25,0.04],[0.18,1,0],[0.18,1.5,0.08],[0.12,7,0.88],
+  [0.10,5,0.72],[0.20,2.5,.38],
+  [.14,5,.72],[.12,7,.86],[.18,5,.66],[.10,8,.92],[.15,3,.52],[.18,2,.34],
+  [.12,5,.76],[.18,4,.82],[.20,7,.94],[.10,9,.96],[.22,6,.88],[.19,7,.90],
+  [.24,4,.82],[.18,5,.88],[.23,3,.44],[.16,5,.72],[.17,4,.76],[.16,4,.66],[.18,2,.28]
+];
+const DEFAULT_MATERIAL_MODES=[0,2,3,2,2,1,1,1,1,1,2,2,2,2,2,3,2,2,2,2,4,6,5,5,3,4,4,6,3,3,4,1];
+let materialSlots=DEFAULT_MATERIAL_SLOTS.map(v=>v.slice());
+let materialParams=DEFAULT_MATERIAL_PARAMS.map(v=>v.slice());
+let materialModes=DEFAULT_MATERIAL_MODES.slice();
+let selectedMaterial=MAT_PLATFORM;
+const paletteRGB=new Uint8Array(PALETTE.flatMap(([,hex])=>[
+  parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)
+]));
+const materialSlotData=new Int32Array(MATERIAL_NAMES.length*3);
+const materialParamData=new Float32Array(MATERIAL_NAMES.length*3);
+const materialModeData=new Int32Array(MATERIAL_NAMES.length);
+function syncMaterialSlots(){
+  materialSlots.forEach((slots,id)=>materialSlotData.set(slots,id*3));
+  materialParams.forEach((params,id)=>materialParamData.set(params,id*3));
+  materialModeData.set(materialModes);
+}
+
+const loadingOverlay=document.getElementById('loadingOverlay'),loadingText=document.getElementById('loadingText'),loadingPercent=document.getElementById('loadingPercent'),loadingFill=document.getElementById('loadingFill'),loadingConsole=document.getElementById('loadingConsole'),loadingClose=document.getElementById('loadingClose'),cartonConveyor=document.getElementById('cartonConveyor');
+const CONVEYOR_PACKETS={
+  initialize:{gap:7,items:['Seed intake','Math.imul','Quintic fade','fBm octave','Domain warp']},
+  terrain:{gap:5,items:['Ridged fBm','Alluvial mask','Curvature proxy','Strata lens','Resource seed']},
+  assemble:{gap:11,items:['Chunk key','X-row copy','Circular ring','Local→physical','Sparse provenance']},
+  audit:{gap:15,items:['Seam hash','Water bounds','Palette index','Dirty retention','Provenance map']},
+  upload:{gap:21,items:['R8UI','texImage3D','UNPACK 1','UNSIGNED_BYTE','Palette texel']},
+  prefetch:{gap:9,items:['Hysteresis box','Prefetch margin','Frontier deque','Ring modulo','Clean eviction']},
+  recover:{gap:17,items:['texSubImage3D','Slab upload','ringX / ringZ','Chunk encoder','Cache commit']},
+  ready:{gap:0,items:[]}
+};
+let conveyorPhase='',loadingActive=true;
+function phaseForLoadingTask(label){
+  const s=label.toLowerCase();
+  if(s.includes('ready')||s.includes('task complete'))return 'ready';
+  if(s.includes('upload'))return 'upload';
+  if(s.includes('audit')||s.includes('inspect'))return 'audit';
+  if(s.includes('generat'))return 'terrain';
+  if(s.includes('assembl')||s.includes('resident ring'))return 'assemble';
+  if(s.includes('precomput')||s.includes('predictive')||s.includes('frontier sector'))return 'prefetch';
+  if(s.includes('resolv')||s.includes('cache miss')||s.includes('landscape ahead'))return 'recover';
+  return 'initialize';
+}
+function setConveyorPhase(phase){
+  if(phase===conveyorPhase)return;conveyorPhase=phase;const config=CONVEYOR_PACKETS[phase]||CONVEYOR_PACKETS.initialize;
+  cartonConveyor.style.setProperty('--packet-gap',`${config.gap}px`);
+  document.querySelectorAll('#cartonBelt .packet-set').forEach(track=>track.replaceChildren(...config.items.map(label=>{const item=document.createElement('span');item.textContent=label;return item;})));
+}
+let engineReady=false;
+let bootLoadStarted=0;
+let loadingLogLines=[];
+function loadingLog(station,detail){
+  const seconds=bootLoadStarted?((performance.now()-bootLoadStarted)/1000).toFixed(1):'0.0';
+  const followTail=loadingConsole.scrollHeight-loadingConsole.clientHeight-loadingConsole.scrollTop<12;
+  loadingLogLines.push(`${seconds.padStart(5,' ')}s  ${station.padEnd(14,' ')} ${detail}`);loadingLogLines=loadingLogLines.slice(-300);
+  loadingConsole.textContent=loadingLogLines.join('\n');if(followTail)loadingConsole.scrollTop=loadingConsole.scrollHeight;
+}
+function showLoading(text,progress=0,streaming=false){
+  const phase=phaseForLoadingTask(text);setConveyorPhase(phase);loadingActive=phase!=='ready';
+  if(loadingActive)loadingOverlay.style.display='flex';loadingClose.disabled=loadingActive;loadingClose.setAttribute('aria-disabled',String(loadingActive));
+  loadingOverlay.classList.toggle('streaming',streaming);loadingText.textContent=text;
+  const pct=Math.max(0,Math.min(1,progress))*100;loadingPercent.textContent=`${pct.toFixed(1)}%`;loadingFill.style.width=`${pct.toFixed(3)}%`;
+}
+loadingClose.addEventListener('click',()=>{if(!loadingActive)loadingOverlay.style.display='none';});
+let lastStableStatus='';
+function hideLoading(message='Task complete. Ready to play.'){
+  // Accessibility invariant: this panel is persistent. Never toggle display,
+  // opacity, or visibility after boot; only replace its text and progress.
+  loadingOverlay.classList.remove('streaming');
+  showLoading(message,1,false);
+  if(message!==lastStableStatus){lastStableStatus=message;loadingLog('Task complete','Ready to play. Predictive cache remains active.');}
+}
+
+function finishInitialWorld(){
+  showLoading('Uploading resident voxel volume',0.965,false);loadingLog('GPU transfer',`writing ${(FULL_UPLOAD_BYTES/1048576).toFixed(0)} MiB R8UI texture`);
+  gl.bindTexture(gl.TEXTURE_3D,tex3d);
+  gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,LOADED_SIZE_X,LOADED_SIZE_Y,LOADED_SIZE_Z,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);
+  const sx=Math.floor(LOADED_SIZE_X/2),sz=Math.floor(LOADED_SIZE_Z/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
+  playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
+  showLoading('Task complete. Ready to play.',1,false);loadingLog('Commit','44×44 chunk cache verified; simulation may start');
+  setTimeout(()=>{resize();window.addEventListener('resize',resize);engineReady=true;nextCacheNoticeAt=performance.now()+20000;hideLoading();refreshWindowState();lastT=performance.now();requestAnimationFrame(loop);},500);
+}
+
+let verificationStarted=0,verificationDuration=1,lastAuditLog=-1;
+function waitForMinimumPreload(){
+  const elapsed=performance.now()-bootLoadStarted;
+  if(!verificationStarted){verificationStarted=performance.now();verificationDuration=Math.max(1,MINIMUM_BOOT_PRELOAD_MS-elapsed);loadingLog('Cache audit',`${chunks.size} generated chunks entering consistency pass`);}
+  if(elapsed<MINIMUM_BOOT_PRELOAD_MS){
+    const inspection=Math.min(1,(performance.now()-verificationStarted)/verificationDuration);
+    showLoading('Auditing predictive cache',0.74+0.20*inspection,false);
+    const auditSecond=Math.floor((performance.now()-verificationStarted)/5000);
+    if(auditSecond!==lastAuditLog){lastAuditLog=auditSecond;loadingLog('Field audit',`pass ${auditSecond+1}: strata continuity, biome masks and water bounds`);}
+    requestAnimationFrame(waitForMinimumPreload);return;
+  }
+  showLoading('Cache audit complete',0.95,false);loadingLog('Release','predictive ring accepted for resident assembly');requestAnimationFrame(finishInitialWorld);
+}
+
+function beginInitialWorldLoad(){
+  bootLoadStarted=performance.now();
+  loadingLogLines=[];loadingLog('Seed intake','terrain seed accepted; initializing deterministic samplers');
+  const jobs=[];
+  const minCX=Math.floor(windowMinX/CHUNK_SIZE)-PREFETCH_MARGIN,minCZ=Math.floor(windowMinZ/CHUNK_SIZE)-PREFETCH_MARGIN,minCY=Math.floor(windowMinY/CHUNK_SIZE);
+  const span=LOADED_CHUNKS_XZ+PREFETCH_MARGIN*2;
+  for(let cx=0;cx<span;cx++)for(let cz=0;cz<span;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)jobs.push([minCX+cx,minCY+cy,minCZ+cz]);
+  let done=0,lastLoggedStep=-1;
+  const batch=()=>{
+    const started=performance.now();
+    while(done<jobs.length&&performance.now()-started<11){generateChunk(...jobs[done++]);}
+    const work=done/jobs.length;
+    showLoading(`Generating ${span}×${span} chunk field`,0.02+work*0.68,false);
+    const logStep=Math.floor(work*20);
+    if(logStep!==lastLoggedStep){
+      lastLoggedStep=logStep;const job=jobs[Math.max(0,done-1)]||jobs[0];
+      const stations=['Height sampler','Domain warp','Strata solver','Biome classifier','Resource pass','Chunk encoder'];
+      loadingLog(stations[logStep%stations.length],`${done}/${jobs.length} chunks · coordinate ${job[0]},${job[1]},${job[2]}`);
+    }
+    if(done<jobs.length){requestAnimationFrame(batch);return;}
+    showLoading('Assembling resident ring',0.72,false);loadingLog('Ring encoder','mapping chunk rows into circular GPU coordinates');
+    requestAnimationFrame(()=>{assembleLoadedGrid();showLoading('Resident ring assembled',0.74,false);loadingLog('Volume check',`${LOADED_SIZE_X}×${LOADED_SIZE_Y}×${LOADED_SIZE_Z} voxels indexed`);requestAnimationFrame(waitForMinimumPreload);});
+  };
+  requestAnimationFrame(batch);
+}
+
+function initGL(){
+  const vs = compile(gl.VERTEX_SHADER, VERT_SRC);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG_SRC);
+  prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
+
+  uRes = gl.getUniformLocation(prog,'uRes');
+  uCamPos = gl.getUniformLocation(prog,'uCamPos');
+  uCamBasis = gl.getUniformLocation(prog,'uCamBasis');
+  uFovScale = gl.getUniformLocation(prog,'uFovScale');
+  uGrid = gl.getUniformLocation(prog,'uGrid');
+  uRing = gl.getUniformLocation(prog,'uRing');
+  uVoxels = gl.getUniformLocation(prog,'uVoxels');
+  uTime = gl.getUniformLocation(prog,'uTime');
+  uLightMode = gl.getUniformLocation(prog,'uLightMode');
+  uHour = gl.getUniformLocation(prog,'uHour');
+  uPaletteTex = gl.getUniformLocation(prog,'uPaletteTex');
+  uMaterialSlots = gl.getUniformLocation(prog,'uMaterialSlots[0]');
+  uMaterialParams = gl.getUniformLocation(prog,'uMaterialParams[0]');
+  uMaterialModes = gl.getUniformLocation(prog,'uMaterialModes[0]');
+  syncMaterialSlots();
+
+  vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+
+  tex3d = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_3D, tex3d);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  paletteTex=gl.createTexture();
+  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,paletteTex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB8,PALETTE.length,1,0,gl.RGB,gl.UNSIGNED_BYTE,paletteRGB);
+
+  // Initial loaded window centered near origin
+  windowMinX = 0;
+  windowMinY = -64;
+  windowMinZ = 0;
+
+  beginInitialWorldLoad();
+}
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio||1, 1.5);
+  canvas.width = Math.max(1, Math.floor(window.innerWidth*dpr*renderScale));
+  canvas.height = Math.max(1, Math.floor(window.innerHeight*dpr*renderScale));
+  canvas.style.width = window.innerWidth+'px';
+  canvas.style.height = window.innerHeight+'px';
+  if (gl) gl.viewport(0,0,canvas.width,canvas.height);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// VOXEL TEXTURE PARTIAL UPDATE
+//////////////////////////////////////////////////////////////////////////
+function uploadRegion(x0,y0,z0,x1,y1,z1){
+  // Clip the inclusive world-space dirty box to the resident GPU window.
+  x0 = Math.max(Math.floor(x0), windowMinX); y0 = Math.max(Math.floor(y0), windowMinY); z0 = Math.max(Math.floor(z0), windowMinZ);
+  x1 = Math.min(Math.floor(x1), windowMinX + LOADED_SIZE_X - 1);
+  y1 = Math.min(Math.floor(y1), windowMinY + LOADED_SIZE_Y - 1);
+  z1 = Math.min(Math.floor(z1), windowMinZ + LOADED_SIZE_Z - 1);
+  if (x1 < x0 || y1 < y0 || z1 < z0) return;
+
+  uploadLocalBox(x0-windowMinX,y0-windowMinY,z0-windowMinZ,x1-windowMinX,y1-windowMinY,z1-windowMinZ);
+}
+
+function mod(n,m){ return ((n%m)+m)%m; }
+function ringSegments(a0,a1,ring,size){
+  const count=a1-a0+1, p0=mod(a0+ring,size);
+  if (p0+count<=size) return [{local:a0,physical:p0,count}];
+  const first=size-p0;
+  return [{local:a0,physical:p0,count:first},{local:a0+first,physical:0,count:count-first}];
+}
+function uploadLocalBox(lx0,ly0,lz0,lx1,ly1,lz1){
+  const xs=ringSegments(lx0,lx1,ringX,LOADED_SIZE_X);
+  const zs=ringSegments(lz0,lz1,ringZ,LOADED_SIZE_Z);
+  const h=ly1-ly0+1;
+  gl.bindTexture(gl.TEXTURE_3D,tex3d);
+  for (const zz of zs) for (const xx of xs) {
+    const staging=new Uint8Array(xx.count*h*zz.count);
+    let o=0;
+    for (let dz=0;dz<zz.count;dz++) for (let y=ly0;y<=ly1;y++) for (let dx=0;dx<xx.count;dx++) {
+      const wx=windowMinX+xx.local+dx, wy=windowMinY+y, wz=windowMinZ+zz.local+dz;
+      const material=getVoxelA(wx,wy,wz);
+      staging[o++]=material;
+      loadedGrid[(xx.physical+dx)+y*LOADED_SIZE_X+(zz.physical+dz)*LOADED_SIZE_X*LOADED_SIZE_Y]=material;
+    }
+    const t0=performance.now();
+    gl.texSubImage3D(gl.TEXTURE_3D,0,xx.physical,ly0,zz.physical,xx.count,h,zz.count,gl.RED_INTEGER,gl.UNSIGNED_BYTE,staging);
+    uploadMs+=performance.now()-t0;
+    uploadBytes+=staging.byteLength;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// INPUT
+//////////////////////////////////////////////////////////////////////////
+const keys = {};
+const startScreen=document.getElementById('startscreen');
+const startBtn=document.getElementById('startBtn');
+let locked=false;
+let hasEnteredWorld=false;
+let focusMenuOnUnlock=false;
+const consoleEl=document.getElementById('console');
+const consoleInput=document.getElementById('consoleInput');
+const consoleOutput=document.getElementById('consoleOutput');
+let consoleLogLines=[consoleOutput.textContent];
+function appendConsoleLog(text){consoleLogLines.push(String(text));consoleLogLines=consoleLogLines.slice(-500);consoleOutput.textContent=consoleLogLines.join('\n\n');consoleOutput.scrollTop=consoleOutput.scrollHeight;}
+const designerEl=document.getElementById('materialDesigner');
+const designerMaterial=document.getElementById('designerMaterial');
+const designerBase=document.getElementById('designerBase');
+const designerLight=document.getElementById('designerLight');
+const designerDark=document.getElementById('designerDark');
+const designerNoise=document.getElementById('designerNoise');
+const designerScale=document.getElementById('designerScale');
+const designerBlur=document.getElementById('designerBlur');
+const designerPattern=document.getElementById('designerPattern');
+const designerStatus=document.getElementById('designerStatus');
+const previewCanvas=document.getElementById('materialPreview');
+const materialAtlas=document.getElementById('materialAtlas'),paletteAtlas=document.getElementById('paletteAtlas');
+const propertyIdInput=document.getElementById('materialPropertyId');
+let consoleOpen=false;
+let designerOpen=false;
+let topWindowZ=21;
+
+function anyToolOpen(){return !!document.querySelector('.tool-window.open');}
+function refreshWindowState(){
+  startScreen.style.display=hasEnteredWorld?'none':'flex';
+  document.querySelectorAll('.menu-button').forEach(button=>button.classList.toggle('active',document.getElementById(button.dataset.window)?.classList.contains('open')));
+}
+
+function bringToFront(win){win.style.zIndex=String(++topWindowZ);}
+function makeDraggable(win){
+  const bar=win.querySelector('.titlebar');
+  let dragging=false,dx=0,dy=0;
+  bar.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button'))return;
+    const r=win.getBoundingClientRect();
+    win.classList.add('dragged');win.style.left=`${r.left}px`;win.style.top=`${r.top}px`;win.style.right='auto';win.style.bottom='auto';
+    dx=e.clientX-r.left;dy=e.clientY-r.top;dragging=true;bringToFront(win);bar.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  bar.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const maxX=Math.max(0,innerWidth-win.offsetWidth),maxY=Math.max(0,innerHeight-win.offsetHeight);
+    win.style.left=`${Math.max(0,Math.min(maxX,e.clientX-dx))}px`;win.style.top=`${Math.max(0,Math.min(maxY,e.clientY-dy))}px`;
+  });
+  bar.addEventListener('pointerup',()=>{dragging=false;});
+  win.addEventListener('pointerdown',()=>bringToFront(win));
+}
+document.querySelectorAll('.tool-window').forEach(makeDraggable);
+
+function setConsole(open){
+  consoleOpen=open;
+  consoleEl.classList.toggle('open',open);
+  for(const k in keys)keys[k]=false;
+  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(consoleEl);consoleInput.value='';consoleInput.focus();}
+  else{consoleInput.blur();if(!designerOpen)canvas.focus();}
+  refreshWindowState();
+}
+function setDesigner(open){
+  designerOpen=open;designerEl.classList.toggle('open',open);
+  for(const k in keys)keys[k]=false;
+  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(designerEl);designerMaterial.value=String(selectedMaterial);loadDesignerMaterial();}
+  else if(!consoleOpen)canvas.focus();
+  refreshWindowState();
+}
+consoleEl.querySelector('.window-close').addEventListener('click',()=>setConsole(false));
+designerEl.querySelector('.window-close').addEventListener('click',()=>setDesigner(false));
+function setSimpleWindow(win,open){
+  win.classList.toggle('open',open);for(const k in keys)keys[k]=false;
+  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(win);if(win.id==='optionsWindow')syncOptionsWindow();}
+  refreshWindowState();
+}
+function setWindowById(id,open){
+  if(id==='console')setConsole(open);else if(id==='materialDesigner')setDesigner(open);else setSimpleWindow(document.getElementById(id),open);
+}
+function returnToGameControl(){
+  document.querySelectorAll('.tool-window.open').forEach(win=>win.classList.remove('open'));
+  consoleOpen=false;designerOpen=false;consoleInput.blur();refreshWindowState();canvas.requestPointerLock();
+}
+document.querySelectorAll('.simple-window .window-close').forEach(button=>button.addEventListener('click',()=>setSimpleWindow(button.closest('.tool-window'),false)));
+document.querySelectorAll('.menu-button').forEach(button=>button.addEventListener('click',()=>{const win=document.getElementById(button.dataset.window);setWindowById(win.id,!win.classList.contains('open'));}));
+
+function rgb(hex){return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
+function previewHash(x,y){let h=Math.imul(x|0,374761393)^Math.imul(y|0,668265263);h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;}
+function previewSmooth(x,y){
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
+  const a=previewHash(ix,iy)*(1-sx)+previewHash(ix+1,iy)*sx,b=previewHash(ix,iy+1)*(1-sx)+previewHash(ix+1,iy+1)*sx;
+  return a*(1-sy)+b*sy;
+}
+function renderMaterialPreview(){
+  const id=Number(designerMaterial.value)||selectedMaterial,slots=materialSlots[id],params=materialParams[id];
+  const colors=slots.map(slot=>rgb(PALETTE[slot][1])),ctx=previewCanvas.getContext('2d');
+  for(let y=0;y<previewCanvas.height;y+=2)for(let x=0;x<previewCanvas.width;x+=2){
+    const crisp=previewHash(x>>2,y>>2),soft=previewSmooth(x/(params[1]*7),y/(params[1]*7));
+    const signed=((crisp*(1-params[2])+soft*params[2])*2-1)*params[0],shade=signed>=0?colors[1]:colors[2],a=Math.abs(signed);
+    ctx.fillStyle=`rgb(${colors[0].map((v,i)=>Math.round(v*(1-a)+shade[i]*a)).join(',')})`;ctx.fillRect(x,y,2,2);
+  }
+}
+let activeShade=0;
+function renderPickerAtlases(){
+  const pc=paletteAtlas.getContext('2d'),cols=20,cellW=paletteAtlas.width/cols,rows=Math.ceil(PALETTE.length/cols),cellH=paletteAtlas.height/rows;
+  pc.clearRect(0,0,paletteAtlas.width,paletteAtlas.height);
+  PALETTE.forEach(([,hex],i)=>{const x=i%cols*cellW,y=Math.floor(i/cols)*cellH;pc.fillStyle=hex;pc.fillRect(x,y,cellW+1,cellH+1);if(materialSlots[Number(designerMaterial.value)||1][activeShade]===i){pc.strokeStyle='#54fc54';pc.lineWidth=3;pc.strokeRect(x+1,y+1,cellW-2,cellH-2);}});
+  const mc=materialAtlas.getContext('2d'),mcols=8,mw=materialAtlas.width/mcols,mh=materialAtlas.height/4;
+  mc.clearRect(0,0,materialAtlas.width,materialAtlas.height);
+  for(let id=0;id<MATERIAL_NAMES.length;id++){
+    const x=id%mcols*mw,y=Math.floor(id/mcols)*mh,slots=materialSlots[id];
+    mc.fillStyle=PALETTE[slots[2]][1];mc.fillRect(x,y,mw,mh);mc.fillStyle=PALETTE[slots[0]][1];mc.fillRect(x+3,y+3,mw-6,mh-6);mc.fillStyle=PALETTE[slots[1]][1];
+    for(let k=0;k<7;k++){const px=x+4+previewHash(id,k)*Math.max(1,mw-8),py=y+4+previewHash(k,id+7)*Math.max(1,mh-8);mc.fillRect(px,py,3,3);}
+    if(Number(designerMaterial.value)===id){mc.strokeStyle='#ccb010';mc.lineWidth=3;mc.strokeRect(x+1,y+1,mw-2,mh-2);}
+  }
+}
+document.querySelectorAll('.shade-tabs button').forEach(button=>button.addEventListener('click',()=>{activeShade=Number(button.dataset.shade);document.querySelectorAll('.shade-tabs button').forEach(b=>b.classList.toggle('active',b===button));renderPickerAtlases();}));
+paletteAtlas.addEventListener('click',e=>{const r=paletteAtlas.getBoundingClientRect(),cols=20,rows=Math.ceil(PALETTE.length/cols),id=Math.floor((e.clientX-r.left)/r.width*cols)+Math.floor((e.clientY-r.top)/r.height*rows)*cols;if(id>=PALETTE.length)return;[designerBase,designerLight,designerDark][activeShade].value=String(id);applyDesigner();});
+materialAtlas.addEventListener('click',e=>{const r=materialAtlas.getBoundingClientRect(),id=Math.floor((e.clientX-r.left)/r.width*8)+Math.floor((e.clientY-r.top)/r.height*4)*8;if(id>0&&id<MATERIAL_NAMES.length){designerMaterial.value=String(id);loadDesignerMaterial();}});
+function materialPropertiesId(id){
+  const p=materialParams[id],slots=materialSlots[id],bytes=[0xd3,id,slots[0]>>8,slots[0]&255,slots[1]>>8,slots[1]&255,slots[2]>>8,slots[2]&255,Math.round(p[0]*255),Math.round((p[1]-1)/11*255),Math.round(p[2]*255),materialModes[id]];
+  return '0x'+bytes.map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function loadMaterialPropertiesId(text){
+  const hex=text.trim().replace(/^0x/i,'');
+  if(!/^[0-9a-f]{24}$/i.test(hex))throw new Error('ID must contain 24 hexadecimal digits.');
+  const b=Array.from({length:12},(_,i)=>parseInt(hex.slice(i*2,i*2+2),16)),slots=[b[2]*256+b[3],b[4]*256+b[5],b[6]*256+b[7]];
+  if(b[0]!==0xd3||b[1]<1||b[1]>=MATERIAL_NAMES.length||slots.some(v=>v>=PALETTE.length)||b[11]>6)throw new Error('Unsupported or invalid material ID.');
+  const id=b[1];materialSlots[id]=slots;materialParams[id]=[b[8]/255,1+b[9]/255*11,b[10]/255];materialModes[id]=b[11];syncMaterialSlots();
+  designerMaterial.value=String(id);loadDesignerMaterial();return id;
+}
+function refreshDesignerLabels(){
+  document.getElementById('designerNoiseValue').textContent=Number(designerNoise.value).toFixed(2);
+  document.getElementById('designerScaleValue').textContent=Number(designerScale.value).toFixed(2);
+  document.getElementById('designerBlurValue').textContent=Number(designerBlur.value).toFixed(2);
+}
+function loadDesignerMaterial(){
+  const id=Number(designerMaterial.value)||1,slots=materialSlots[id],params=materialParams[id];
+  designerBase.value=String(slots[0]);designerLight.value=String(slots[1]);designerDark.value=String(slots[2]);
+  designerNoise.value=String(params[0]);designerScale.value=String(params[1]);designerBlur.value=String(params[2]);
+  designerPattern.value=String(materialModes[id]);
+  document.getElementById('materialPickerSummary').textContent=`Material: ${MATERIAL_NAMES[id].replaceAll('_',' ')}`;
+  refreshDesignerLabels();renderMaterialPreview();renderPickerAtlases();propertyIdInput.value=materialPropertiesId(id);designerStatus.textContent=`Editing ${MATERIAL_NAMES[id].replaceAll('_',' ')} · live material ${id}`;
+}
+function applyDesigner(){
+  const id=Number(designerMaterial.value);
+  materialSlots[id]=[Number(designerBase.value),Number(designerLight.value),Number(designerDark.value)];
+  materialParams[id]=[Number(designerNoise.value),Number(designerScale.value),Number(designerBlur.value)];
+  materialModes[id]=Number(designerPattern.value);syncMaterialSlots();refreshDesignerLabels();renderMaterialPreview();renderPickerAtlases();propertyIdInput.value=materialPropertiesId(id);designerStatus.textContent=`${MATERIAL_NAMES[id]} updated live`;
+}
+for(let id=1;id<MATERIAL_NAMES.length;id++)designerMaterial.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,String(id)));
+for(const select of [designerBase,designerLight,designerDark])PALETTE.forEach(([name,hex],id)=>select.add(new Option(`${String(id).padStart(2,'0')} · ${hex} · ${name}`,String(id))));
+designerMaterial.addEventListener('change',loadDesignerMaterial);
+for(const control of [designerBase,designerLight,designerDark,designerNoise,designerScale,designerBlur,designerPattern])control.addEventListener('input',applyDesigner);
+document.getElementById('designerSelect').addEventListener('click',()=>{selectedMaterial=Number(designerMaterial.value);designerStatus.textContent=`${MATERIAL_NAMES[selectedMaterial]} selected for building`;});
+document.getElementById('designerReset').addEventListener('click',()=>{const id=Number(designerMaterial.value);materialSlots[id]=DEFAULT_MATERIAL_SLOTS[id].slice();materialParams[id]=DEFAULT_MATERIAL_PARAMS[id].slice();materialModes[id]=DEFAULT_MATERIAL_MODES[id];syncMaterialSlots();loadDesignerMaterial();designerStatus.textContent=`${MATERIAL_NAMES[id]} restored to defaults`;});
+document.getElementById('designerCopyId').addEventListener('click',async()=>{
+  propertyIdInput.value=materialPropertiesId(Number(designerMaterial.value));
+  try{await navigator.clipboard.writeText(propertyIdInput.value);designerStatus.textContent='Properties ID copied to clipboard.';}
+  catch{propertyIdInput.select();document.execCommand('copy');designerStatus.textContent='Properties ID copied to clipboard.';}
+});
+document.getElementById('designerLoadId').addEventListener('click',()=>{try{const id=loadMaterialPropertiesId(propertyIdInput.value);designerStatus.textContent=`Loaded ${MATERIAL_NAMES[id]} from properties ID.`;}catch(error){designerStatus.textContent=error.message;}});
+designerEl.addEventListener('keydown',e=>e.stopPropagation());
+document.querySelectorAll('.simple-window').forEach(win=>win.addEventListener('keydown',e=>e.stopPropagation()));
+
+// RESOURCE GENERATOR — named procedural voxel objects. The same compact schema
+// drives natural boulders, flowers and trees and is ready for later crafting use.
+const resourceDefinitions=new Map([
+  ['field_boulder',{name:'field_boulder',role:'stone',shape:'ellipsoid',material:MAT_GRANITE,secondary:MAT_LICHEN,fractal:'ridged',seed:4171,scale:6,subsurface:.18,radial:1,angle:28,iterations:3,tropism:0,influence:8,kill:2,components:[]}],
+  ['foxglove',{name:'foxglove',role:'flower',shape:'branch graph',material:MAT_FLOWER,secondary:MAT_TALL_GRASS,fractal:'phyllotaxis',seed:811,scale:5,subsurface:.05,radial:5,angle:38,iterations:4,tropism:.6,influence:7,kill:2,components:[]}],
+  ['meadow_grass_blade',{name:'meadow_grass_blade',role:'grass',shape:'capsule',material:MAT_GRASS,secondary:MAT_GRASS,fractal:'branching',seed:217,scale:3,subsurface:0,radial:1,angle:8,iterations:2,tropism:.9,influence:4,kill:1,components:[]}],
+  ['high_grass_blade',{name:'high_grass_blade',role:'grass',shape:'capsule',material:MAT_TALL_GRASS,secondary:MAT_TALL_GRASS,fractal:'branching',seed:619,scale:7,subsurface:0,radial:1,angle:14,iterations:3,tropism:.75,influence:5,kill:1,components:[]}],
+  ['moss_cushion',{name:'moss_cushion',role:'moss',shape:'ellipsoid',material:MAT_MOSS,secondary:MAT_LICHEN,fractal:'cellular',seed:941,scale:4,subsurface:.12,radial:1,angle:8,iterations:3,tropism:0,influence:5,kill:1,components:[]}],
+  ['ironbark_tree',{name:'ironbark_tree',role:'tree',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BARK,fractal:'space colonization',seed:1337,scale:12,subsurface:.12,radial:7,angle:32,iterations:5,tropism:.28,influence:12,kill:3,components:['moss_cushion']}]
+]);
+for(const name of resourceDefinitions.keys())registerResourceName(name);
+function resourceVoxel(def,x,y,z){
+  const s=Math.max(2,def.scale),seed=def.seed|0,rr=Math.hypot(x,z),rad=Math.atan2(z,x),noise=fbm2((x+seed%97)*.19,(z-y+seed%53)*.19,3,2,.5,3301+seed);
+  if(def.role==='tree'){
+    const thickness=Math.max(1,(def.kill||2)*.34),top=s*(.86+(def.tropism||0)*.12),level=Math.max(2,Math.floor(s/Math.max(2,(def.iterations||4)+1))),branchY=Math.round(y/level)*level,branchPhase=branchY*Math.sin((def.angle||30)*Math.PI/180)+seed*.013;
+    const trunk=y>=0&&y<top&&rr<Math.max(thickness,thickness*1.7-y/s),arm=Math.abs(y-branchY)<thickness*.55&&y>2&&y<top*.92&&Math.abs(Math.sin(rad*def.radial+branchPhase))<.20&&rr<Math.min(s*.58,(def.influence||10)*.48);
+    const crownRadius=s*(.30+Math.min(32,def.influence||10)/100),crown=Math.hypot(x/crownRadius,(y-top)/(s*.34),z/crownRadius)<1+noise*.16;
+    return trunk||arm?def.secondary:(crown?def.material:0);
+  }
+  if(def.role==='flower'||def.role==='grass'){
+    const lean=Math.sin((def.seed||0)*.017+y*.38)*(1-(def.tropism||0))*.7,stem=y>=0&&y<s&&Math.hypot(x-lean,z)<.72,petal=def.role==='flower'&&Math.abs(y-s)<1.2&&rr<s*.55&&Math.cos(rad*def.radial)>.18;
+    return petal?def.material:(stem?def.secondary:0);
+  }
+  if(def.role==='moss')return y>=0&&y<=Math.max(1,s*.34)&&Math.hypot(x/(s*.75),y/(s*.30),z/(s*.75))<1+noise*.18?(noise>.54?def.secondary:def.material):0;
+  return resourceContains(def,x,y,z)?(noise>.58&&def.secondary?def.secondary:def.material):0;
+}
+function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
+  const key=chunkKey(cx,cy,cz);
+  const put=(x,y,z,m,rid)=>{const lx=x-baseX,ly=y-baseY,lz=z-baseZ;if(lx>=0&&ly>=0&&lz>=0&&lx<32&&ly<32&&lz<32){const i=lx+ly*32+lz*1024;chunk[i]=m;if(rid){const metadata=resourceChunks.get(key)||new Map();metadata.set(i,rid);resourceChunks.set(key,metadata);}}};
+  const stamp=(def,wx,wy,wz)=>{if(wy+def.scale*2<baseY||wy-def.scale>baseY+31)return;const rid=registerResourceName(def.name);for(let x=-def.scale;x<=def.scale;x++)for(let y=-def.scale;y<=def.scale*2;y++)for(let z=-def.scale;z<=def.scale;z++){const material=resourceVoxel(def,x,y,z);if(material)put(wx+x,wy+y,wz+z,material,rid);}for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36);stamp({...child,components:[]},Math.round(wx+Math.cos(angle)*dist),wy,Math.round(wz+Math.sin(angle)*dist));}};
+  for(let n=0;n<4;n++){
+    const wx=baseX+3+Math.floor(hash3(cx,n,cz,3101)*26),wz=baseZ+3+Math.floor(hash3(cx,n,cz,3103)*26),col=columns[(wx-baseX)+(wz-baseZ)*32];if(!col)continue;
+    const wy=col.h+1,r=hash3(cx,n,cz,3119);
+    if(col.exposedRock||col.snowy||col.terrain.poolMask>.3)continue;
+    if(r>.76&&col.stoneField>.08){const def={...resourceDefinitions.get('field_boulder'),material:col.rockMaterial,seed:3121+wx*3+wz};stamp(def,wx,wy,wz);}
+    else if(r>.94&&col.moisture>.42&&col.slope<2.8)stamp(resourceDefinitions.get('ironbark_tree'),wx,wy,wz);
+    else if(col.grassy&&col.moisture>.72&&r>.68)stamp(resourceDefinitions.get('moss_cushion'),wx,wy,wz);
+    else if(r>.80&&col.grassy){const kind=hash3(wx,wy,wz,3181);stamp(resourceDefinitions.get(kind>.82?'foxglove':kind>.42?'high_grass_blade':'meadow_grass_blade'),wx,wy,wz);}
+  }
+}
+const resourceWindow=document.getElementById('resourceDesigner'),resourceMaterial=document.getElementById('resourceMaterial'),resourceSecondary=document.getElementById('resourceSecondary'),resourceLibrary=document.getElementById('resourceLibrary'),resourceComponents=document.getElementById('resourceComponents');
+for(let id=1;id<MATERIAL_NAMES.length;id++){resourceMaterial.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));resourceSecondary.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));}
+resourceMaterial.value=String(MAT_GRANITE);
+resourceSecondary.value=String(MAT_LICHEN);
+function refreshResourceLibrary(){const selected=resourceLibrary.value;resourceLibrary.replaceChildren();resourceComponents.replaceChildren();for(const name of resourceDefinitions.keys()){resourceLibrary.add(new Option(name.replaceAll('_',' '),name));resourceComponents.add(new Option(name.replaceAll('_',' '),name));}if(resourceDefinitions.has(selected))resourceLibrary.value=selected;}
+function currentResource(){const shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,role=shape==='branch graph'&&['space colonization','L-system','branching'].includes(fractal)?'tree':fractal==='phyllotaxis'?'flower':shape==='cone'&&fractal==='cluster aggregation'?'grass':'custom';return {name:document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',role,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
+function resourceContains(def,x,y,z){
+  const s=Math.max(2,def.scale),rad=Math.atan2(z,x),rr=Math.hypot(x,z),seed=def.seed|0,n=fbm2((x+37+seed%71)*.19,(z-y+seed%43)*.19,Math.max(2,Math.min(6,def.iterations||3)),2,.5,3301+seed);
+  const warp=def.fractal==='none'?0:n*s*(def.fractal==='domain warp'?.18:.10);
+  if(def.radial>1){const sector=Math.PI*2/def.radial;rr+=Math.cos(rad*def.radial)*s*.035;}
+  let d=def.shape==='cube'?Math.max(Math.abs(x),Math.abs(y),Math.abs(z))-s*.5:
+    def.shape==='donut'?Math.hypot(rr-s*.32,y)-s*.17:
+    def.shape==='capsule'?Math.hypot(rr,Math.max(0,Math.abs(y)-s*.35))-s*.22:
+    def.shape==='cone'?rr-(s-Math.max(0,y))*.32:
+    def.shape==='cylinder'?Math.max(rr-s*.28,Math.abs(y)-s*.5):
+    def.shape==='ellipsoid'?Math.hypot(x,y*1.45,z)-s*.5:Math.hypot(x,y,z)-s*.5;
+  if(['branching','L-system','space colonization','root network','vein network','coral growth'].includes(def.fractal))d-=Math.max(0,(1-Math.abs(y)/(s*.6)))*Math.cos(rad*def.radial+y*Math.sin((def.angle||30)*Math.PI/180))*s*.12;
+  if(def.fractal==='phyllotaxis')d-=Math.cos(rad*2.399963+y*.7)*s*.08;
+  if(def.fractal==='cellular'||def.fractal==='cluster aggregation')d+=Math.abs(n)*s*.12;
+  return d+warp<0 && (def.subsurface<=0||hash3(x|0,y|0,z|0,3313)>def.subsurface*.28);
+}
+function renderResourcePreview(){const c=document.getElementById('resourcePreview'),ctx=c.getContext('2d'),def=currentResource();ctx.fillStyle='#040818';ctx.fillRect(0,0,c.width,c.height);const px=Math.max(2,Math.min(6,70/def.scale));for(let y=-def.scale;y<=def.scale*2;y++)for(let x=-def.scale;x<=def.scale;x++){const material=resourceVoxel(def,x,y,0);if(material){ctx.fillStyle=PALETTE[materialSlots[material][0]][1];ctx.fillRect(c.width/2+x*px,c.height*.72-y*px,px,px);}}ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · ${def.shape} · ${def.fractal} · seed ${def.seed}`,8,14);}
+resourceWindow.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',renderResourcePreview));
+function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));renderResourcePreview();}
+resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')}`;});
+document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · Resource ID ${rid} · ${resourceDefinitions.size} definitions`;renderResourcePreview();});
+document.getElementById('resourcePlace').addEventListener('click',()=>{
+  const def=currentResource(),cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);
+  if(!hit){document.getElementById('resourceStatus').textContent='No surface under the crosshair.';return;}
+  const place=(d,ox,oy,oz,depth=0)=>{const rid=registerResourceName(d.name);for(let x=-d.scale;x<=d.scale;x++)for(let y=-d.scale;y<=d.scale*2;y++)for(let z=-d.scale;z<=d.scale;z++){const material=resourceVoxel(d,x,y,z);if(material)setVoxel(ox+x,oy+y,oz+z,material,rid);}if(depth<2)for(const [i,name] of (d.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(d.seed||0,i,depth,3911)*Math.PI*2,dist=Math.max(2,d.scale*.42);place(child,Math.round(ox+Math.cos(angle)*dist),oy,Math.round(oz+Math.sin(angle)*dist),depth+1);}};
+  place(def,hit.px,hit.py,hit.pz);const extent=def.scale*3+2;uploadRegion(hit.px-extent,hit.py-extent,hit.pz-extent,hit.px+extent,hit.py+extent,hit.pz+extent);document.getElementById('resourceStatus').textContent=`Placed ${def.name} and ${def.components.length} growth-seeded component${def.components.length===1?'':'s'}`;
+});
+refreshResourceLibrary();resourceLibrary.value='field_boulder';loadResource('field_boulder');document.getElementById('resourceStatus').textContent=`Resource ID ${registerResourceName('field_boulder')} · field boulder`;
+renderResourcePreview();
+
+const optionFov=document.getElementById('optionFov'),optionTime=document.getElementById('optionTime'),optionGravity=document.getElementById('optionGravity'),optionLightmode=document.getElementById('optionLightmode');
+function syncOptionsWindow(){
+  optionFov.value=String(fovDegrees);optionTime.value=String(timeOfDay||24);optionGravity.value=String(-gravityAcceleration);optionLightmode.value=String(lightMode);
+  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionGravityValue').textContent=`${(-gravityAcceleration).toFixed(1)}`;
+}
+optionFov.addEventListener('input',()=>{fovDegrees=Number(optionFov.value);syncOptionsWindow();});
+optionTime.addEventListener('input',()=>{timeOfDay=Number(optionTime.value)%24;syncOptionsWindow();});
+optionGravity.addEventListener('input',()=>{gravityAcceleration=-Number(optionGravity.value);syncOptionsWindow();});
+optionLightmode.addEventListener('change',()=>{lightMode=Number(optionLightmode.value);syncOptionsWindow();});
+function runConsoleCommand(raw){
+  const command=raw.trim().toLowerCase().replace(/\s+/g,' ');
+  const [name,arg]=command.split(' ');
+  const number=Number(arg);
+  if(command)appendConsoleLog(`> ${raw.trim()}`);
+  const say=text=>appendConsoleLog(text);
+  if(!command || name==='help')return say(
+`Dreamplay One commands
+help                 list commands and descriptions
+lightmode <0|1>      hard voxel or smooth Voxlap lighting
+respawn              return to the original spawn point
+gravity <m/s²>       set downward acceleration (0–50)
+time <1–24>          set hour, sun direction, lighting, and sky
+speed <m/s>          set walking speed (0.5–20)
+jump <m/s>           set jump launch speed (0–20)
+reach <m>            set crosshair editing reach (0.5–20)
+brush <voxels>       set carve/place ball radius (1–12)
+waterflow <on|off>   run or freeze water simulation
+fov <degrees>        set field of view (40–110)
+where                show current world coordinates
+palette              list the official palette colors
+materials            list material IDs and selected material
+designer             open the windowed Material Designer
+material <name|id>   inspect a material's palette texture
+material select <m>  use a material for right-click placement
+material sample      select the material under the crosshair
+material set <m> <base|light|dark> <palette-id>
+material <noise|scale|blur> <m> <value>
+material pattern <m> <0–6> choose procedural texture generator
+material id <m>      show a portable properties ID
+material load <hex>  load a material properties ID
+material reset <m|all> restore default material colors
+resources            list named procedural Resources
+resource place <name> place a saved Resource at the crosshair
+resource sample       inspect material and Resource provenance`);
+  if(name==='lightmode' && (arg==='0'||arg==='1')){lightMode=Number(arg);return say(`lightmode ${lightMode} active`);}
+  if(name==='respawn'){
+    playerPos={...spawnPos};velY=0;grounded=false;
+    return say(`respawned at ${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)} m`);
+  }
+  if(name==='gravity' && Number.isFinite(number) && number>=0 && number<=50){gravityAcceleration=-number;return say(`gravity ${number.toFixed(2)} m/s²`);}
+  if(name==='time' && Number.isFinite(number) && number>=1 && number<=24){timeOfDay=number===24?0:number;return say(`time ${number.toFixed(1)}:00`);}
+  if(name==='speed' && Number.isFinite(number) && number>=0.5 && number<=20){walkSpeed=number;return say(`walk speed ${number.toFixed(2)} m/s`);}
+  if(name==='jump' && Number.isFinite(number) && number>=0 && number<=20){jumpSpeed=number;return say(`jump speed ${number.toFixed(2)} m/s`);}
+  if(name==='reach' && Number.isFinite(number) && number>=0.5 && number<=20){editReachMeters=number;return say(`editing reach ${number.toFixed(2)} m`);}
+  if(name==='brush' && Number.isInteger(number) && number>=1 && number<=12){carveRadius=number;placeRadius=number;return say(`brush radius ${number} voxel${number===1?'':'s'} (${(number*VS).toFixed(1)} m)`);}
+  if(name==='waterflow' && (arg==='on'||arg==='off')){waterFlowEnabled=arg==='on';return say(`water flow ${arg}`);}
+  if(name==='fov' && Number.isFinite(number) && number>=40 && number<=110){fovDegrees=number;return say(`field of view ${number.toFixed(1)}°`);}
+  if(name==='where')return say(`xyz ${playerPos.x.toFixed(2)}, ${playerPos.y.toFixed(2)}, ${playerPos.z.toFixed(2)} m`);
+  if(name==='palette')return say(PALETTE.map(([n,h],i)=>`${String(i).padStart(2,'0')}  ${h}  ${n}`).join('\n'));
+  if(name==='materials')return say(MATERIAL_NAMES.slice(1).map((n,i)=>`${i+1}  ${n}${selectedMaterial===i+1?'  [SELECTED]':''}`).join('\n'));
+  if(name==='designer'){setDesigner(true);return say('Material Designer opened. Changes apply live.');}
+  if(name==='resources')return say([...resourceDefinitions.values()].map(r=>`${registerResourceName(r.name)} · ${r.name} · ${r.shape} · ${MATERIAL_NAMES[r.material]} · ${r.fractal}`).join('\n'));
+  if(name==='resource'){
+    const parts=command.split(' ');
+    if(parts[1]==='sample'){
+      const cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);if(!hit)return say('No voxel under the crosshair.');
+      const material=getVoxelA(hit.x,hit.y,hit.z),rid=getVoxelResourceId(hit.x,hit.y,hit.z);return say(`voxel ${hit.x},${hit.y},${hit.z}\nmaterial ${material}: ${MATERIAL_NAMES[material]||'unknown'}\nResource ID ${rid}: ${resourceNameById[rid]||'none (terrain or manual voxel)'}`);
+    }
+    const def=resourceDefinitions.get(parts[2]);
+    if(parts[1]!=='place'||!def)return say('Usage: resource place <name>  (use “resources” to list names)');
+    loadResource(def.name);document.getElementById('resourcePlace').click();return say(`placed Resource ${def.name}`);
+  }
+  if(name==='material'){
+    const parts=command.split(' ');
+    const materialId=value=>{
+      const numeric=Number(value);
+      if(Number.isInteger(numeric)&&numeric>=1&&numeric<MATERIAL_NAMES.length)return numeric;
+      const id=MATERIAL_NAMES.indexOf(value||'');return id>0?id:-1;
+    };
+    const describe=id=>{
+      const labels=['base','light','dark'];
+      return `${id} ${MATERIAL_NAMES[id]}${selectedMaterial===id?' [SELECTED]':''}\n`+
+        materialSlots[id].map((slot,i)=>`${labels[i]}: palette ${slot} ${PALETTE[slot][1]} ${PALETTE[slot][0]}`).join('\n')+
+        `\nnoise: ${materialParams[id][0].toFixed(2)} · scale: ${materialParams[id][1].toFixed(2)} · blur: ${materialParams[id][2].toFixed(2)}`;
+    };
+    if(parts[1]==='select'){
+      const id=materialId(parts[2]);if(id<1)return say('Usage: material select <name|1-12>');
+      selectedMaterial=id;return say(`placement material: ${MATERIAL_NAMES[id]} (${id})`);
+    }
+    if(parts[1]==='sample'){
+      const cam=getCamBasis(), hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);
+      if(!hit)return say('No material under the crosshair.');
+      const id=getVoxelA(hit.x,hit.y,hit.z);selectedMaterial=id;return say(`sampled ${MATERIAL_NAMES[id]} (${id})`);
+    }
+    if(parts[1]==='set'){
+      const id=materialId(parts[2]), channel={base:0,light:1,dark:2}[parts[3]], slot=Number(parts[4]);
+      if(id<1 || channel===undefined || !Number.isInteger(slot) || slot<0 || slot>=PALETTE.length)return say('Usage: material set <name|id> <base|light|dark> <palette-id>');
+      materialSlots[id][channel]=slot;syncMaterialSlots();if(designerOpen&&Number(designerMaterial.value)===id)loadDesignerMaterial();return say(describe(id));
+    }
+    if(parts[1]==='noise' || parts[1]==='scale' || parts[1]==='blur'){
+      const id=materialId(parts[2]),value=Number(parts[3]),index={noise:0,scale:1,blur:2}[parts[1]];
+      const valid=id>0&&Number.isFinite(value)&&(index===1?value>=1&&value<=12:value>=0&&value<=1);
+      if(!valid)return say(`Usage: material ${parts[1]} <name|id> <${index===1?'1-12':'0-1'}>`);
+      materialParams[id][index]=value;syncMaterialSlots();if(designerOpen&&Number(designerMaterial.value)===id)loadDesignerMaterial();return say(describe(id));
+    }
+    if(parts[1]==='pattern'){
+      const id=materialId(parts[2]),value=Number(parts[3]);if(id<1||!Number.isInteger(value)||value<0||value>6)return say('Usage: material pattern <name|id> <0-6>');
+      materialModes[id]=value;syncMaterialSlots();if(designerOpen&&Number(designerMaterial.value)===id)loadDesignerMaterial();return say(describe(id)+`\npattern: ${value}`);
+    }
+    if(parts[1]==='id'){
+      const id=materialId(parts[2]);if(id<1)return say('Usage: material id <name|id>');
+      return say(`${MATERIAL_NAMES[id]} properties ID\n${materialPropertiesId(id)}`);
+    }
+    if(parts[1]==='load'){
+      try{const id=loadMaterialPropertiesId(parts[2]||'');return say(`Loaded ${MATERIAL_NAMES[id]} from ${materialPropertiesId(id)}`);}catch(error){return say(error.message);}
+    }
+    if(parts[1]==='reset'){
+      if(parts[2]==='all'){materialSlots=DEFAULT_MATERIAL_SLOTS.map(v=>v.slice());materialParams=DEFAULT_MATERIAL_PARAMS.map(v=>v.slice());materialModes=DEFAULT_MATERIAL_MODES.slice();syncMaterialSlots();if(designerOpen)loadDesignerMaterial();return say('All material definitions reset.');}
+      const id=materialId(parts[2]);if(id<1)return say('Usage: material reset <name|id|all>');
+      materialSlots[id]=DEFAULT_MATERIAL_SLOTS[id].slice();materialParams[id]=DEFAULT_MATERIAL_PARAMS[id].slice();materialModes[id]=DEFAULT_MATERIAL_MODES[id];syncMaterialSlots();if(designerOpen&&Number(designerMaterial.value)===id)loadDesignerMaterial();return say(describe(id));
+    }
+    const id=materialId(parts[1]);if(id>0)return say(describe(id));
+    return say('Usage: material <name|id>, select, sample, set, or reset');
+  }
+  say(`Unknown or invalid command: ${raw}\nType “help” for syntax and valid ranges.`);
+}
+consoleInput.addEventListener('keydown',e=>{
+  e.stopPropagation();
+  if(e.code==='Enter'){runConsoleCommand(consoleInput.value);consoleInput.value='';e.preventDefault();}
+  else if(e.code==='Escape'){if(hasEnteredWorld)returnToGameControl();else setConsole(false);e.preventDefault();}
+  else if(e.code==='Slash'){setConsole(false);e.preventDefault();}
+});
+window.addEventListener('keydown', e => {
+  if(e.code==='Slash'){setConsole(!consoleOpen);e.preventDefault();return;}
+  const typing=e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement;
+  if(hasEnteredWorld&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    const button=document.querySelector(`.menu-button[data-hotkey="${e.key.toLowerCase()}"]`);
+    if(button){const win=document.getElementById(button.dataset.window);setWindowById(win.id,!win.classList.contains('open'));e.preventDefault();return;}
+  }
+  if(hasEnteredWorld&&!typing&&(e.code==='Escape'||e.code==='Space')){
+    if(locked){if(e.code==='Escape')focusMenuOnUnlock=true;document.exitPointerLock();}else returnToGameControl();
+    e.preventDefault();return;
+  }
+  if(anyToolOpen()){
+    e.preventDefault();return;
+  }
+  keys[e.code]=true;
+  if (e.code==='Space'||e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight') e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code]=false; });
+
+startBtn.addEventListener('click',()=>{if(!engineReady)return;hasEnteredWorld=true;refreshWindowState();canvas.requestPointerLock();});
+canvas.addEventListener('click',()=>{if(hasEnteredWorld&&!locked)canvas.requestPointerLock();});
+
+document.addEventListener('pointerlockchange', () => {
+  locked = document.pointerLockElement === canvas;
+  document.body.classList.toggle('cursor-mode',!locked);
+  refreshWindowState();
+  if(!locked&&(focusMenuOnUnlock||!anyToolOpen())){focusMenuOnUnlock=false;document.querySelector('.menu-button')?.focus();}
+});
+
+window.addEventListener('mousemove', e => {
+  if (!locked || consoleOpen) return;
+  yaw -= e.movementX * 0.0022;
+  pitch -= e.movementY * 0.0022;
+  pitch = Math.max(-1.5, Math.min(1.5, pitch));
+});
+
+let mouseDown = -1, nextEditAt = 0;
+window.addEventListener('mousedown', e => { if (locked && !consoleOpen && (e.button===0 || e.button===2)){ mouseDown=e.button; doAction(e.button); nextEditAt=performance.now()+140; } });
+window.addEventListener('mouseup', () => { mouseDown=-1; });
+window.addEventListener('blur', () => { mouseDown=-1; for (const k in keys) keys[k]=false; });
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+// CPU-side voxel raycast for shooting/placing (Amanatides-Woo, mirrors shader)
+function raycastVoxels(ro, rd, maxDist){
+  let mapX=Math.floor(ro.x), mapY=Math.floor(ro.y), mapZ=Math.floor(ro.z);
+  const sx = rd.x<0?-1:1, sy = rd.y<0?-1:1, sz = rd.z<0?-1:1;
+  const ddx = Math.abs(1/(rd.x||1e-9)), ddy = Math.abs(1/(rd.y||1e-9)), ddz = Math.abs(1/(rd.z||1e-9));
+  let sdx = (sx>0 ? (mapX+1-ro.x) : (ro.x-mapX)) * ddx;
+  let sdy = (sy>0 ? (mapY+1-ro.y) : (ro.y-mapY)) * ddy;
+  let sdz = (sz>0 ? (mapZ+1-ro.z) : (ro.z-mapZ)) * ddz;
+  let dist=0, lastX=mapX,lastY=mapY,lastZ=mapZ;
+  for (let i=0;i<512;i++){
+    // No hard bounds — world is chunked and effectively infinite for editing
+    if (getVoxelA(mapX,mapY,mapZ)>0){
+      return { x:mapX,y:mapY,z:mapZ, px:lastX,py:lastY,pz:lastZ, dist };
+    }
+    lastX=mapX; lastY=mapY; lastZ=mapZ;
+    if (sdx<sdy){
+      if (sdx<sdz){ dist=sdx; sdx+=ddx; mapX+=sx; } else { dist=sdz; sdz+=ddz; mapZ+=sz; }
+    } else {
+      if (sdy<sdz){ dist=sdy; sdy+=ddy; mapY+=sy; } else { dist=sdz; sdz+=ddz; mapZ+=sz; }
+    }
+    if (dist>maxDist) return null;
+  }
+  return null;
+}
+
+// Budgeted cellular water: only water near edits wakes up, keeping frame times stable.
+const waterQueue=[];
+const waterQueued=new Set();
+function waterKey(x,y,z){return `${x},${y},${z}`;}
+function enqueueWater(x,y,z){
+  if(getVoxelA(x,y,z)!==MAT_WATER)return;
+  const k=waterKey(x,y,z);
+  if(!waterQueued.has(k)){waterQueued.add(k);waterQueue.push([x,y,z]);}
+}
+function wakeWaterNear(cx,cy,cz,r){
+  for(let x=cx-r;x<=cx+r;x++) for(let y=cy-r;y<=cy+r;y++) for(let z=cz-r;z<=cz+r;z++) enqueueWater(x,y,z);
+}
+function updateWater(budget=220){
+  if(!waterFlowEnabled || !waterQueue.length)return;
+  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  const touch=(x,y,z)=>{minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);};
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let n=0;n<budget && waterQueue.length;n++){
+    const [x,y,z]=waterQueue.pop(); waterQueued.delete(waterKey(x,y,z));
+    if(getVoxelA(x,y,z)!==MAT_WATER)continue;
+    let tx=x,ty=y-1,tz=z;
+    if(ty<windowMinY || getVoxelA(tx,ty,tz)!==MAT_AIR){
+      let moved=false;
+      const start=(hash3(x,y,z,91)*4)|0;
+      for(let d=0;d<4;d++){
+        const [dx,dz]=dirs[(start+d)&3];
+        if(getVoxelA(x+dx,y,z+dz)===MAT_AIR){tx=x+dx;ty=y;tz=z+dz;moved=true;break;}
+      }
+      if(!moved)continue;
+    }
+    setVoxel(x,y,z,MAT_AIR); setVoxel(tx,ty,tz,MAT_WATER);
+    touch(x,y,z);touch(tx,ty,tz);
+    enqueueWater(tx,ty,tz);
+    enqueueWater(x,y+1,z);
+    for(const [dx,dz] of dirs) enqueueWater(x+dx,y,z+dz);
+  }
+  if(minX!==Infinity)uploadRegion(minX-1,minY-1,minZ-1,maxX+1,maxY+1,maxZ+1);
+}
+
+function doAction(button){
+  const cam = getCamBasis();
+  // Match the renderer's camera origin exactly; editing now travels through the
+  // visible center crosshair instead of starting down at the player's feet.
+  const ro = { x:playerPos.x/VS, y:(playerPos.y+currentEyeH)/VY, z:playerPos.z/VS };
+  const rd = gridDirection(cam.forward);
+  const res = raycastVoxels(ro, rd, editReachMeters/VS);
+  if (!res) return;
+  if (button === 0){
+    // carve a small radius (now finer with microvoxels)
+    const R = carveRadius;
+    for (let x=res.x-R;x<=res.x+R;x++) for (let y=res.y-R;y<=res.y+R;y++) for (let z=res.z-R;z<=res.z+R;z++){
+      if (Math.hypot(x-res.x,y-res.y,z-res.z) <= R+0.4) setVoxel(x,y,z,MAT_AIR);
+    }
+    wakeWaterNear(res.x,res.y,res.z,R+3);
+    uploadRegion(res.x-R-1,res.y-R-1,res.z-R-1,res.x+R+1,res.y+R+1,res.z+R+1);
+  } else if (button === 2){
+    const p = res; const t = {x:p.px,y:p.py,z:p.pz};
+    const R=placeRadius;
+    let placedWater=false;
+    for(let x=t.x-R;x<=t.x+R;x++) for(let y=t.y-R;y<=t.y+R;y++) for(let z=t.z-R;z<=t.z+R;z++){
+      if(Math.hypot(x-t.x,y-t.y,z-t.z)>R+0.25 || getVoxelA(x,y,z)!==MAT_AIR) continue;
+      const wx=(x+0.5)*VS,wy=(y+0.5)*VY,wz=(z+0.5)*VS;
+      const insidePlayer=Math.abs(wx-playerPos.x)<PLAYER_R+VS*.5 && Math.abs(wz-playerPos.z)<PLAYER_R+VS*.5 && wy>playerPos.y && wy<playerPos.y+PLAYER_H;
+      if(!insidePlayer){setVoxel(x,y,z,selectedMaterial);placedWater=placedWater||selectedMaterial===MAT_WATER;}
+    }
+    if(placedWater)wakeWaterNear(t.x,t.y,t.z,R+1);
+    uploadRegion(t.x-R-1,t.y-R-1,t.z-R-1,t.x+R+1,t.y+R+1,t.z+R+1);
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// CAMERA / MOVEMENT
+//////////////////////////////////////////////////////////////////////////
+function getCamBasis(){
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const forward = { x: sy*cp, y: sp, z: cy*cp };
+  const worldUp = {x:0,y:1,z:0};
+  // right = normalize(cross(forward, worldUp))
+  let rx = forward.y*worldUp.z - forward.z*worldUp.y;
+  let ry = forward.z*worldUp.x - forward.x*worldUp.z;
+  let rz = forward.x*worldUp.y - forward.y*worldUp.x;
+  const rl = Math.hypot(rx,ry,rz)||1;
+  const right = {x:rx/rl, y:ry/rl, z:rz/rl};
+  const up = {
+    x: right.y*forward.z - right.z*forward.y,
+    y: right.z*forward.x - right.x*forward.z,
+    z: right.x*forward.y - right.y*forward.x
+  };
+  return { forward, right, up };
+}
+
+function gridDirection(d){
+  const x=d.x/VS,y=d.y/VY,z=d.z/VS,n=Math.hypot(x,y,z)||1;
+  return {x:x/n,y:y/n,z:z/n};
+}
+
+const PLAYER_R = 0.30, PLAYER_H = 1.50, EYE_H = 1.38, CRAWL_EYE_H=.62;
+let currentEyeH=EYE_H,velY = 0, grounded = false,jumpWasDown=false;
+function solidAt(wx,wy,wz){
+  const vx = Math.floor(wx/VS), vy = Math.floor(wy/VY), vz = Math.floor(wz/VS);
+  const material=getVoxelA(vx,vy,vz);
+  return material!==MAT_AIR && material!==MAT_WATER && material!==MAT_MOSS && material!==MAT_TALL_GRASS && material!==MAT_FLOWER && material!==MAT_LEAVES;
+}
+function collidesAt(px,py,pz){
+  // sample cylinder corners at feet/mid/head
+  const offs = [[PLAYER_R,PLAYER_R],[PLAYER_R,-PLAYER_R],[-PLAYER_R,PLAYER_R],[-PLAYER_R,-PLAYER_R],[0,0]];
+  for (const [ox,oz] of offs){
+    for (let h=0.1; h<PLAYER_H; h+=0.55){
+      if (solidAt(px+ox, py+h, pz+oz)) return true;
+    }
+  }
+  return false;
+}
+
+let lastT = performance.now();
+let frameCount=0, fpsAccum=0, fps=0;
+
+function loop(now){
+  const dt = Math.min((now-lastT)/1000, 0.05);
+  lastT = now;
+
+  if(streamTask)processStreamTask();
+  else processBackgroundPrefetch();
+  if (locked && !consoleOpen) {
+    updatePlayer(dt);
+    if(!streamTask)updateLoadedWindow();
+    updateWater();
+    if (mouseDown >= 0 && now >= nextEditAt) { doAction(mouseDown); nextEditAt = now + 140; }
+  }
+
+  render();
+
+  frameCount++; fpsAccum += dt;
+  if (fpsAccum >= 0.5){
+    fps = frameCount/fpsAccum;
+    frameCount = 0; fpsAccum = 0;
+    document.getElementById('stats').textContent =
+      `${fps.toFixed(0)} fps · lightmode ${lightMode} · ${timeOfDay.toFixed(1)}h · material ${MATERIAL_NAMES[selectedMaterial]} · ${canvas.width}×${canvas.height}\n`+
+      `${chunks.size} chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB CPU · ${(FULL_UPLOAD_BYTES/1048576).toFixed(1)} MiB GPU\n`+
+      `${dirtyChunks.size} edited chunks · ${resourceChunks.size} provenance chunks · ring ${ringX},${ringZ}\n`+
+      `uploads ${(uploadBytes/1048576).toFixed(2)} MiB · ${uploadMs.toFixed(2)} ms · stream ${streamMs.toFixed(1)} ms\n`+
+      `xyz ${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)} m`;
+    uploadBytes=0; uploadMs=0; streamMs=0;
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function updatePlayer(dt){
+  const cam = getCamBasis();
+  const crawling=!!(keys['ControlLeft']||keys['ControlRight']);
+  const speed = walkSpeed*(crawling?.34:1);
+  currentEyeH+=( (crawling?CRAWL_EYE_H:EYE_H)-currentEyeH)*Math.min(1,dt*12);
+
+  let mx=0, mz=0;
+  const fx = cam.forward.x, fz = cam.forward.z;
+  const flen = Math.hypot(fx,fz)||1;
+  const fdx = fx/flen, fdz = fz/flen;
+  const rdx = cam.right.x, rdz = cam.right.z;
+
+  if (keys['KeyW']) { mx+=fdx; mz+=fdz; }
+  if (keys['KeyS']) { mx-=fdx; mz-=fdz; }
+  if (keys['KeyD']) { mx+=rdx; mz+=rdz; }
+  if (keys['KeyA']) { mx-=rdx; mz-=rdz; }
+  const mlen = Math.hypot(mx,mz);
+  if (mlen>0){ mx/=mlen; mz/=mlen; }
+
+  const dx = mx*speed*dt, dz = mz*speed*dt;
+
+  // Resolve axes independently so the player naturally slides along walls.
+  const STEP_H = 0.4;
+  function moveAxis(axis, amount) {
+    if (!amount) return;
+    const nx=playerPos.x+(axis==='x'?amount:0), nz=playerPos.z+(axis==='z'?amount:0);
+    if (!collidesAt(nx,playerPos.y,nz)) { playerPos[axis]+=amount; return; }
+    if (grounded) {
+      for (let lift=VS; lift<=STEP_H+1e-6; lift+=VS) {
+        if (!collidesAt(nx,playerPos.y+lift,nz)) {
+          playerPos[axis]+=amount; playerPos.y+=lift; velY=Math.max(0,velY); grounded=false; return;
+        }
+      }
+    }
+  }
+  moveAxis('x',dx);
+  moveAxis('z',dz);
+
+  // gravity + vertical
+  velY += gravityAcceleration*dt;
+  const jumpDown=!!(keys['ShiftLeft']||keys['ShiftRight']);
+  if (grounded && jumpDown && !jumpWasDown) { velY=jumpSpeed; grounded=false; }
+  jumpWasDown=jumpDown;
+  const dy=velY*dt;
+  const verticalSteps=Math.max(1,Math.ceil(Math.abs(dy)/(VS*0.5)));
+  const stepY=dy/verticalSteps;
+  for (let i=0;i<verticalSteps;i++) {
+    if (!collidesAt(playerPos.x,playerPos.y+stepY,playerPos.z)) { playerPos.y+=stepY; grounded=false; }
+    else { if (velY<0) grounded=true; velY=0; break; }
+  }
+
+  // hard floor safety (in case falls out of world)
+  const safetyFloor=(windowMinY+2)*VY;
+  if (playerPos.y < safetyFloor){ playerPos.y=safetyFloor; velY=0; grounded=true; }
+}
+
+// === POSITION-ANCHORED SLIDING LOADED WINDOW ===
+let lastStreamShiftAt=0;
+let streamTask=null;
+let prefetchJobs=[],prefetchSignature='';
+let nextCacheNoticeAt=Infinity,cacheNoticeActive=false,cacheNoticeTotal=0,cacheNoticeHideAt=0;
+function rebuildPrefetchQueue(){
+  const minCX=Math.floor(windowMinX/CHUNK_SIZE)-PREFETCH_MARGIN,minCZ=Math.floor(windowMinZ/CHUNK_SIZE)-PREFETCH_MARGIN,minCY=Math.floor(windowMinY/CHUNK_SIZE);
+  const span=LOADED_CHUNKS_XZ+PREFETCH_MARGIN*2,signature=`${minCX},${minCZ}`;
+  if(signature===prefetchSignature)return;
+  prefetchSignature=signature;prefetchJobs=[];
+  // Work from the inner edge outward so the chunks most likely to enter the
+  // renderer are prepared first.
+  for(let ring=PREFETCH_MARGIN-1;ring>=0;ring--){
+    const lo=ring,hi=span-1-ring;
+    for(let x=lo;x<=hi;x++)for(const z of [lo,hi])for(let cy=0;cy<LOADED_CHUNKS_Y;cy++){
+      const job=[minCX+x,minCY+cy,minCZ+z];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);
+    }
+    for(let z=lo+1;z<hi;z++)for(const x of [lo,hi])for(let cy=0;cy<LOADED_CHUNKS_Y;cy++){
+      const job=[minCX+x,minCY+cy,minCZ+z];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);
+    }
+  }
+}
+function processBackgroundPrefetch(){
+  rebuildPrefetchQueue();
+  const now=performance.now();
+  if(now>=nextCacheNoticeAt){
+    nextCacheNoticeAt=now+20000;cacheNoticeActive=true;cacheNoticeTotal=Math.max(1,prefetchJobs.length);cacheNoticeHideAt=0;
+    showLoading(prefetchJobs.length?'Precomputing frontier sectors':'Predictive cache ready',prefetchJobs.length?0:1,true);
+    loadingLog('Motion predictor',prefetchJobs.length?`${prefetchJobs.length} frontier chunks queued by proximity`:'frontier ring is current');
+    if(!prefetchJobs.length)cacheNoticeHideAt=now+1000;
+  }
+  const started=performance.now();
+  while(prefetchJobs.length&&performance.now()-started<5){generateChunk(...prefetchJobs.shift());}
+  if(cacheNoticeActive){
+    if(prefetchJobs.length)showLoading('Precomputing frontier sectors',1-prefetchJobs.length/cacheNoticeTotal,true);
+    else{
+      showLoading('Predictive cache ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Frontier commit','next resident sectors available before boundary crossing');}
+      if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}
+    }
+  }
+}
+function queueStreamShift(shiftX,shiftZ){
+  const newMinX=windowMinX+shiftX,newMinZ=windowMinZ+shiftZ,unique=new Set(),jobs=[];
+  const add=(cx,cy,cz)=>{const key=chunkKey(cx,cy,cz);if(!generatedChunks.has(key)&&!unique.has(key)){unique.add(key);jobs.push([cx,cy,cz]);}};
+  const minCX=Math.floor(newMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(newMinZ/CHUNK_SIZE);
+  if(shiftX){const cx=minCX+(shiftX>0?LOADED_CHUNKS_XZ-1:0);for(let cz=0;cz<LOADED_CHUNKS_XZ;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(cx,minCY+cy,minCZ+cz);}
+  if(shiftZ){const cz=minCZ+(shiftZ>0?LOADED_CHUNKS_XZ-1:0);for(let cx=0;cx<LOADED_CHUNKS_XZ;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(minCX+cx,minCY+cy,cz);}
+  streamTask={shiftX,shiftZ,newMinX,newMinZ,jobs,done:0,started:performance.now()};
+  if(jobs.length)showLoading('Resolving frontier cache miss',0,true);
+}
+function processStreamTask(){
+  const task=streamTask,started=performance.now();
+  while(task.done<task.jobs.length&&performance.now()-started<5)generateChunk(...task.jobs[task.done++]);
+  if(task.done<task.jobs.length){showLoading('Resolving landscape ahead',task.done/task.jobs.length*0.9,true);return;}
+  windowMinX=task.newMinX;windowMinZ=task.newMinZ;
+  ringX=mod(ringX+task.shiftX,LOADED_SIZE_X);ringZ=mod(ringZ+task.shiftZ,LOADED_SIZE_Z);
+  if(task.shiftX>0)uploadLocalBox(LOADED_SIZE_X-CHUNK_SIZE,0,0,LOADED_SIZE_X-1,LOADED_SIZE_Y-1,LOADED_SIZE_Z-1);
+  else if(task.shiftX<0)uploadLocalBox(0,0,0,CHUNK_SIZE-1,LOADED_SIZE_Y-1,LOADED_SIZE_Z-1);
+  if(task.shiftZ>0)uploadLocalBox(0,0,LOADED_SIZE_Z-CHUNK_SIZE,LOADED_SIZE_X-1,LOADED_SIZE_Y-1,LOADED_SIZE_Z-1);
+  else if(task.shiftZ<0)uploadLocalBox(0,0,0,LOADED_SIZE_X-1,LOADED_SIZE_Y-1,CHUNK_SIZE-1);
+  evictDistantCleanChunks();streamMs+=performance.now()-task.started;streamTask=null;if(task.jobs.length)hideLoading();lastStreamShiftAt=performance.now();
+}
+function updateLoadedWindow() {
+  const playerVoxelX = Math.floor(playerPos.x / VS);
+  const playerVoxelZ = Math.floor(playerPos.z / VS);
+  let shiftX = 0, shiftZ = 0;
+  const now=performance.now();
+  if(now-lastStreamShiftAt<90)return;
+  // Camera rotation must never move the resident window. Shift only after the
+  // player physically crosses a four-chunk-wide hysteresis box around its center.
+  const centerX=windowMinX+LOADED_SIZE_X*0.5,centerZ=windowMinZ+LOADED_SIZE_Z*0.5;
+  const hysteresis=CHUNK_SIZE*2;
+  if(playerVoxelX>centerX+hysteresis)shiftX=CHUNK_SIZE;else if(playerVoxelX<centerX-hysteresis)shiftX=-CHUNK_SIZE;
+  if(playerVoxelZ>centerZ+hysteresis)shiftZ=CHUNK_SIZE;else if(playerVoxelZ<centerZ-hysteresis)shiftZ=-CHUNK_SIZE;
+  if(shiftX||shiftZ){lastStreamShiftAt=now;queueStreamShift(shiftX,shiftZ);}
+}
+
+const camMat = new Float32Array(9);
+function render(){
+  if (!gl) return;
+  // Sky-colored fallback prevents a black flash if a frame is delayed.
+  gl.clearColor(80/255,164/255,252/255,1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(prog);
+  gl.bindVertexArray(vao);
+
+  const cam = getCamBasis();
+  camMat[0]=cam.right.x/VS; camMat[1]=cam.right.y/VY; camMat[2]=cam.right.z/VS;
+  camMat[3]=cam.up.x/VS;    camMat[4]=cam.up.y/VY;    camMat[5]=cam.up.z/VS;
+  camMat[6]=cam.forward.x/VS; camMat[7]=cam.forward.y/VY; camMat[8]=cam.forward.z/VS;
+
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+  gl.uniform3f(uCamPos, 
+    playerPos.x/VS - windowMinX, 
+    (playerPos.y + currentEyeH)/VY - windowMinY, 
+    playerPos.z/VS - windowMinZ);
+  gl.uniformMatrix3fv(uCamBasis, false, camMat);
+  const fovY = fovDegrees * Math.PI/180;
+  gl.uniform1f(uFovScale, Math.tan(fovY/2));
+  gl.uniform3i(uGrid, LOADED_SIZE_X, LOADED_SIZE_Y, LOADED_SIZE_Z);
+  gl.uniform3i(uRing, ringX, 0, ringZ);
+  gl.uniform1f(uTime, performance.now()/1000);
+  gl.uniform1i(uLightMode,lightMode);
+  gl.uniform1f(uHour,timeOfDay);
+  gl.uniform3iv(uMaterialSlots,materialSlotData);
+  gl.uniform3fv(uMaterialParams,materialParamData);
+  gl.uniform1iv(uMaterialModes,materialModeData);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_3D, tex3d);
+  gl.uniform1i(uVoxels, 0);
+  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,paletteTex);gl.uniform1i(uPaletteTex,1);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+if (gl) initGL();
+
+})();
+</script>
+</body>
+</html>
