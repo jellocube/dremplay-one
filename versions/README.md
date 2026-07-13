@@ -1,0 +1,33 @@
+# Dreamplay One version archive
+
+Every recovered release is preserved here as a self-contained runtime.
+
+Latest release: [v0.0.1.0.16](./dreamplay-one-v0.0.1.0.16/)
+
+- [v0.8.0](./dreamplay-one-v0.8.0/)
+- [v0.8.1](./dreamplay-one-v0.8.1/)
+- [v0.8.2](./dreamplay-one-v0.8.2/)
+- [v0.9.0](./dreamplay-one-v0.9.0/)
+- [v0.9.1](./dreamplay-one-v0.9.1/)
+- [v0.9.2](./dreamplay-one-v0.9.2/)
+- [v0.9.3](./dreamplay-one-v0.9.3/)
+- [v0.9.4](./dreamplay-one-v0.9.4/)
+- [v0.9.5](./dreamplay-one-v0.9.5/)
+- [v0.9.6](./dreamplay-one-v0.9.6/)
+- [v0.0.1](./dreamplay-one-v0.0.1/)
+- [v0.0.1.0.1](./dreamplay-one-v0.0.1.0.1/)
+- [v0.0.1.0.2](./dreamplay-one-v0.0.1.0.2/)
+- [v0.0.1.0.3](./dreamplay-one-v0.0.1.0.3/)
+- [v0.0.1.0.4](./dreamplay-one-v0.0.1.0.4/)
+- [v0.0.1.0.5](./dreamplay-one-v0.0.1.0.5/)
+- [v0.0.1.0.6](./dreamplay-one-v0.0.1.0.6/)
+- [v0.0.1.0.7](./dreamplay-one-v0.0.1.0.7/)
+- [v0.0.1.0.8](./dreamplay-one-v0.0.1.0.8/)
+- [v0.0.1.0.9](./dreamplay-one-v0.0.1.0.9/)
+- [v0.0.1.0.10](./dreamplay-one-v0.0.1.0.10/)
+- [v0.0.1.0.11](./dreamplay-one-v0.0.1.0.11/)
+- [v0.0.1.0.12](./dreamplay-one-v0.0.1.0.12/)
+- [v0.0.1.0.13](./dreamplay-one-v0.0.1.0.13/)
+- [v0.0.1.0.14](./dreamplay-one-v0.0.1.0.14/)
+- [v0.0.1.0.15](./dreamplay-one-v0.0.1.0.15/)
+- [v0.0.1.0.16](./dreamplay-one-v0.0.1.0.16/)
