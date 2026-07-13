@@ -1,6 +1,22 @@
 # Dremplay One
 
-Current release: **v0.0.1.0.19.1**
+Current release: **v0.0.1.0.19.3**
+
+## v0.0.1.0.19.3 four-range voxel LOD fix
+
+- Added an exact distance ladder measured in feet: 5 cm microvoxels from 0–20 ft, authoritative 10 cm voxels from 20–50 ft, merged 20 cm voxels from 50–250 ft, and the compact kilometer terrain atlas from 250 ft onward.
+- Added a dedicated 20 cm DDA traversal that consumes two stable opposite-corner samples per merged cell. It halves distant traversal iterations without allocating another 3D texture, regenerating material noise, or adding streaming uploads.
+- Kept one authoritative 10 cm world beneath every level. Merged hits retain their source material coordinate, so official-palette materials, soft lighting, water shading, Resource identity, collision, and editing do not change at LOD boundaries.
+- Gated the far-terrain intersection to 76.2 m / 250 ft so the atlas cannot replace nearby tree, plant, rock, or terrain silhouettes prematurely.
+- Updated Options and the About panel to report the complete physical LOD ladder. Quality and Balanced use the requested 20/50/250 ft boundaries; Performance may disable only the 5 cm foreground pass.
+
+## v0.0.1.0.19.2 natural microdetail fix
+
+- Rebuilt generated grass Resources as continuous one-cell-wide 5 cm blades. Dense ground remains a stable carpet, while isolated meadow, slope and tall-grass parents resolve into individually readable blades with their existing wind lean and varied height.
+- Replaced blocky leaf fragments with small, coherent horizontal or angled 5 cm leaf plates. Orientation varies by stable growth seed, fine palette shades preserve vein-like detail, and the coarse parent canopy remains available to the distant LOD.
+- Rounded submerged stream pebbles and geological grains by removing a stable minority of their fine corner cells. Pebbles retain one simple coarse interaction target and Resource provenance even though their near silhouette is more natural.
+- Replaced noisy bark corner erosion with deterministic supported-corner rounding. Thick trunks and branches receive even circular outlines at 5 cm; thin saplings stay complete and consistent instead of randomly losing cells.
+- Matched the Resource Editor preview to the runtime rules for grass columns, leaf plates, flowers, grains and rounded wood, while retaining automatic fit for large trees.
 
 ## v0.0.1.0.19.1 microvoxel model bugfix
 
