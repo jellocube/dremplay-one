@@ -3,98 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-  <meta name="theme-color" content="#080b0c">
-  <title>Dremplay One v0.0.1.2 — Infinite Detail Engine</title>
-  <link rel="stylesheet" href="styles.css?v=0.0.1.2">
+  <meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate">
+  <title>Dremplay One v0.0.1.3 — Infinite Detail Engine</title>
+  <link rel="stylesheet" href="styles.css?v=0.0.1.3">
 </head>
 <body>
-  <canvas id="world" aria-label="Dremplay One hierarchical voxel world"></canvas>
-
-  <nav id="menu" aria-label="Engine windows">
-    <button data-window="console">[/] Console</button>
-    <button data-window="materials">[M] Materials</button>
-    <button data-window="resources">[R] Resources</button>
-    <button data-window="server">[F10] Server</button>
-    <button data-window="options">[F12] Options</button>
-    <button data-window="mods">[F11] Mods</button>
-    <button data-window="help">[F1] Help</button>
-    <button data-window="about">[F2] About</button>
-  </nav>
-
-  <section id="hud">
-    <div class="brand">Dremplay One <span>v0.0.1.2 · Hierarchical Infinite Detail Voxels</span></div>
-    <div id="telemetry">Starting renderer…</div>
-  </section>
-
-  <div id="crosshair" aria-hidden="true"></div>
-  <div id="controls">WASD move　 Shift jump　 Ctrl crawl　 LMB carve ball　 RMB add ball　 Space cursor　 / console　 Esc go back</div>
-
-  <main id="titleScreen">
-    <section class="title-card">
-      <p class="kicker">Infinite Detail Engine</p>
+  <canvas id="world" aria-label="Adaptive octree voxel world"></canvas>
+  <header><strong>Dremplay One</strong><span>v0.0.1.3 · Infinite Detail Engine · voxel prototype</span></header>
+  <aside id="stats">Starting voxel converter…</aside>
+  <div id="crosshair"></div>
+  <footer>WASD move　 Shift jump　 Ctrl crawl　 Space cursor　 Esc title</footer>
+  <main id="title">
+    <section>
+      <p class="eyebrow">Infinite Detail Engine</p>
       <h1>Dremplay One</h1>
-      <p class="version">v0.0.1.2 · Hierarchical Voxel World</p>
-      <p>Mathematical sources converted once into cached voxels, octree Resources and projected-size detail levels. Smooth lighting without walking-time regeneration.</p>
-      <div class="title-actions">
-        <button id="play" disabled>Preparing voxel hierarchy…</button>
-        <button id="testZone" disabled>Preparing test zone…</button>
-      </div>
-      <div class="links">
-        <a href="https://jellocube.me">jellocube.me</a>
-        <a href="https://jellocube.me/myar">Myar</a>
-        <a href="https://github.com/jellocube/dremplay-one">GitHub</a>
-      </div>
+      <p>Adaptive octree voxel prototype</p>
+      <p class="explain">Walk toward the tree, fern, stone and five/seven-sided crystals. Their mathematical definitions convert into progressively smaller real voxels according to projected screen size.</p>
+      <button id="play" disabled>Building initial voxel buffer…</button>
+      <div id="load"><i></i></div>
+      <pre id="log">Allocating tagged voxel buffer…</pre>
+      <nav><a href="https://jellocube.me">jellocube.me</a><a href="https://github.com/jellocube/dremplay-one">GitHub</a></nav>
     </section>
   </main>
-
-  <section class="window loading-window" id="loading" data-window-name="loading">
-    <header><span>✦ AI Loading Monitor</span><span><button data-minimize aria-label="Minimize">—</button><button data-close aria-label="Close">×</button></span></header>
-    <div class="window-body">
-      <div class="load-row"><span id="loadTask">Compiling voxel converters</span><span id="loadPercent">0%</span></div>
-      <div class="progress"><i id="loadProgress"></i></div>
-      <div id="conveyor" class="conveyor" aria-label="Current loading operations"></div>
-      <pre id="loadLog" class="log"></pre>
-    </div>
-  </section>
-
-  <section class="window hidden" id="console" data-window-name="console">
-    <header><span>Console</span><button data-close>×</button></header>
-    <div class="window-body console-body"><pre id="consoleLog" class="log"></pre><form id="consoleForm"><span>/</span><input id="consoleInput" autocomplete="off" spellcheck="false" aria-label="Console command"></form></div>
-  </section>
-
-  <section class="window hidden" id="options" data-window-name="options">
-    <header><span>Options</span><button data-close>×</button></header>
-    <div class="window-body form-grid">
-      <label>Render scale <select id="renderScale"><option value="0.5">Performance</option><option value="0.6" selected>Balanced</option><option value="1">Native</option></select></label>
-      <label>Voxel traversal <select id="quality"><option value="64">Fast</option><option value="80" selected>Balanced</option><option value="112">Highest</option></select></label>
-      <label>View distance <output>1.00 km fixed</output></label>
-      <label>Lighting <select id="lighting"><option value="1" selected>Smooth field gradient</option><option value="0">Unlit diagnostic</option></select></label>
-      <label><input id="pixelDetail" type="checkbox" checked> Distance-adaptive voxel sampling</label>
-      <label>Touch controls <select id="touchMode"><option value="auto" selected>Platform detect</option><option value="on">Always on</option><option value="off">Always off</option></select></label>
-    </div>
-  </section>
-
-  <section class="window hidden" id="resources" data-window-name="resources">
-    <header><span>Resource Field Inspector</span><button data-close>×</button></header>
-    <div class="window-body">
-      <p>Resources retain mathematical definitions and identity, then convert to tagged octree voxels at the projected detail needed by the display.</p>
-      <select id="resourceSelect"><option>Oak branching field</option><option>Fir phyllotactic field</option><option>Fivefold quasicrystal field</option><option>Sevenfold growth crystal field</option><option>Recursive fern field</option><option>Grass blade field</option><option>Rounded stone field</option></select>
-      <label>Growth seed <input id="resourceSeed" type="number" value="7319" min="0" max="99999999"></label>
-      <pre id="resourceEquation" class="equation"></pre>
-      <div class="title-actions"><button id="copyResourceId">Copy Resource ID</button><button id="placeResource">Place at crosshair</button></div>
-      <input id="resourceId" readonly aria-label="Resource transfer ID">
-    </div>
-  </section>
-
-  <section class="window hidden" id="materials" data-window-name="materials"><header><span>Materials</span><button data-close>×</button></header><div class="window-body"><p>Palette-bound voxel materials with separately tagged simulation properties.</p><div id="swatches"></div></div></section>
-  <section class="window hidden" id="server" data-window-name="server"><header><span>Server Options</span><button data-close>×</button></header><div class="window-body form-grid"><label>Gravity <input id="gravity" type="number" value="10" min="0" max="40" step="0.5"> m/s²</label><label>Water simulation <select><option>Analytic flow field</option></select></label><label>Spawn ecology <select><option>Natural</option><option>Sparse</option><option>Dense</option></select></label></div></section>
-  <section class="window hidden" id="mods" data-window-name="mods"><header><span>Mods</span><button data-close>×</button></header><div class="window-body"><p>No mods loaded. The field API will expose deterministic equations and material functions.</p></div></section>
-  <section class="window hidden" id="help" data-window-name="help"><header><span>Help</span><button data-close>×</button></header><div class="window-body"><p>WASD moves. Shift jumps. Ctrl crawls. Space switches between look and cursor control. Slash opens the console.</p><p>Console commands: help, respawn, time, gravity, position, lighting, quality, seed, clear.</p></div></section>
-  <section class="window hidden" id="about" data-window-name="about"><header><span>About Dremplay One</span><button data-close>×</button></header><div class="window-body"><h2>Dremplay One</h2><p>Infinite Detail Engine v0.0.1.2</p><p>A hybrid voxel architecture informed by Euclideon's projected octree traversal and John Lin's allocation, tagging and conversion pipeline. Mathematical definitions generate cached formats suited separately to rendering, editing and simulation.</p></div></section>
-
-  <div id="touchControls" class="hidden" aria-label="Touch controls"><div id="touchMove" class="touch-pad">move</div><div id="touchLook" class="touch-pad">look</div><button id="touchJump">jump</button><button id="touchCarve">carve</button><button id="touchAdd">add</button></div>
-
-  <script src="engine.js?v=0.0.1.2"></script>
+  <script src="engine.js?v=0.0.1.3"></script>
 </body>
 </html>
