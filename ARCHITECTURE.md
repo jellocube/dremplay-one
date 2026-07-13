@@ -66,6 +66,14 @@ An octave is a factor-of-two sampling band over the same underlying matter.
 
 Future octaves may refine below 5 cm around the gaze, editing brush, and inspected Resource. They must be requested through screen-space error and device budgets, not by globally doubling world resolution.
 
+### v0.0.3.0 active scheduling
+
+The resident 10 cm ring remains the editable authority. An embedded Worker now fills an 18-chunk mathematical terrain-plan reserve from interleaved 1.6 m samples, the main-thread voxel cache follows a movement-time horizon up to fourteen chunks, and the kilometer max-height atlas remains the final landscape octave. Fine planning fills the alternate samples only when a sector approaches. This deliberately loads equations and low-cost plans farther than dense matter.
+
+GPU conversion is committed in 32×32×416-cell tiles using reusable staging memory. Water changes use independent 8×8×8 dirty tiles. Both systems have byte budgets, so spatially distant changes cannot accidentally form one massive transfer.
+
+The first equation-defined exemplar set contains five- and seven-sided crystal clusters, recursive bracken fronds, a phyllotactic palm crown and bark rosettes, a weathered pyramid, and a columned stone temple. These definitions are stored as Resource identity rather than one frozen mesh.
+
 ## Mathematical Resource contract
 
 A Resource definition contains:

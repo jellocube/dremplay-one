@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.2.1**
+Current release: **v0.0.3.0**
+
+## v0.0.3.0 octave planner and smooth budgets
+
+- Removed the artificial 12-second startup hold. The title enters Ready state when the resident ring, weather relief, horizon hierarchy, and GPU transfer are actually complete.
+- Added an embedded terrain-planning Worker. At boot it computes an 18-chunk outer reserve of deterministic warped, ridged, and basin octave samples while the main thread builds playable fine voxels.
+- Extended the time-horizon directional cache to as much as fourteen fine chunks ahead. Idle/title time fills it aggressively; walking frames accept background generation only after a healthy frame and observe a cooldown.
+- Reduced full-height streaming uploads from 64×64 to 32×32 cells: about 416 KiB per tile. Reusable typed-array staging buffers remove repeated large allocations and garbage-collection spikes.
+- Replaced water's single potentially enormous dirty AABB with an 8³ dirty-tile queue, adaptive simulation work, and explicit per-frame upload-byte budgets.
+- Throttled the AI Loading Monitor's DOM log painting without dropping log records or resetting its conveyor.
+- Added equation-defined pentagonal and septagonal crystals, bracken fern, fan palm and palm bark, a weathered pyramid, and a stone temple to the Resource Editor. Their compact definitions remain valid across voxel octaves.
 
 ## v0.0.2.1 predictive memory and streaming
 

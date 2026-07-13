@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.2.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.3.0 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.2.1';
+  const CURRENT_VERSION = '0.0.3.0';
   const CURRENT_REVISION = 27;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.2.1 · Infinite Detail Voxel Engine · predictive memory</span></div>
+<div id="topleft">Dremplay One<span>v0.0.3.0 · Infinite Detail Voxel Engine · octave streaming</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.2.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.3.0 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -329,7 +329,7 @@
     <canvas id="resourcePreview" width="360" height="360" aria-label="Live Resource preview"></canvas>
     <label>Resource library <select id="resourceLibrary"></select></label>
     <label>Name <input id="resourceName" value="new_resource"></label>
-    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option></select></label>
+    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option><option>pyramid</option><option>temple</option></select></label>
     <label>Material <select id="resourceMaterial"></select></label>
     <label>Secondary material <select id="resourceSecondary"></select></label>
     <label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option></select></label>
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.2.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Early directional prefetch · bounded derived caches · reclaimable simulation memory · adaptive device budgets</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.3.0</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Worker-planned terrain · time-horizon prefetch · budgeted GPU and water queues · mathematical Resources</p></div>
 </div>
 
 <script>
@@ -432,9 +432,10 @@ const VY = 0.1;                        // true isotropic voxels: no world-wide v
 const CHUNK_SIZE = 32;                 // voxels per chunk (good balance for upload + traversal)
 const LOADED_CHUNKS_XZ = 24;           // 768 voxels loaded in X/Z (~76.8 m), 9x original area
 const LOADED_CHUNKS_Y = 13;            // 416 isotropic cells: 41.6 m, including 6.4 m underground
-const PREFETCH_MARGIN=10;               // predictive cache grown during play
+const PREFETCH_MARGIN=14;               // fine-voxel predictive cache grown during play
+const TERRAIN_PLAN_MARGIN=18;            // lightweight mathematical reserve beyond fine voxels
 const BOOT_PREFETCH_MARGIN=0;           // resident field first; predictive cache begins after entry
-const MINIMUM_BOOT_PRELOAD_MS=12000;    // cold-boot target stays below twenty seconds
+const MINIMUM_BOOT_PRELOAD_MS=0;        // readiness follows completed work, never an artificial timer
 
 const LOADED_SIZE_X = LOADED_CHUNKS_XZ * CHUNK_SIZE;
 const LOADED_SIZE_Y = LOADED_CHUNKS_Y * CHUNK_SIZE;
@@ -519,6 +520,33 @@ function cachedTerrainSample(wx,wz){const key=`${wx},${wz}`;let value=terrainPla
 function persistTerrainPlanCache(){
   if(terrainPlanCache.size>30000)return;
   try{if(typeof localStorage!=='undefined'){const rows=[];for(const [key,v] of terrainPlanCache)rows.push([key,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask||0,v.continental,v.ridges]);localStorage.setItem(TERRAIN_PLAN_CACHE_KEY,JSON.stringify(rows));loadingLog('Plan cache',`${rows.length} shared terrain samples retained for future launches`);}}catch{}
+}
+
+// Broad terrain planning is pure mathematics, so it can run away from the
+// render thread. The worker precomputes only the outer reserve: the resident
+// ring still receives exact fine voxels, while approaching sectors already
+// have their expensive warped/ridged octave samples waiting in the LRU.
+let terrainPlannerWorker=null,terrainPlanRequest=0,terrainPlanPending=false,terrainPlanAccepted=0;
+function ensureTerrainPlannerWorker(){
+  if(terrainPlannerWorker||typeof Worker==='undefined')return terrainPlannerWorker;
+  const source=`"use strict";
+${hash3.toString()}
+${fade.toString()}
+${valueNoise2.toString()}
+${fbm2.toString()}
+${ridged2.toString()}
+${smoothstep.toString()}
+${warpedCoords.toString()}
+${terrainSample.toString()}
+self.onmessage=event=>{const p=event.data,rows=[];for(let x=p.minX;x<=p.maxX;x+=16)for(let z=p.minZ;z<=p.maxZ;z+=16){if(x>=p.innerMinX&&x<=p.innerMaxX&&z>=p.innerMinZ&&z<=p.innerMaxZ)continue;const v=terrainSample(x,z);rows.push([x,z,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask,v.continental,v.ridges]);if(rows.length===2048)self.postMessage({id:p.id,rows:rows.splice(0),done:false});}self.postMessage({id:p.id,rows,done:true});};`;
+  try{terrainPlannerWorker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));terrainPlannerWorker.onmessage=event=>{const {id,rows,done}=event.data;if(id!==terrainPlanRequest)return;for(const row of rows)terrainPlanCache.set(`${row[0]},${row[1]}`,{height:row[2],rawHeight:row[3],valleyMask:row[4],poolMask:row[5],poolDepth:row[6],riverMask:row[7],continental:row[8],ridges:row[9]});terrainPlanAccepted+=rows.length;trimOldestMap(terrainPlanCache,cacheLimitForDevice(18000,30000,42000));if(done){terrainPlanPending=false;loadingLog('Octave planner',`${terrainPlanAccepted} outer terrain samples accepted from worker · ${terrainPlanCache.size} cached`);}};terrainPlannerWorker.onerror=()=>{terrainPlanPending=false;terrainPlannerWorker?.terminate();terrainPlannerWorker=null;};}catch{return null;}
+  return terrainPlannerWorker;
+}
+function queueTerrainPlanReserve(minCX,minCZ,span,margin=TERRAIN_PLAN_MARGIN){
+  const worker=ensureTerrainPlannerWorker();if(!worker||terrainPlanPending)return;
+  terrainPlanPending=true;terrainPlanAccepted=0;const id=++terrainPlanRequest;
+  worker.postMessage({id,minX:(minCX-margin)*CHUNK_SIZE-8,minZ:(minCZ-margin)*CHUNK_SIZE-8,maxX:(minCX+span+margin)*CHUNK_SIZE+8,maxZ:(minCZ+span+margin)*CHUNK_SIZE+8,innerMinX:minCX*CHUNK_SIZE-8,innerMinZ:minCZ*CHUNK_SIZE-8,innerMaxX:(minCX+span)*CHUNK_SIZE+8,innerMaxZ:(minCZ+span)*CHUNK_SIZE+8});
+  loadingLog('Octave planner',`${margin}-chunk mathematical terrain reserve dispatched to worker`);
 }
 
 // Chunk storage (sparse, can grow to millions of chunks for huge worlds)
@@ -1596,12 +1624,12 @@ function updateLoadingIntelligence(phase,pct){
 let engineReady=false;
 let bootLoadStarted=0;
 let initialLoadToken=0,testZoneMode=false,activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
-let loadingLogLines=[];
+let loadingLogLines=[],loadingLogPaintPending=false,lastLoadingLogPaint=0;
+function paintLoadingLog(){loadingLogPaintPending=false;lastLoadingLogPaint=performance.now();const followTail=loadingConsole.scrollHeight-loadingConsole.clientHeight-loadingConsole.scrollTop<12;loadingConsole.textContent=loadingLogLines.join('\n');if(followTail)loadingConsole.scrollTop=loadingConsole.scrollHeight;}
 function loadingLog(station,detail){
   const seconds=bootLoadStarted?((performance.now()-bootLoadStarted)/1000).toFixed(1):'0.0';
-  const followTail=loadingConsole.scrollHeight-loadingConsole.clientHeight-loadingConsole.scrollTop<12;
   loadingLogLines.push(`${seconds.padStart(5,' ')}s  ${station.padEnd(14,' ')} ${detail}`);loadingLogLines=loadingLogLines.slice(-300);
-  loadingConsole.textContent=loadingLogLines.join('\n');if(followTail)loadingConsole.scrollTop=loadingConsole.scrollHeight;
+  if(!loadingLogPaintPending){loadingLogPaintPending=true;const delay=Math.max(0,100-(performance.now()-lastLoadingLogPaint));setTimeout(paintLoadingLog,delay);}
 }
 function showLoading(text,progress=0,streaming=false){
   const phase=phaseForLoadingTask(text);setConveyorPhase(phase);loadingActive=phase!=='ready';
@@ -1645,8 +1673,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
 
 let verificationStarted=0,verificationDuration=1,lastAuditLog=-1;
 function initialLoadProgress(workFraction=1){
-  const elapsedFraction=Math.min(1,(performance.now()-bootLoadStarted)/activeMinimumBootMs);
-  return .02+.93*Math.min(Math.max(0,Math.min(1,workFraction)),elapsedFraction);
+  return .02+.93*Math.max(0,Math.min(1,workFraction));
 }
 function waitForMinimumPreload(loadToken=initialLoadToken){
   if(loadToken!==initialLoadToken)return;
@@ -1662,9 +1689,9 @@ function waitForMinimumPreload(loadToken=initialLoadToken){
 }
 
 function beginInitialWorldLoad(useTestZone=false){
-  const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=useTestZone?6000:MINIMUM_BOOT_PRELOAD_MS;
+  const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
   if(useTestZone){
-    chunks.clear();generatedChunks.clear();dirtyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
+    chunks.clear();generatedChunks.clear();dirtyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
     engineReady=false;startBtn.disabled=true;startBtn.setAttribute('aria-disabled','true');startBtn.textContent='Wait until loaded…';testZoneBtn.disabled=true;testZoneBtn.textContent='Loading test zone…';
   }
   activeGridSizeX=useTestZone?TEST_ZONE_SIZE_X:LOADED_SIZE_X;
@@ -1684,6 +1711,7 @@ function beginInitialWorldLoad(useTestZone=false){
   const span=useTestZone?TEST_ZONE_CHUNKS_XZ:LOADED_CHUNKS_XZ+BOOT_PREFETCH_MARGIN*2;
   const minCX=useTestZone?residentMinCX:residentMinCX-BOOT_PREFETCH_MARGIN;
   const minCZ=useTestZone?residentMinCZ:residentMinCZ-BOOT_PREFETCH_MARGIN;
+  if(!useTestZone)queueTerrainPlanReserve(minCX,minCZ,span);
   for(let cx=0;cx<span;cx++)for(let cz=0;cz<span;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)jobs.push([minCX+cx,minCY+cy,minCZ+cz]);
   let done=0,lastLoggedStep=-1;
   const batch=()=>{
@@ -1808,8 +1836,11 @@ function ringSegments(a0,a1,ring,size){
   const first=size-p0;
   return [{local:a0,physical:p0,count:first},{local:a0+first,physical:0,count:count-first}];
 }
+let uploadStageU8=new Uint8Array(0),uploadStageU16=new Uint16Array(0);
+function acquireUploadU8(length){if(uploadStageU8.length<length)uploadStageU8=new Uint8Array(length);const view=uploadStageU8.subarray(0,length);view.fill(0);return view;}
+function acquireUploadU16(length){if(uploadStageU16.length<length)uploadStageU16=new Uint16Array(length);const view=uploadStageU16.subarray(0,length);view.fill(0);return view;}
 function uploadTerrainWeatherSegment(xx,zz,originX,originZ){
-  const staging=new Uint16Array(xx.count*zz.count*2);let o=0,lastKey='',columns=null;
+  const staging=acquireUploadU16(xx.count*zz.count*2);let o=0,lastKey='',columns=null;
   for(let dz=0;dz<zz.count;dz++){
     const wz=originZ+zz.local+dz,cz=Math.floor(wz/CHUNK_SIZE),lz=mod(wz,CHUNK_SIZE),rowStart=o;
     for(let dx=0;dx<xx.count;dx++){
@@ -1830,7 +1861,7 @@ function uploadLocalBox(lx0,ly0,lz0,lx1,ly1,lz1,originX=windowMinX,originZ=windo
   const h=ly1-ly0+1;
   gl.bindTexture(gl.TEXTURE_3D,tex3d);
   for (const zz of zs) for (const xx of xs) {
-    const staging=new Uint8Array(xx.count*h*zz.count);
+    const staging=acquireUploadU8(xx.count*h*zz.count);
     let o=0;
     // Copy contiguous X rows directly from chunk arrays. The previous path did
     // a Map lookup, floor division and modulo operation for every voxel, making
@@ -2086,7 +2117,16 @@ const resourceDefinitions=new Map([
   ['apple_leaf_fruit_spray',{name:'apple_leaf_fruit_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_RED,fractal:'phyllotaxis',seed:86028193,scale:8,sizeVariance:.24,subsurface:.09,radial:14,angle:43,iterations:6,tropism:.31,influence:6,kill:1,components:[]}],
   ['oak_leaf_spray',{name:'oak_leaf_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_LEAVES,fractal:'phyllotaxis',seed:86028209,scale:9,sizeVariance:.27,subsurface:.10,radial:15,angle:52,iterations:7,tropism:.24,influence:7,kill:1,components:[]}],
   ['fir_needle_spray',{name:'fir_needle_spray',role:'foliage',shape:'branch graph',material:MAT_TEAL,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028221,scale:6,sizeVariance:.22,subsurface:.04,radial:12,angle:71,iterations:6,tropism:.66,influence:5,kill:1,components:[]}],
-  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}]
+  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}],
+  // Mathematical exemplars: compact equations remain valid at every octave.
+  // Crystals intentionally use only five- and seven-fold symmetry.
+  ['pentagonal_quartz_cluster',{name:'pentagonal_quartz_cluster',role:'crystal',growthStage:'adult',shape:'cone',material:MAT_QUARTZ,secondary:MAT_MARBLE,fractal:'cluster aggregation',seed:96174893,scale:18,sizeVariance:.37,subsurface:.04,radial:5,angle:17,iterations:5,tropism:.08,influence:8,kill:2,components:[]}],
+  ['septagonal_amethyst_cluster',{name:'septagonal_amethyst_cluster',role:'crystal',growthStage:'adult',shape:'cone',material:MAT_PURPLE,secondary:MAT_QUARTZ,fractal:'cluster aggregation',seed:96174917,scale:22,sizeVariance:.34,subsurface:.05,radial:7,angle:14,iterations:6,tropism:.05,influence:9,kill:2,components:[]}],
+  ['bracken_fern',{name:'bracken_fern',role:'fern',growthStage:'adult',shape:'branch graph',material:MAT_GRASS,secondary:MAT_MOSS,fractal:'L-system',seed:982451653,scale:12,sizeVariance:.39,subsurface:.03,radial:7,angle:43,iterations:6,tropism:.58,influence:7,kill:1,components:[]}],
+  ['fan_palm_tree',{name:'fan_palm_tree',role:'palm',growthStage:'adult',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BARK,fractal:'phyllotaxis',seed:982451707,scale:64,sizeVariance:.28,subsurface:.04,radial:11,angle:61,iterations:7,tropism:.72,influence:15,kill:2,components:[]}],
+  ['palm_bark_rosette',{name:'palm_bark_rosette',role:'palm_bark',growthStage:'adult',shape:'cylinder',material:MAT_BARK,secondary:MAT_WOOD,fractal:'phyllotaxis',seed:982451737,scale:8,sizeVariance:.22,subsurface:.06,radial:7,angle:51,iterations:5,tropism:0,influence:5,kill:1,components:[]}],
+  ['weathered_stone_pyramid',{name:'weathered_stone_pyramid',role:'architecture',growthStage:'adult',shape:'pyramid',material:MAT_LIMESTONE,secondary:MAT_MOSS,fractal:'ridged',seed:982451759,scale:28,sizeVariance:.08,subsurface:.04,radial:5,angle:52,iterations:6,tropism:0,influence:12,kill:2,components:[]}],
+  ['seven_court_stone_temple',{name:'seven_court_stone_temple',role:'architecture',growthStage:'adult',shape:'temple',material:MAT_MARBLE,secondary:MAT_LICHEN,fractal:'cellular',seed:982451773,scale:34,sizeVariance:.06,subsurface:.03,radial:7,angle:38,iterations:7,tropism:0,influence:14,kill:2,components:[]}]
 ]);
 
 const WOODY_PROFILES=[
@@ -2134,6 +2174,11 @@ function resourceBounds(def){
   if(def.role==='foliage')return {x:Math.ceil(s*.72)+1,z:Math.ceil(s*.72)+1,y0:0,y1:Math.ceil(s*1.18)+1};
   if(def.role==='moss')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:0,y1:Math.ceil(s*.5)};
   if(def.role==='stone'||def.role==='grain')return {x:Math.ceil(s*.68),z:Math.ceil(s*.68),y0:-Math.ceil(s*.4),y1:Math.ceil(s*.58)};
+  if(def.role==='crystal')return {x:Math.ceil(s*.62),z:Math.ceil(s*.62),y0:-1,y1:Math.ceil(s*1.45)};
+  if(def.role==='fern')return {x:Math.ceil(s*.92),z:Math.ceil(s*.92),y0:0,y1:Math.ceil(s*1.05)};
+  if(def.role==='palm')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-2,y1:Math.ceil(s*1.35)};
+  if(def.role==='palm_bark')return {x:Math.ceil(s*.55),z:Math.ceil(s*.55),y0:-1,y1:Math.ceil(s)};
+  if(def.role==='architecture')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-2,y1:Math.ceil(s*.86)};
   return {x:s,z:s,y0:-s,y1:s*2};
 }
 function resourceVoxelCacheKey(def){return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface].join(':');}
@@ -2369,6 +2414,31 @@ function foliageResourceVoxel(def,x,y,z){
   for(const stroke of leafSprayStrokes(def.seed|0,center,s*.64,s*.52,s*.64,count))if(pointSegmentDistance(x,y,z,stroke.a,stroke.b)<=stroke.r)return stroke.leaf?def.material:def.secondary;
   return 0;
 }
+function polygonRadius(x,z,sides){const a=Math.atan2(z,x),sector=Math.PI*2/sides,local=((a+sector*.5)%sector+sector)%sector-sector*.5;return Math.hypot(x,z)*Math.cos(local)/Math.cos(Math.PI/sides);}
+function crystalResourceVoxel(def,x,y,z){
+  const s=Math.max(4,def.scale),sides=def.radial===7?7:5,seed=def.seed|0;let material=0;
+  // A central prism and deterministic daughter prisms form a scale-independent
+  // cluster. Each prism has an exact pentagonal or septagonal cross-section.
+  const test=(px,py,pz,height,radius,leanX,leanZ)=>{if(py<0||py>height)return false;const tx=px-leanX*py/height,tz=pz-leanZ*py/height,tip=1-smoothstep(height*.72,height,py),limit=radius*(.74+.26*tip);return polygonRadius(tx,tz,sides)<=limit;};
+  if(test(x,y,z,s*1.35,s*.20,(hash3(seed,1,2,8011)-.5)*s*.18,(hash3(seed,3,4,8017)-.5)*s*.18))material=def.material;
+  for(let i=0;i<Math.max(3,Math.min(7,def.iterations||4));i++){const a=i*2.399963+hash3(seed,i,7,8039),d=s*(.18+.18*hash3(seed,i,9,8053)),h=s*(.42+.38*hash3(seed,i,11,8059)),r=s*(.08+.07*hash3(seed,i,13,8069));if(test(x-Math.cos(a)*d,y,z-Math.sin(a)*d,h,r,Math.cos(a)*h*.22,Math.sin(a)*h*.22))material=hash3(seed,i,17,8081)>.72&&def.secondary?def.secondary:def.material;}
+  return material;
+}
+function fernResourceVoxel(def,x,y,z){
+  const s=Math.max(5,def.scale),stemTop=s*.82;if(Math.hypot(x,z)<.58&&y>=0&&y<=stemTop)return def.secondary;
+  const count=Math.max(5,Math.min(11,def.radial||7));
+  for(let i=0;i<count;i++){const a=i*Math.PI*2/count+hash3(def.seed|0,i,2,8111)*.34,len=s*(.58+.28*hash3(def.seed|0,i,4,8117)),base={x:0,y:stemTop*(.62+.23*i/count),z:0},tip={x:Math.cos(a)*len,y:stemTop+len*.12,z:Math.sin(a)*len};if(pointSegmentDistance(x,y,z,base,tip)<.55)return def.material;for(let j=2;j<9;j++){const t=j/10,cx=base.x+(tip.x-base.x)*t,cy=base.y+(tip.y-base.y)*t,cz=base.z+(tip.z-base.z)*t,side=(j&1)?1:-1,leafA={x:cx,y:cy,z:cz},leafB={x:cx+Math.cos(a+side*Math.PI*.5)*len*(.26*(1-t)),y:cy+.12,z:cz+Math.sin(a+side*Math.PI*.5)*len*(.26*(1-t))};if(pointSegmentDistance(x,y,z,leafA,leafB)<.48)return def.material;}}
+  return 0;
+}
+function palmResourceVoxel(def,x,y,z){
+  const s=Math.max(12,def.scale),h=s,leanX=Math.sin((def.seed|0)*.013)*s*.08,leanZ=Math.cos((def.seed|0)*.017)*s*.08;if(y>=-1&&y<=h){const t=Math.max(0,y)/h,cx=leanX*t*t,cz=leanZ*t*t,r=Math.max(1.15,s*(.055-.021*t));if(Math.hypot(x-cx,z-cz)<=r*(1+.10*Math.sin(y*1.7)))return ((Math.floor(y/2)&1)&&def.secondary)?def.secondary:MAT_BARK;}
+  const crown={x:leanX,y:h,z:leanZ},count=Math.max(7,Math.min(15,def.radial||11));for(let i=0;i<count;i++){const a=i*Math.PI*2/count+hash3(def.seed|0,i,3,8209)*.22,len=s*(.42+.16*hash3(def.seed|0,i,5,8219)),tip={x:crown.x+Math.cos(a)*len,y:crown.y-len*.16,z:crown.z+Math.sin(a)*len};if(pointSegmentDistance(x,y,z,crown,tip)<.7)return def.material;}
+  return 0;
+}
+function architectureResourceVoxel(def,x,y,z){
+  const s=Math.max(8,def.scale),weather=hash3(x|0,y|0,z|0,(def.seed|0)+8303);if(def.shape==='pyramid'){if(y<0||y>s*.78)return 0;const half=s*.64*(1-y/(s*.84)),inside=Math.max(Math.abs(x),Math.abs(z))<=half,entrance=Math.abs(x)<s*.08&&z<-half+s*.2&&y<s*.23;if(inside&&!entrance)return weather<def.subsurface*.22?0:weather>.93&&def.secondary?def.secondary:def.material;return 0;}
+  const half=s*.62,roofY=s*.58,base=y>=0&&y<s*.09&&Math.abs(x)<=half&&Math.abs(z)<=half*.72,roof=y>=roofY&&y<roofY+s*.12&&Math.abs(x)<=half&&Math.abs(z)<=half*.72,columns=Math.abs(z)<=half*.58&&y>=s*.08&&y<roofY&&Math.min(...[-.46,-.15,.15,.46].map(k=>Math.abs(x-s*k)))<s*.055;return base||roof||columns?(weather>.94&&def.secondary?def.secondary:def.material):0;
+}
 function resourceVoxel(def,x,y,z){
   if(def.role==='tree'){
     const architecture=treeArchitecture(def);
@@ -2381,6 +2451,11 @@ function resourceVoxel(def,x,y,z){
   if(def.role==='foliage')return foliageResourceVoxel(def,x,y,z);
   if(def.role==='moss')return mossResourceVoxel(def,x,y,z);
   if(def.role==='stone'||def.role==='grain')return rockResourceVoxel(def,x,y,z);
+  if(def.role==='crystal')return crystalResourceVoxel(def,x,y,z);
+  if(def.role==='fern')return fernResourceVoxel(def,x,y,z);
+  if(def.role==='palm')return palmResourceVoxel(def,x,y,z);
+  if(def.role==='palm_bark')return resourceContains(def,x,y,z)?(hash3(x|0,y|0,z|0,(def.seed|0)+8257)>.72?def.secondary:def.material):0;
+  if(def.role==='architecture')return architectureResourceVoxel(def,x,y,z);
   const noise=fbm2((x+(def.seed%97))*.19,(z-y+(def.seed%53))*.19,3,2,.5,3301+(def.seed|0));
   return resourceContains(def,x,y,z)?(noise>.58&&def.secondary?def.secondary:def.material):0;
 }
@@ -2454,7 +2529,7 @@ const RESOURCE_MODEL_DETAIL=2; // 5 cm model lattice over 10 cm physical parents
 function refreshResourceLibrary(){const selected=resourceLibrary.value;resourceLibrary.replaceChildren();resourceComponents.replaceChildren();for(const name of resourceDefinitions.keys()){resourceLibrary.add(new Option(name.replaceAll('_',' '),name));resourceComponents.add(new Option(name.replaceAll('_',' '),name));}if(resourceDefinitions.has(selected))resourceLibrary.value=selected;}
 function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),role=known?.role||(shape==='branch graph'&&['space colonization','L-system','branching'].includes(fractal)?'tree':fractal==='phyllotaxis'?'flower':shape==='cone'&&fractal==='cluster aggregation'?'grass':'custom');return {name,role,detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
 const RESOURCE_TRANSFER_MAGIC=0xd4,RESOURCE_TRANSFER_VERSION=1;
-const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','custom'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation'];
+const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','custom','crystal','fern','palm','palm_bark','architecture'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph','pyramid','temple'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation'];
 function resourceChecksum(bytes){let h=2166136261;for(const byte of bytes)h=Math.imul(h^byte,16777619);return h>>>0;}
 function resourcePayload(def){const rounded=value=>Math.round(Number(value)*10000)/10000,snapshot=id=>[...materialSlots[id],...materialParams[id].map(rounded),materialModes[id]];return {n:def.name,r:def.role,o:def.detail||RESOURCE_MODEL_DETAIL,g:def.growthStage||'adult',h:def.shape,m:def.material,s:def.secondary,f:def.fractal,e:def.seed>>>0,z:def.scale,v:rounded(def.sizeVariance),u:rounded(def.subsurface),d:def.radial,a:rounded(def.angle),i:def.iterations,t:rounded(def.tropism),q:rounded(def.influence),k:rounded(def.kill),c:[...(def.components||[])],x:snapshot(def.material),y:snapshot(def.secondary)};}
 function resourceTransferId(def){
@@ -2851,10 +2926,20 @@ function wakeWaterNear(cx,cy,cz,r){
   for(let x=cx-r;x<=cx+r;x++)for(let z=cz-r;z<=cz+r;z++){if((x-cx)*(x-cx)+(z-cz)*(z-cz)>rr)continue;const col=terrainWeatherColumn(x,z);if(col.terrain.poolMask<=.30||col.h>=WATER_LEVEL)continue;for(let y=Math.max(cy-r,col.h+1);y<=Math.min(cy+r,WATER_LEVEL,col.h+20);y++)enqueueWater(x,y,z);}
   for(const key of waterLevels.keys()){const [x,y,z]=key.split(',').map(Number);if((x-cx)*(x-cx)+(y-cy)*(y-cy)+(z-cz)*(z-cz)<=rr)enqueueWater(x,y,z);}
 }
+const WATER_DIRTY_TILE=8;
+const waterDirtyTiles=new Set();
+function markWaterDirty(x,y,z){waterDirtyTiles.add(`${Math.floor(x/WATER_DIRTY_TILE)},${Math.floor(y/WATER_DIRTY_TILE)},${Math.floor(z/WATER_DIRTY_TILE)}`);}
+function processWaterDirtyUploads(byteBudget=98304){
+  let bytes=0,tiles=0;
+  while(waterDirtyTiles.size&&bytes<WATER_DIRTY_TILE*WATER_DIRTY_TILE*WATER_DIRTY_TILE+byteBudget){
+    const key=waterDirtyTiles.values().next().value;waterDirtyTiles.delete(key);const [tx,ty,tz]=key.split(',').map(Number),x=tx*WATER_DIRTY_TILE,y=ty*WATER_DIRTY_TILE,z=tz*WATER_DIRTY_TILE;
+    uploadRegion(x-1,y-1,z-1,x+WATER_DIRTY_TILE,y+WATER_DIRTY_TILE,z+WATER_DIRTY_TILE);bytes+=(WATER_DIRTY_TILE+2)**3;tiles++;
+  }
+  return tiles;
+}
 function updateWater(budget=waterSimulationBudget){
   waterMovedLastFrame=0;if(!waterFlowEnabled || !waterQueue.length||budget<=0)return;
-  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
-  const touch=(x,y,z)=>{minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);};
+  const touch=markWaterDirty;
   const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
   for(let n=0;n<budget && waterQueue.length;n++){
     const [x,y,z]=waterQueue.pop(); waterQueued.delete(waterKey(x,y,z));
@@ -2878,7 +2963,6 @@ function updateWater(budget=waterSimulationBudget){
     if(transfer<=0||(!source&&level<=1))continue;setWaterState(best[0],y,best[1],bestLevel+transfer);if(!source)setWaterState(x,y,z,level-transfer);
     touch(x,y,z);touch(best[0],y,best[1]);waterMovedLastFrame++;enqueueWater(best[0],y,best[1]);if(source||level-transfer>1)enqueueWater(x,y,z);enqueueWater(x,y+1,z);
   }
-  if(minX!==Infinity)uploadRegion(minX-1,minY-1,minZ-1,maxX+1,maxY+1,maxZ+1);
 }
 
 function doAction(button){
@@ -3005,7 +3089,12 @@ function loop(now){
   }
   // Server-authoritative water continues while a GUI is open; its fixed budget
   // prevents an options window from accidentally freezing a falling stream.
-  if(hasEnteredWorld)updateWater(waterSimulationBudget);
+  if(hasEnteredWorld){
+    const deviceScale=DEVICE_PROFILE.tier==='mobile'?.38:DEVICE_PROFILE.tier==='high'?1:.68;
+    const frameScale=frameGapMs>28?.35:frameGapMs>20?.62:1;
+    updateWater(Math.max(6,Math.floor(waterSimulationBudget*deviceScale*frameScale)));
+    if(!streamTask)processWaterDirtyUploads(moving?49152:196608);
+  }
 
   render();
   reportFrameOverrun(Math.max(frameGapMs,performance.now()-frameStarted));
@@ -3087,9 +3176,10 @@ function updatePlayer(dt){
 }
 
 // === DIRECTION-PREDICTED SECTOR STREAMING ===
-const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,STREAM_UPLOAD_TILE_VOXELS=CHUNK_SIZE*2,PREDICT_DEPTH_CHUNKS=PREFETCH_MARGIN;
+const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,STREAM_UPLOAD_TILE_VOXELS=CHUNK_SIZE;
 let lastStreamShiftAt=0,streamTask=null,prefetchJobs=[],prefetchSignature='',prefetchSectorLabel='forward';
 let lastPrefetchWorkAt=-Infinity,nextCacheNoticeAt=Infinity,cacheNoticeActive=false,cacheNoticeTotal=0,cacheNoticeHideAt=0;
+let nextMovingPrefetchAt=0;
 let lastMemoryMaintenanceAt=0;
 function releaseDerivedCaches(aggressive=false){
   const divisor=aggressive?2:1;
@@ -3110,13 +3200,14 @@ function predictedSectorDirection(){
   const threshold=mag*.38;let dx=Math.abs(x)>=threshold?Math.sign(x):0,dz=Math.abs(z)>=threshold?Math.sign(z):0;if(!dx&&!dz)Math.abs(x)>Math.abs(z)?dx=Math.sign(x):dz=Math.sign(z);
   const vertical=dz<0?'north':dz>0?'south':'',horizontal=dx<0?'west':dx>0?'east':'',label=vertical&&horizontal?`${vertical}-${horizontal}`:vertical||horizontal;return {dx,dz,label};
 }
+function predictiveDepthChunks(){const horizon=DEVICE_PROFILE.tier==='mobile'?8:DEVICE_PROFILE.tier==='high'?14:10;return Math.max(8,Math.min(PREFETCH_MARGIN,Math.ceil(walkSpeed*horizon/(CHUNK_SIZE*VS))));}
 function rebuildPrefetchQueue(){
-  const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE),maxCX=minCX+LOADED_CHUNKS_XZ-1,maxCZ=minCZ+LOADED_CHUNKS_XZ-1,minCY=Math.floor(windowMinY/CHUNK_SIZE),prediction=predictedSectorDirection(),signature=`${minCX},${minCZ},${prediction.dx},${prediction.dz}`;
+  const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE),maxCX=minCX+LOADED_CHUNKS_XZ-1,maxCZ=minCZ+LOADED_CHUNKS_XZ-1,minCY=Math.floor(windowMinY/CHUNK_SIZE),prediction=predictedSectorDirection(),depth=predictiveDepthChunks(),signature=`${minCX},${minCZ},${prediction.dx},${prediction.dz},${depth}`;
   if(signature===prefetchSignature)return;prefetchSignature=signature;prefetchJobs=[];prefetchSectorLabel=prediction.label;
   const cells=new Map(),addCell=(cx,cz,distance)=>{const key=`${cx},${cz}`,prior=cells.get(key);if(!prior||distance<prior.distance)cells.set(key,{cx,cz,distance});};
-  if(prediction.dx)for(let depth=1;depth<=PREDICT_DEPTH_CHUNKS;depth++){const cx=prediction.dx>0?maxCX+depth:minCX-depth;for(let cz=minCZ;cz<=maxCZ;cz++)addCell(cx,cz,depth+Math.abs(cz-(minCZ+maxCZ)/2)*.015);}
-  if(prediction.dz)for(let depth=1;depth<=PREDICT_DEPTH_CHUNKS;depth++){const cz=prediction.dz>0?maxCZ+depth:minCZ-depth;for(let cx=minCX;cx<=maxCX;cx++)addCell(cx,cz,depth+Math.abs(cx-(minCX+maxCX)/2)*.015);}
-  if(prediction.dx&&prediction.dz)for(let depthX=1;depthX<=PREDICT_DEPTH_CHUNKS;depthX++)for(let depthZ=1;depthZ<=PREDICT_DEPTH_CHUNKS;depthZ++)addCell(prediction.dx>0?maxCX+depthX:minCX-depthX,prediction.dz>0?maxCZ+depthZ:minCZ-depthZ,Math.max(depthX,depthZ));
+  if(prediction.dx)for(let d=1;d<=depth;d++){const cx=prediction.dx>0?maxCX+d:minCX-d;for(let cz=minCZ;cz<=maxCZ;cz++)addCell(cx,cz,d+Math.abs(cz-(minCZ+maxCZ)/2)*.015);}
+  if(prediction.dz)for(let d=1;d<=depth;d++){const cz=prediction.dz>0?maxCZ+d:minCZ-d;for(let cx=minCX;cx<=maxCX;cx++)addCell(cx,cz,d+Math.abs(cx-(minCX+maxCX)/2)*.015);}
+  if(prediction.dx&&prediction.dz)for(let depthX=1;depthX<=depth;depthX++)for(let depthZ=1;depthZ<=depth;depthZ++)addCell(prediction.dx>0?maxCX+depthX:minCX-depthX,prediction.dz>0?maxCZ+depthZ:minCZ-depthZ,Math.max(depthX,depthZ));
   const ordered=[...cells.values()].sort((a,b)=>b.distance-a.distance);for(const cell of ordered)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++){const job=[cell.cx,minCY+cy,cell.cz];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);}
   if(cacheNoticeActive){cacheNoticeTotal=Math.max(1,prefetchJobs.length);loadingLog('Vector predictor',`${prediction.label} · ${cells.size} horizontal cells · ${prefetchJobs.length} missing chunks`);}
 }
@@ -3124,8 +3215,13 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(testZoneMode)return;rebuildPrefetchQueue();
   if(now>=nextCacheNoticeAt){nextCacheNoticeAt=now+20000;cacheNoticeActive=true;cacheNoticeTotal=Math.max(1,prefetchJobs.length);cacheNoticeHideAt=0;showLoading(prefetchJobs.length?`Precomputing ${prefetchSectorLabel} landscape sectors`:'Predictive sector ready',prefetchJobs.length?0:1,true);loadingLog('Vector predictor',prefetchJobs.length?`${prefetchSectorLabel} · ${prefetchJobs.length} chunks ordered into broad sectors`:'current predicted sector is resident');if(!prefetchJobs.length)cacheNoticeHideAt=now+1000;}
   const profileBudget=DEVICE_PROFILE.tier==='mobile'?.65:DEVICE_PROFILE.tier==='high'?1.5:1.0;
+  // Never force one uninterruptible terrain/Resource chunk into every walking
+  // frame. Title/idle time fills the reserve rapidly; motion borrows a slot
+  // only after a healthy frame and then observes a cooldown.
+  if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.65))return;
   const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
   while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){generateChunk(...prefetchJobs.pop());worked=true;lastPrefetchWorkAt=performance.now();}
+  if(moving&&worked)nextMovingPrefetchAt=performance.now()+120;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
 function queueStreamShift(shiftX,shiftZ){
@@ -3137,8 +3233,8 @@ function queueStreamShift(shiftX,shiftZ){
   streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],uploadDone:0};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
 }
 function buildStreamUploadBoxes(task){
-  // Keep the directional shift broad and atomic, but upload it in 6.4 m
-  // squares. Each tile is ~1.7 MiB instead of the former ~6.8 MiB slab,
+  // Keep the directional shift broad and atomic, but upload it in 3.2 m
+  // squares. Each full-height tile is ~416 KiB instead of 1.6 MiB,
   // removing the single-frame copy/upload spike without exposing strips.
   const boxes=[],seen=new Set(),add=(x,z)=>{const key=`${x},${z}`;if(seen.has(key))return;seen.add(key);boxes.push([x,0,z,Math.min(LOADED_SIZE_X-1,x+STREAM_UPLOAD_TILE_VOXELS-1),LOADED_SIZE_Y-1,Math.min(LOADED_SIZE_Z-1,z+STREAM_UPLOAD_TILE_VOXELS-1)]);};
   if(task.shiftX){const x0=task.shiftX>0?LOADED_SIZE_X-Math.abs(task.shiftX):0;for(let x=x0;x<x0+Math.abs(task.shiftX);x+=STREAM_UPLOAD_TILE_VOXELS)for(let z=0;z<LOADED_SIZE_Z;z+=STREAM_UPLOAD_TILE_VOXELS)add(x,z);}
@@ -3149,9 +3245,9 @@ function processStreamTask(){
   const task=streamTask,started=performance.now();if(task.phase==='generate'){
     while(task.done<task.jobs.length&&performance.now()-started<streamingBudgetMs)generateChunk(...task.jobs[task.done++]);
     if(task.done<task.jobs.length){showLoading('Resolving predicted landscape sector',.35*task.done/task.jobs.length,true);return;}
-    task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='upload';loadingLog('Sector encoder',`${task.uploadBoxes.length} broad 12.8 m × 12.8 m GPU sectors queued behind the current view`);
+    task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='upload';loadingLog('Sector encoder',`${task.uploadBoxes.length} budgeted 3.2 m × 3.2 m GPU tiles queued behind the current view`);
   }
-  if(task.phase==='upload'&&task.uploadDone<task.uploadBoxes.length){const uploadStarted=performance.now(),box=task.uploadBoxes[task.uploadDone++];uploadLocalBox(...box,task.newMinX,task.newMinZ,task.newRingX,task.newRingZ);loadingLog('Sector upload',`${task.uploadDone}/${task.uploadBoxes.length} · ${(uploadBytes/1048576).toFixed(2)} MiB cumulative · ${(performance.now()-uploadStarted).toFixed(1)} ms`);showLoading('Installing predicted landscape sectors',.35+.64*task.uploadDone/task.uploadBoxes.length,true);if(task.uploadDone<task.uploadBoxes.length)return;}
+  if(task.phase==='upload'&&task.uploadDone<task.uploadBoxes.length){const uploadStarted=performance.now(),box=task.uploadBoxes[task.uploadDone++];uploadLocalBox(...box,task.newMinX,task.newMinZ,task.newRingX,task.newRingZ);if(task.uploadDone===1||task.uploadDone===task.uploadBoxes.length||task.uploadDone%8===0)loadingLog('Sector upload',`${task.uploadDone}/${task.uploadBoxes.length} · ${(uploadBytes/1048576).toFixed(2)} MiB cumulative · ${(performance.now()-uploadStarted).toFixed(1)} ms`);showLoading('Installing predicted landscape sectors',.35+.64*task.uploadDone/task.uploadBoxes.length,true);if(task.uploadDone<task.uploadBoxes.length)return;}
   windowMinX=task.newMinX;windowMinZ=task.newMinZ;ringX=task.newRingX;ringZ=task.newRingZ;prefetchSignature='';evictDistantCleanChunks();streamMs+=performance.now()-task.started;loadingLog('Sector commit',`${task.uploadBoxes.length} broad sectors committed atomically in ${streamMs.toFixed(1)} ms`);streamTask=null;hideLoading();lastStreamShiftAt=performance.now();
 }
 function updateLoadedWindow(){
