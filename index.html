@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.0.18</title>
+<title>Dremplay One v0.0.1.0.19</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.0.18';
-  const CURRENT_REVISION = 18;
+  const CURRENT_VERSION = '0.0.1.0.19';
+  const CURRENT_REVISION = 19;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.0.18 · Living woodland</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.0.19 · Fine voxel engine</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.0.18</p>
+  <p>Version 0.0.1.0.19</p>
   <p>A first-person <b>microvoxel</b> engine with true 0.1 m isotropic detail. Chunked streaming + natural-systems terrain. 
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
      A procedural far-field continues the terrain and water horizon as far as 1 km without allocating a cubic kilometer of editable voxels.
@@ -416,7 +416,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.0.18</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Scientific woodland architecture · 5 cm near detail · kilometer far-field</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.0.19</h2><p>A medieval terminal microvoxel wilderness, natural-material laboratory, and procedural Resource forge.</p><p class="muted">Scientific woodland architecture · 5 cm near detail · kilometer far-field</p></div>
 </div>
 
 <script>
@@ -1027,11 +1027,15 @@ uint getFineMaterial(ivec3 fineP){
   // parent cell remains solid, so collision, edits, water, and caves retain
   // their exact sparse 10 cm authority and cannot acquire procedural holes.
   if(m!=10u&&m!=28u&&m!=29u&&m!=30u&&m!=31u&&m!=18u){
-    bool chip=(sub.y==1&&getDensity(parent+ivec3(0,1,0))<.5&&grain<.15)
-      ||(sub.x==0&&getDensity(parent-ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(17,3,5))<.07)
-      ||(sub.x==1&&getDensity(parent+ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(7,19,3))<.07)
-      ||(sub.z==0&&getDensity(parent-ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(3,5,23))<.07)
-      ||(sub.z==1&&getDensity(parent+ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(11,7,29))<.07);
+    // A shared four-sample field gives neighboring 5 cm cells correlated
+    // microrelief rather than even dither. Nearly half of exposed upper
+    // half-cells recede by exactly 5 cm, making the doubled geometry visible.
+    float micro=(grain+materialHash(worldFine+ivec3(1,0,0))+materialHash(worldFine+ivec3(0,0,1))+materialHash(worldFine+ivec3(1,0,1)))*.25;
+    bool chip=(sub.y==1&&getDensity(parent+ivec3(0,1,0))<.5&&micro<.46)
+      ||(sub.x==0&&getDensity(parent-ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(17,3,5))<.10)
+      ||(sub.x==1&&getDensity(parent+ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(7,19,3))<.10)
+      ||(sub.z==0&&getDensity(parent-ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(3,5,23))<.10)
+      ||(sub.z==1&&getDensity(parent+ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(11,7,29))<.10);
     if(chip)return 0u;
   }
   return m;
@@ -1048,11 +1052,14 @@ float smoothMaterialNoise(vec3 x){
              mix(mix(n001,n101,f.x),mix(n011,n111,f.x),f.y),f.z);
 }
 
-vec3 materialColor(uint m, ivec3 p){
+vec3 materialColor(uint m, ivec3 p, int detailScale){
   int id=clamp(int(m),0,31);
   ivec3 slots=uMaterialSlots[id];
   vec3 params=uMaterialParams[id];
-  ivec3 wp=p+uWorldOrigin;
+  // Fine hits pass 5 cm coordinates and a scale of two. Coarse hits retain
+  // the original 10 cm coordinate system. This makes adjacent microvoxels
+  // receive distinct palette samples instead of inheriting one parent shade.
+  ivec3 wp=p+uWorldOrigin*detailScale;
   int mode=uMaterialModes[id];
   float pattern=0.5,soft=0.5;
   if(uMaterialQuality==0){pattern=.5;soft=.5;}
@@ -1095,7 +1102,7 @@ vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-uFogStart)*adaptiveDensity);return mix(lit,skyColor(rd,false),clamp(fog,0.0,1.0));
 }
 vec3 waterPixelColor(ivec3 p,vec3 faceNormal,vec3 rd,float depthVoxels){
-  vec3 base=materialColor(10u,p);if(uWaterQuality==0)return base;
+  vec3 base=materialColor(10u,p,1);if(uWaterQuality==0)return base;
   // Flow facets are anchored to absolute world cells; a resident-ring shift
   // cannot regenerate or slide their statistical pattern under the player.
   vec2 cell=floor(vec2(p.x+uWorldOrigin.x,p.z+uWorldOrigin.z)/3.0);float phase=uTime*1.35+cell.x*1.71+cell.y*2.23,flow=.5+.5*sin(phase),stepped=floor(flow*5.0+.5)/5.0;
@@ -1113,12 +1120,14 @@ void main(){
   vec3 ro = uCamPos;
 
   ivec3 mapPos = ivec3(floor(ro));
+  ivec3 materialPos = mapPos;
   vec3 rdSafe = vec3(
     abs(rd.x) < 1e-6 ? 1e-6 : rd.x,
     abs(rd.y) < 1e-6 ? 1e-6 : rd.y,
     abs(rd.z) < 1e-6 ? 1e-6 : rd.z
   );
   bool hit = false;
+  bool fineHit = false;
   bool waterHit = false;
   vec3 normal = vec3(0.0);
   uint material = 0u;
@@ -1137,7 +1146,7 @@ void main(){
       if(fineDist>uNearDetail*float(WORLD_DETAIL)||!inFineBounds(finePos))break;
       uint m=getFineMaterial(finePos);ivec3 parent=finePos/WORLD_DETAIL;
       if(m==10u){if(!waterHit){waterHit=true;waterDist=fineDist/float(WORLD_DETAIL);waterMapPos=parent;waterNormal=length(normal)>.1?normal:vec3(0.0,1.0,0.0);}}
-      else if(m>0u){hit=true;material=m;mapPos=parent;dist=fineDist/float(WORLD_DETAIL);break;}
+      else if(m>0u){hit=true;fineHit=true;material=m;mapPos=parent;materialPos=finePos;dist=fineDist/float(WORLD_DETAIL);break;}
       if(fineSide.x<fineSide.y){if(fineSide.x<fineSide.z){fineDist=fineSide.x;fineSide.x+=fineDelta.x;finePos.x+=int(fineStep.x);normal=vec3(-fineStep.x,0.0,0.0);}else{fineDist=fineSide.z;fineSide.z+=fineDelta.z;finePos.z+=int(fineStep.z);normal=vec3(0.0,0.0,-fineStep.z);}}
       else{if(fineSide.y<fineSide.z){fineDist=fineSide.y;fineSide.y+=fineDelta.y;finePos.y+=int(fineStep.y);normal=vec3(0.0,-fineStep.y,0.0);}else{fineDist=fineSide.z;fineSide.z+=fineDelta.z;finePos.z+=int(fineStep.z);normal=vec3(0.0,0.0,-fineStep.z);}}
     }
@@ -1153,7 +1162,7 @@ void main(){
       dist=coarseStart+localDist;if(dist>uViewDistance||!inBounds(mapPos))break;
       uint m=getMaterial(mapPos);
       if(m==10u){if(!waterHit){waterHit=true;waterDist=dist;waterMapPos=mapPos;waterNormal=length(normal)>.1?normal:vec3(0.0,1.0,0.0);}}
-      else if(m>0u){hit=true;material=m;break;}
+      else if(m>0u){hit=true;material=m;materialPos=mapPos;break;}
       if(sideDist.x<sideDist.y){if(sideDist.x<sideDist.z){localDist=sideDist.x;sideDist.x+=deltaDist.x;mapPos.x+=int(stepDir.x);normal=vec3(-stepDir.x,0.0,0.0);}else{localDist=sideDist.z;sideDist.z+=deltaDist.z;mapPos.z+=int(stepDir.z);normal=vec3(0.0,0.0,-stepDir.z);}}
       else{if(sideDist.y<sideDist.z){localDist=sideDist.y;sideDist.y+=deltaDist.y;mapPos.y+=int(stepDir.y);normal=vec3(0.0,-stepDir.y,0.0);}else{localDist=sideDist.z;sideDist.z+=deltaDist.z;mapPos.z+=int(stepDir.z);normal=vec3(0.0,0.0,-stepDir.z);}}
     }
@@ -1184,7 +1193,7 @@ void main(){
     faceLight=floor(faceLight*8.0+0.5)/8.0*mix(0.18,1.0,daylightAmount());
   }else{
     vec3 grad=vec3(0.0);
-    if(uPerformanceMode==1){
+    if(!fineHit&&uPerformanceMode==1){
       // Twelve density reads form a compact spherical kernel: six axial and
       // six diagonal. This preserves rounded slopes at 40% of the prior cost.
       grad+=vec3(
@@ -1195,7 +1204,7 @@ void main(){
       grad+=0.34*normalize(vec3(1.0,1.0,0.0))*(getDensity(mapPos-ivec3(1,1,0))-getDensity(mapPos+ivec3(1,1,0)));
       grad+=0.34*normalize(vec3(1.0,0.0,1.0))*(getDensity(mapPos-ivec3(1,0,1))-getDensity(mapPos+ivec3(1,0,1)));
       grad+=0.34*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,1,1))-getDensity(mapPos+ivec3(0,1,1)));
-    }else{
+    }else if(!fineHit){
       // The full-world quality kernel retains both axial radii and all planar
       // diagonal directions for the soft Voxlap cave response.
       grad+=vec3(
@@ -1215,10 +1224,10 @@ void main(){
       grad+=0.38*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,2,2))-getDensity(mapPos+ivec3(0,2,2)));
       grad+=0.38*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,2,-2))-getDensity(mapPos+ivec3(0,2,-2)));
     }
-    shadeNormal=length(grad)>0.05?normalize(grad+normal*0.04):normal;
+    if(!fineHit)shadeNormal=length(grad)>0.05?normalize(grad+normal*0.04):normal;
     vec3 lightDir=sunDirection();
     float diffuse=max(dot(shadeNormal,lightDir),0.0);
-    if(uPerformanceMode==0){
+    if(uPerformanceMode==0&&!fineHit){
       float localOcc=(
         getDensity(mapPos+ivec3(1,0,0))+getDensity(mapPos-ivec3(1,0,0))+
         getDensity(mapPos+ivec3(0,1,0))+getDensity(mapPos-ivec3(0,1,0))+
@@ -1233,7 +1242,7 @@ void main(){
   // opaque cave stone. Keeping a modest material-specific floor prevents the
   // smoothed normal kernel from turning alternating blade voxels near-black.
   if(material==18u)faceLight=max(faceLight,mix(0.28,0.62,daylightAmount()));
-  vec3 base = materialColor(material, mapPos);
+  vec3 base = materialColor(material, materialPos, fineHit?WORLD_DETAIL:1);
   vec3 lit=base*faceLight;
   if(uLightMode==1 && uPerformanceMode==0){
     vec3 lightDir=sunDirection();
@@ -1957,10 +1966,11 @@ const resourceCeilingCache=new Map();
 function resourceBounds(def){
   const s=Math.max(2,def.scale);
   if(def.role==='tree'){
-    const architecture=treeArchitecture(def);let minX=0,maxX=0,minY=0,maxY=0,minZ=0,maxZ=0;
-    for(const segment of architecture.segments){minX=Math.min(minX,segment.a.x-segment.r,segment.b.x-segment.r);maxX=Math.max(maxX,segment.a.x+segment.r,segment.b.x+segment.r);minY=Math.min(minY,segment.a.y-segment.r,segment.b.y-segment.r);maxY=Math.max(maxY,segment.a.y+segment.r,segment.b.y+segment.r);minZ=Math.min(minZ,segment.a.z-segment.r,segment.b.z-segment.r);maxZ=Math.max(maxZ,segment.a.z+segment.r,segment.b.z+segment.r);}
-    for(const leaf of architecture.leaves){minX=Math.min(minX,leaf.x-leaf.rx);maxX=Math.max(maxX,leaf.x+leaf.rx);minY=Math.min(minY,leaf.y-leaf.ry);maxY=Math.max(maxY,leaf.y+leaf.ry);minZ=Math.min(minZ,leaf.z-leaf.rz);maxZ=Math.max(maxZ,leaf.z+leaf.rz);}
-    return {x:Math.ceil(Math.max(-minX,maxX))+1,z:Math.ceil(Math.max(-minZ,maxZ))+1,y0:Math.floor(minY)-1,y1:Math.ceil(maxY)+1};
+    // Bounds are a conservative allometric envelope, not a generated tree.
+    // Streaming previously constructed hundreds of complete seeded branch
+    // graphs merely to answer a height/intersection query while walking.
+    const profile=woodyProfile(def),radialFactor=profile.form==='conifer'?.64:profile.form==='shrub'?.90:profile.form==='birch'?.72:.90,radial=Math.min(CHUNK_SIZE*2,Math.ceil(s*radialFactor)+2);
+    return {x:radial,z:radial,y0:-2,y1:Math.ceil(s*(profile.height+.24))+2};
   }
   if(def.role==='flower')return {x:Math.ceil(Math.max(5,s*.75)),z:Math.ceil(Math.max(5,s*.75)),y0:-1,y1:Math.ceil(s*1.85)};
   if(def.role==='grass')return {x:Math.ceil(Math.max(2,s*.28)),z:Math.ceil(Math.max(2,s*.28)),y0:0,y1:Math.ceil(s*1.24)};
@@ -2016,7 +2026,7 @@ function leafClusterStrokes(def,leaf,index){
   return strokes;
 }
 function voxelizedResource(def){
-  const key=resourceVoxelCacheKey(def),cached=resourceVoxelCache.get(key);if(cached)return cached;
+  const key=resourceVoxelCacheKey(def),cached=resourceVoxelCache.get(key);if(cached){resourceVoxelCache.delete(key);resourceVoxelCache.set(key,cached);return cached;}
   const b=resourceBounds(def),points=[];
   if(def.role==='tree'){
     // Rasterize the compact branch graph and sparse leaf-spray Resources directly.
@@ -2040,7 +2050,9 @@ function voxelizedResource(def){
   resourceVoxelCache.set(key,points);
   // Natural instances have unique seeds. Bound the memo table while retaining
   // the most recently used forms for adjacent vertical chunks and previews.
-  if(resourceVoxelCache.size>240)resourceVoxelCache.delete(resourceVoxelCache.keys().next().value);
+  // Tree point lists are large nested arrays. A compact LRU keeps the nearby
+  // working set but prevents a long walk from retaining hundreds of crowns.
+  if(resourceVoxelCache.size>64)resourceVoxelCache.delete(resourceVoxelCache.keys().next().value);
   return points;
 }
 function pointSegmentDistance(px,py,pz,a,b){
@@ -2053,7 +2065,7 @@ function variedResource(def,wx,wz,salt=0){
   // bounded lognormal-like biological size variation without tiny/giant outliers.
   const a=hash3(wx,def.seed|0,wz,5101+salt),b=hash3(wz,wx,def.seed|0,5119+salt),c=hash3(def.seed|0,wz,wx,5147+salt);
   const bell=(a+b+c-1.5)/1.5,variance=def.sizeVariance??.28;
-  let scale=Math.max(2,Math.min(72,Math.round(def.scale*Math.exp(bell*variance*.88))));
+  let scale=Math.max(2,Math.min(70,Math.round(def.scale*Math.exp(bell*variance*.88))));
   // A tree Resource is classified as adult in this generator. With the trunk
   // architecture's 1.38× height multiplier, 43 voxels guarantees >=6.1 m / 20 ft.
   if(def.role==='tree'&&woodyProfile(def).form==='shrub')scale=Math.max(7,Math.min(34,scale));
@@ -2064,7 +2076,7 @@ function variedResource(def,wx,wz,salt=0){
 }
 function treeArchitecture(def){
   const key=[def.name,def.growthStage||'adult',def.seed,def.scale,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,vegetationDetail].join(':');
-  if(resourceArchitectureCache.has(key))return resourceArchitectureCache.get(key);
+  if(resourceArchitectureCache.has(key)){const cached=resourceArchitectureCache.get(key);resourceArchitectureCache.delete(key);resourceArchitectureCache.set(key,cached);return cached;}
   const s=Math.max(3,def.scale),seed=def.seed|0,profile=woodyProfile(def),height=s*profile.height,steps=Math.max(6,(def.iterations||5)+2),nodes=[];
   const windAngle=hash3(seed,1,0,5201)*Math.PI*2,wind=.028*s*(1-Math.max(-.3,def.tropism||0));
   for(let i=0;i<=steps;i++){
@@ -2108,7 +2120,7 @@ function treeArchitecture(def){
       leaves.push({x:nodes[steps].x,y:nodes[steps].y,z:nodes[steps].z,rx:s*.18,ry:s*.15,rz:s*.18});
     }
   }
-  const result={segments,leaves};resourceArchitectureCache.set(key,result);return result;
+  const result={segments,leaves};resourceArchitectureCache.set(key,result);if(resourceArchitectureCache.size>64)resourceArchitectureCache.delete(resourceArchitectureCache.keys().next().value);return result;
 }
 function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   // Trees use their own jittered candidates, independent from rocks/flowers.
@@ -2890,7 +2902,7 @@ function updatePlayer(dt){
 }
 
 // === DIRECTION-PREDICTED SECTOR STREAMING ===
-const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,PREDICT_DEPTH_CHUNKS=Math.min(8,PREFETCH_MARGIN);
+const STREAM_SECTOR_CHUNKS=4,STREAM_SECTOR_VOXELS=STREAM_SECTOR_CHUNKS*CHUNK_SIZE,STREAM_UPLOAD_TILE_VOXELS=CHUNK_SIZE*2,PREDICT_DEPTH_CHUNKS=Math.min(8,PREFETCH_MARGIN);
 let lastStreamShiftAt=0,streamTask=null,prefetchJobs=[],prefetchSignature='',prefetchSectorLabel='forward';
 let lastPrefetchWorkAt=-Infinity,nextCacheNoticeAt=Infinity,cacheNoticeActive=false,cacheNoticeTotal=0,cacheNoticeHideAt=0;
 function predictedSectorDirection(){
@@ -2924,9 +2936,12 @@ function queueStreamShift(shiftX,shiftZ){
   streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],uploadDone:0};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
 }
 function buildStreamUploadBoxes(task){
-  const boxes=[],seen=new Set(),add=(x,z)=>{const key=`${x},${z}`;if(seen.has(key))return;seen.add(key);boxes.push([x,0,z,Math.min(LOADED_SIZE_X-1,x+STREAM_SECTOR_VOXELS-1),LOADED_SIZE_Y-1,Math.min(LOADED_SIZE_Z-1,z+STREAM_SECTOR_VOXELS-1)]);};
-  if(task.shiftX){const x0=task.shiftX>0?LOADED_SIZE_X-Math.abs(task.shiftX):0;for(let z=0;z<LOADED_SIZE_Z;z+=STREAM_SECTOR_VOXELS)add(x0,z);}
-  if(task.shiftZ){const z0=task.shiftZ>0?LOADED_SIZE_Z-Math.abs(task.shiftZ):0;for(let x=0;x<LOADED_SIZE_X;x+=STREAM_SECTOR_VOXELS)add(x,z0);}
+  // Keep the directional shift broad and atomic, but upload it in 6.4 m
+  // squares. Each tile is ~1.7 MiB instead of the former ~6.8 MiB slab,
+  // removing the single-frame copy/upload spike without exposing strips.
+  const boxes=[],seen=new Set(),add=(x,z)=>{const key=`${x},${z}`;if(seen.has(key))return;seen.add(key);boxes.push([x,0,z,Math.min(LOADED_SIZE_X-1,x+STREAM_UPLOAD_TILE_VOXELS-1),LOADED_SIZE_Y-1,Math.min(LOADED_SIZE_Z-1,z+STREAM_UPLOAD_TILE_VOXELS-1)]);};
+  if(task.shiftX){const x0=task.shiftX>0?LOADED_SIZE_X-Math.abs(task.shiftX):0;for(let x=x0;x<x0+Math.abs(task.shiftX);x+=STREAM_UPLOAD_TILE_VOXELS)for(let z=0;z<LOADED_SIZE_Z;z+=STREAM_UPLOAD_TILE_VOXELS)add(x,z);}
+  if(task.shiftZ){const z0=task.shiftZ>0?LOADED_SIZE_Z-Math.abs(task.shiftZ):0;for(let z=z0;z<z0+Math.abs(task.shiftZ);z+=STREAM_UPLOAD_TILE_VOXELS)for(let x=0;x<LOADED_SIZE_X;x+=STREAM_UPLOAD_TILE_VOXELS)add(x,z);}
   return boxes;
 }
 function processStreamTask(){

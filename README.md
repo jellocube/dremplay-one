@@ -1,6 +1,15 @@
 # Dremplay One
 
-Current release: **v0.0.1.0.18**
+Current release: **v0.0.1.0.19**
+
+## v0.0.1.0.19 fine voxel engine
+
+- Made the near field visibly and geometrically 2× finer: 5 cm traversal, correlated 5 cm surface relief, and independent palette shading for every microvoxel in all three axes. The previous pass incorrectly shaded each group from its 10 cm parent coordinate, concealing the doubled resolution.
+- Fine hits now retain crisp microvoxel face normals and bypass the expensive 12–24 sample coarse smoothing kernel. The detailed foreground is both sharper and cheaper to light.
+- Replaced procedural tree-bound queries with conservative species-aware allometric envelopes. Directional prefetch no longer constructs complete seeded branch graphs merely to test height and chunk overlap.
+- Converted branch-architecture and voxelized-Resource caches to compact 64-entry LRU working sets, preventing long walks from retaining hundreds of large tree crowns while preserving reuse across adjacent chunks.
+- Split streaming uploads into 6.4 m square, approximately 1.7 MiB tiles instead of approximately 6.8 MiB slabs. Broad directional sectors still commit together, but individual frames perform much less CPU copying and GPU upload work.
+- Kept the authoritative editable/collidable world sparse at 10 cm and the distant landscape coarse. Only the configurable near radius pays for 5 cm ray traversal, avoiding an eightfold world-memory increase.
 
 ## v0.0.1.0.18 living woodland
 
