@@ -1,6 +1,14 @@
 # Dremplay One
 
-Current release: **v0.0.1.0.19**
+Current release: **v0.0.1.0.19.1**
+
+## v0.0.1.0.19.1 microvoxel model bugfix
+
+- Extended the 5 cm near-field lattice to every procedural Resource material. Leaves, needles, flowers and grass use fine porosity; exposed bark and wood trim their corner octants; rocks, soil props and placed models use the same correlated micro-surface system.
+- Restored the exact parent-density normal, cavity, daylight and specular calculations used by the 10 cm renderer. Small and merged voxels now match in softness and brightness across the LOD boundary instead of switching to harsh cube-face shadows.
+- Added 5 cm model-detail identity to Resource transfer payloads while remaining compatible with existing IDs. Procedural scale continues to describe physical model size, independently from render LOD.
+- Updated the Resource preview to expose 5 cm model cells without expanding the authoritative world texture or retaining a second full-resolution copy.
+- Fine Resources merge back into their existing 10 cm parent cells beyond the configurable near-detail radius, preserving the optimized distant raymarch and unchanged physical silhouettes.
 
 ## v0.0.1.0.19 fine voxel engine
 
