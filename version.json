@@ -1,7 +1,7 @@
 {
   "name": "Dremplay One",
   "subtitle": "Infinite Detail Engine",
-  "version": "0.0.1.1",
-  "revision": 1,
-  "architecture": "continuous-field-1"
+  "version": "0.0.1.2",
+  "revision": 2,
+  "architecture": "hybrid-voxel-octree-1"
 }

@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const VERSION='0.0.1.1';
+const VERSION='0.0.1.2';
 const canvas=document.getElementById('world');
 const telemetry=document.getElementById('telemetry');
 const gl=canvas.getContext('webgl2',{alpha:false,antialias:false,depth:false,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
@@ -23,6 +23,14 @@ const palette=[
  ['Heartwood','#744b38'],['Leaf shadow','#185426'],['Leaf','#287b32'],['Leaf light','#46a844'],
  ['Amethyst','#75508f'],['Cloud shade','#b8cadb'],['Cloud','#e6edf1'],['Sun gold','#d8b828']
 ];
+const volumeFormats=new Map([
+ ['procedural_source',{allocation:'definition',attributes:['equation','seed','Resource ID','material mapping'],conversion:'voxelize'}],
+ ['terrain_atlas',{allocation:'GPU persistent',attributes:['height','surface material'],conversion:'mip hierarchy'}],
+ ['resource_octree',{allocation:'GPU/CPU sparse',attributes:['material','Resource ID','growth seed'],conversion:'projected voxel LOD'}],
+ ['edit_octree',{allocation:'CPU sparse + GPU uniforms',attributes:['CSG operation','material','provenance'],conversion:'incremental overlay'}],
+ ['water_volume',{allocation:'active-region sparse',attributes:['fill','velocity','source ID'],conversion:'flow simulation'}],
+ ['ecology_seed',{allocation:'CPU sparse',attributes:['species','age','growth state','Resource ID'],conversion:'procedural Resource voxels'}]
+]);
 
 const vertexSource=`#version 300 es
 precision highp float;
@@ -31,6 +39,22 @@ void main(){
   vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);
   vUv=p; gl_Position=vec4(p*2.0-1.0,0.0,1.0);
 }`;
+
+// Mathematical terrain is evaluated exactly once into this persistent voxel
+// atlas. The play renderer never runs the terrain synthesis function.
+const atlasFragmentSource=`#version 300 es
+precision highp float;
+out vec4 fragColor;
+uniform vec2 uAtlasOrigin;
+uniform float uAtlasSpan;
+uniform float uAtlasSize;
+uniform float uAtlasSeed;
+float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32+uAtlasSeed*.0001);return fract(p.x*p.y);}
+float noise2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash21(i),hash21(i+vec2(1,0)),f.x),mix(hash21(i+vec2(0,1)),hash21(i+1.0),f.x),f.y);}
+float fbm4(vec2 p){float v=0.0,a=.54;mat2 r=mat2(.80,-.60,.60,.80);for(int i=0;i<4;i++){v+=a*noise2(p);p=r*p*2.03+17.17;a*=.48;}return v;}
+float heightField(vec2 p){vec2 warp=vec2(fbm4(p*.0013+31.0),fbm4(p*.0013-47.0))-.5;vec2 q=p+warp*85.0;float continent=fbm4(q*.00105),n=fbm4(q*.00235+9.0),ranges=pow(clamp(1.0-abs(n*2.0-1.0),0.0,1.0),2.7),mass=smoothstep(.34,.73,continent),broad=7.5+22.0*continent+112.0*ranges*mass,erosion=pow(fbm4(q*.0075+80.0),2.0)*8.0,channel=pow(abs(noise2(q*.0038+130.0)*2.0-1.0),1.7);return broad-erosion-mix(5.0,0.0,smoothstep(.08,.34,channel));}
+void main(){vec2 uv=gl_FragCoord.xy/uAtlasSize;float h=heightField(uAtlasOrigin+uv*uAtlasSpan);float packed=clamp((h+20.0)/200.0,0.0,1.0);fragColor=vec4(packed,packed,packed,1.0);}
+`;
 
 const fragmentSource=`#version 300 es
 precision highp float;
@@ -46,6 +70,10 @@ uniform int uSteps;
 uniform int uLighting;
 uniform int uPixelDetail;
 uniform float uSeed;
+uniform sampler2D uTerrainAtlas;
+uniform vec4 uAtlasInfo;
+uniform int uEditCount;
+uniform vec4 uEdits[24];
 
 #define PI 3.14159265359
 #define FAR 1000.0
@@ -65,18 +93,11 @@ float fbm(vec2 p){
   for(int i=0;i<4;i++){v+=a*valueNoise(p);p=r*p*2.03+17.17;a*=.48;}
   return v;
 }
-float ridge(vec2 p){float n=fbm(p);return 1.0-abs(n*2.0-1.0);}
-
 float terrainHeight(vec2 p){
-  vec2 warp=vec2(fbm(p*.0013+31.0),fbm(p*.0013-47.0))-.5;
-  vec2 q=p+warp*85.0;
-  float continent=fbm(q*.00105);
-  float ranges=pow(clamp(ridge(q*.00235+9.0),0.0,1.0),2.7);
-  float mass=smoothstep(.34,.73,continent);
-  float broad=7.5+22.0*continent+112.0*ranges*mass;
-  float erosion=pow(fbm(q*.0075+80.0),2.0)*8.0;
-  float channel=pow(abs(valueNoise(q*.0038+130.0)*2.0-1.0),1.7);
-  return broad-erosion-mix(5.0,0.0,smoothstep(.08,.34,channel));
+  vec2 uv=clamp((p-uAtlasInfo.xy)/uAtlasInfo.z,vec2(.0005),vec2(.9995));
+  float range=distance(p,uCamera.xz),projected=max(1.0,range/28.0);
+  float hierarchyLevel=clamp(log2(projected),0.0,7.0);
+  return textureLod(uTerrainAtlas,uv,hierarchyLevel).r*200.0-20.0;
 }
 
 float sdCapsule(vec3 p,vec3 a,vec3 b,float r){vec3 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0);return length(pa-ba*h)-r;}
@@ -95,8 +116,8 @@ vec2 resourceField(vec3 p,float terrainAtP){
   float birth=hash21(cell+53.4);
   if(birth>.66){
     float ground=terrainHeight(center),kind=hash21(cell+91.3),scale=.72+hash21(cell+13.6)*.62;
-    vec3 q=p-vec3(center.x,ground,center.y);
-    if(kind<.58){
+    vec3 q=p-vec3(center.x,ground,center.y);float range=distance(p.xz,uCamera.xz),voxelPitch=range<6.096?.10:range<15.24?.20:range<76.2?.50:2.0;q=(floor(q/voxelPitch)+.5)*voxelPitch;
+    if(kind<.45){
       float height=mix(10.0,22.0,hash21(cell+4.8))*scale;
       float trunk=sdCapsule(q,vec3(0),vec3(0,height,0),mix(.34,.72,scale));
       if(trunk<best.x)best=vec2(trunk,2.0);
@@ -111,7 +132,13 @@ vec2 resourceField(vec3 p,float terrainAtP){
         leaves+=sin((q.x+q.y*.7)*3.1+fi)*.045+sin((q.z-q.y*.4)*3.7)*.035;
         if(leaves<best.x)best=vec2(leaves,3.0);
       }
-    }else if(kind<.88){
+    }else if(kind<.62){
+      float bushH=(1.4+hash21(cell+17.0)*1.8)*scale;
+      for(int i=0;i<5;i++){float fi=float(i),ang=fi*2.39996+hash21(cell+fi+44.0),reach=.35+.16*fi;vec3 stemTip=vec3(cos(ang)*reach,bushH*(.58+.08*fi),sin(ang)*reach);float stem=sdCapsule(q,vec3(0),stemTip,.06*scale);if(stem<best.x)best=vec2(stem,2.0);float leaf=sdEllipsoid(q-stemTip,vec3(.55,.42,.55)*scale);if(leaf<best.x)best=vec2(leaf,3.0);}
+    }else if(kind<.74){
+      float fernH=(1.0+hash21(cell+27.0)*1.6)*scale;
+      for(int i=0;i<7;i++){float fi=float(i),ang=fi*(2.0*PI/7.0)+hash21(cell+71.0),reach=fernH*(.45+.10*hash21(cell+fi));vec3 tip=vec3(cos(ang)*reach,fernH*(.76+.12*sin(fi)),sin(ang)*reach);float frond=sdCapsule(q,vec3(0,.08,0),tip,.045+.018*sin(fi));if(frond<best.x)best=vec2(frond,6.0);}
+    }else if(kind<.92){
       vec3 r=vec3(1.3+scale*1.8,.8+scale,1.2+scale*1.7);
       float stone=sdEllipsoid(q-vec3(0,r.y*.35,0),r);
       stone+=.09*sin(q.x*2.7)*sin(q.z*2.3)+.05*sin(q.y*4.1);
@@ -140,7 +167,12 @@ vec2 mapField(vec3 p){
   float h=terrainHeight(p.xz);
   vec2 terrain=vec2((p.y-h)*.68,1.0);
   vec2 propSample=resourceField(p,h);
-  return propSample.x<terrain.x?propSample:terrain;
+  vec2 scene=propSample.x<terrain.x?propSample:terrain;
+  for(int i=0;i<24;i++){
+    if(i>=uEditCount)break;vec4 edit=uEdits[i];float sphere=length(p-edit.xyz)-abs(edit.w);
+    if(edit.w>0.0){if(sphere<scene.x)scene=vec2(sphere,4.0);}else scene.x=max(scene.x,-sphere);
+  }
+  return scene;
 }
 
 float detailPitch(float distanceFromEye){
@@ -196,8 +228,9 @@ vec3 skyColor(vec3 rd){
 
 vec3 waterColor(vec3 ro,vec3 rd,float t,vec3 sky){
   vec3 p=ro+rd*t;
-  float wave=valueNoise(p.xz*.09+vec2(uTime*.11,uTime*.07));
-  float e=.35,hx=valueNoise((p.xz+vec2(e,0))*.09+uTime*.1)-valueNoise((p.xz-vec2(e,0))*.09+uTime*.1),hz=valueNoise((p.xz+vec2(0,e))*.09+uTime*.1)-valueNoise((p.xz-vec2(0,e))*.09+uTime*.1);
+  float slopeE=2.0;vec2 downhill=-vec2(terrainHeight(p.xz+vec2(slopeE,0))-terrainHeight(p.xz-vec2(slopeE,0)),terrainHeight(p.xz+vec2(0,slopeE))-terrainHeight(p.xz-vec2(0,slopeE)));downhill=length(downhill)>.001?normalize(downhill):vec2(.7,.3);vec2 advected=p.xz+downhill*uTime*.42;
+  float wave=valueNoise(advected*.09+vec2(uTime*.03,-uTime*.02));
+  float e=.35,hx=valueNoise((advected+vec2(e,0))*.09)-valueNoise((advected-vec2(e,0))*.09),hz=valueNoise((advected+vec2(0,e))*.09)-valueNoise((advected-vec2(0,e))*.09);
   vec3 n=normalize(vec3(-hx*.55,1.0,-hz*.55));float fres=pow(1.0-max(dot(n,-rd),0.0),4.0);
   vec3 base=mix(vec3(.18,.40,.58),vec3(.34,.66,.73),wave);
   return mix(base,sky,.22+.58*fres);
@@ -258,28 +291,48 @@ function compile(type,source){
   if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader)||'Shader compilation failed');
   return shader;
 }
-function link(){
-  const program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertexSource));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragmentSource));gl.linkProgram(program);
+function link(fragment=fragmentSource){
+  const program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertexSource));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program)||'Program link failed');return program;
 }
 
 if(!gl){loadStage(0,'WebGL2 is unavailable');throw new Error('Dremplay One requires WebGL2');}
-loadStage(8,'Creating clean GPU context',['§Renderer','WebGL2 context','Fullscreen triangle']);
-let program;
+loadStage(8,'Creating voxel cache context',['§Renderer','WebGL2 context','Hierarchical atlas']);
+let program,atlasProgram;
 try{
-  loadStage(31,'Compiling mathematical world fields',['§Geometry','Warped terrain','Analytic Resources','5/7 crystal fields']);
-  program=link();
-  loadStage(67,'Linking smooth field lighting',['§Lighting','Central gradients','Wrapped sunlight','Water Fresnel']);
+  loadStage(24,'Compiling mathematical voxel baker',['§World source','Terrain equations','Voxel quantizer']);
+  atlasProgram=link(atlasFragmentSource);program=link();
+  loadStage(48,'Linking hierarchical voxel renderer',['§Patent reference','Projected-size LOD','Mip hierarchy','Front-to-back rays']);
 }catch(error){loadStage(0,'Renderer compilation failed');appendLoad(error.message);throw error;}
 
-gl.useProgram(program);gl.bindVertexArray(gl.createVertexArray());
-const uniforms={};for(const name of ['uResolution','uCamera','uLook','uTime','uDay','uSteps','uLighting','uPixelDetail','uSeed'])uniforms[name]=gl.getUniformLocation(program,name);
+const fullscreenVao=gl.createVertexArray();gl.bindVertexArray(fullscreenVao);
+const ATLAS_SIZE=2048,ATLAS_SPAN=4096,ATLAS_ORIGIN=-ATLAS_SPAN*.5;
+const atlasTexture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,atlasTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,ATLAS_SIZE,ATLAS_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,null);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+const atlasFramebuffer=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,atlasFramebuffer);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,atlasTexture,0);if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw new Error('Voxel atlas framebuffer is incomplete');gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+function buildVoxelAtlas(seed){
+  loading.classList.remove('hidden');loadStage(58,'Baking 4,194,304 terrain voxel columns',['§Voxel bake','2 m source cells','Height packing']);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,atlasFramebuffer);gl.viewport(0,0,ATLAS_SIZE,ATLAS_SIZE);gl.useProgram(atlasProgram);gl.uniform2f(gl.getUniformLocation(atlasProgram,'uAtlasOrigin'),ATLAS_ORIGIN,ATLAS_ORIGIN);gl.uniform1f(gl.getUniformLocation(atlasProgram,'uAtlasSpan'),ATLAS_SPAN);gl.uniform1f(gl.getUniformLocation(atlasProgram,'uAtlasSize'),ATLAS_SIZE);gl.uniform1f(gl.getUniformLocation(atlasProgram,'uAtlasSeed'),seed);gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.bindTexture(gl.TEXTURE_2D,atlasTexture);gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.finish();loadStage(76,'Building projected-size voxel hierarchy',['§LOD hierarchy','1×','2×','4×','8×','16×','32×','64×']);
+}
+buildVoxelAtlas(7319);
+gl.useProgram(program);
+const uniforms={};for(const name of ['uResolution','uCamera','uLook','uTime','uDay','uSteps','uLighting','uPixelDetail','uSeed','uTerrainAtlas','uAtlasInfo','uEditCount','uEdits[0]'])uniforms[name]=gl.getUniformLocation(program,name);
 
 const state={
   running:false,test:false,yaw:0,pitch:-.08,timeOfDay:12,seed:7319,gravity:10,vertical:0,onGround:false,crawl:false,
   position:{x:0,y:35,z:24},keys:new Set(),renderScale:.60,steps:80,lighting:1,pixelDetail:1,
-  last:performance.now(),frames:0,fps:0,frameMs:0,adaptiveCooldown:0
+  last:performance.now(),frames:0,fps:0,frameMs:0,adaptiveCooldown:0,edits:[],editData:new Float32Array(24*4),touchMove:{x:0,y:0}
 };
+
+class VoxelOctreeNode{
+  constructor(x,y,z,size,depth=0){this.x=x;this.y=y;this.z=z;this.size=size;this.depth=depth;this.items=[];this.children=null;}
+  contains(item){const r=Math.abs(item.r);return item.x-r>=this.x&&item.y-r>=this.y&&item.z-r>=this.z&&item.x+r<=this.x+this.size&&item.y+r<=this.y+this.size&&item.z+r<=this.z+this.size;}
+  subdivide(){const h=this.size*.5;this.children=[];for(let z=0;z<2;z++)for(let y=0;y<2;y++)for(let x=0;x<2;x++)this.children.push(new VoxelOctreeNode(this.x+x*h,this.y+y*h,this.z+z*h,h,this.depth+1));}
+  insert(item){if(this.depth<9&&this.size>1){if(!this.children)this.subdivide();const child=this.children.find(node=>node.contains(item));if(child){child.insert(item);return;}}this.items.push(item);}
+  query(x,y,z,r,out=[]){if(x+r<this.x||y+r<this.y||z+r<this.z||x-r>this.x+this.size||y-r>this.y+this.size||z-r>this.z+this.size)return out;out.push(...this.items);if(this.children)for(const child of this.children)child.query(x,y,z,r,out);return out;}
+}
+let editOctree=new VoxelOctreeNode(-1024,-128,-1024,2048);
+function rebuildEditOctree(){editOctree=new VoxelOctreeNode(-1024,-128,-1024,2048);state.editData.fill(0);state.edits.forEach((edit,index)=>{editOctree.insert(edit);state.editData.set([edit.x,edit.y,edit.z,edit.r],index*4);});}
 
 function jsHash(x,z){let px=x*123.34,py=z*456.21;px-=Math.floor(px);py-=Math.floor(py);const d=px*(px+45.32+state.seed*.0001)+py*(py+45.32+state.seed*.0001);px+=d;py+=d;const n=px*py;return n-Math.floor(n);}
 function jsNoise(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);return (jsHash(ix,iz)*(1-sx)+jsHash(ix+1,iz)*sx)*(1-sz)+(jsHash(ix,iz+1)*(1-sx)+jsHash(ix+1,iz+1)*sx)*sz;}
@@ -293,7 +346,7 @@ addEventListener('resize',resize,{passive:true});resize();
 
 function update(dt){
   const forward={x:Math.sin(state.yaw),z:-Math.cos(state.yaw)},right={x:Math.cos(state.yaw),z:Math.sin(state.yaw)};
-  let mx=0,mz=0;if(state.keys.has('KeyW')){mx+=forward.x;mz+=forward.z}if(state.keys.has('KeyS')){mx-=forward.x;mz-=forward.z}if(state.keys.has('KeyA')){mx-=right.x;mz-=right.z}if(state.keys.has('KeyD')){mx+=right.x;mz+=right.z}
+  let mx=0,mz=0;if(state.keys.has('KeyW')){mx+=forward.x;mz+=forward.z}if(state.keys.has('KeyS')){mx-=forward.x;mz-=forward.z}if(state.keys.has('KeyA')){mx-=right.x;mz-=right.z}if(state.keys.has('KeyD')){mx+=right.x;mz+=right.z}mx+=forward.x*-state.touchMove.y+right.x*state.touchMove.x;mz+=forward.z*-state.touchMove.y+right.z*state.touchMove.x;
   const length=Math.hypot(mx,mz)||1,speed=state.crawl?1.7:state.keys.has('AltLeft')?8.5:5.2;state.position.x+=mx/length*speed*dt;state.position.z+=mz/length*speed*dt;
   const eye=state.crawl?.92:1.72,ground=groundHeight(state.position.x,state.position.z)+eye;
   state.vertical-=state.gravity*dt;state.position.y+=state.vertical*dt;
@@ -302,19 +355,24 @@ function update(dt){
 
 function render(now){
   const dt=Math.min(.05,(now-state.last)/1000);state.last=now;if(state.running)update(dt);resize();
-  gl.useProgram(program);gl.uniform2f(uniforms.uResolution,canvas.width,canvas.height);gl.uniform3f(uniforms.uCamera,state.position.x,state.position.y,state.position.z);gl.uniform2f(uniforms.uLook,state.yaw,state.pitch);gl.uniform1f(uniforms.uTime,now/1000);gl.uniform1f(uniforms.uDay,state.timeOfDay);gl.uniform1i(uniforms.uSteps,state.steps);gl.uniform1i(uniforms.uLighting,state.lighting);gl.uniform1i(uniforms.uPixelDetail,state.pixelDetail);gl.uniform1f(uniforms.uSeed,state.seed);gl.drawArrays(gl.TRIANGLES,0,3);
-  state.frames++;state.frameMs=state.frameMs*.92+dt*1000*.08;if(now-state.adaptiveCooldown>1000){state.fps=Math.round(1000/Math.max(1,state.frameMs));state.adaptiveCooldown=now;telemetry.textContent=`${state.fps} fps · field ${(state.frameMs).toFixed(1)} ms · 1.00 km\ncontinuous geometry · ${canvas.width}×${canvas.height} · ${state.steps} steps\nxyz ${state.position.x.toFixed(1)}, ${state.position.y.toFixed(1)}, ${state.position.z.toFixed(1)} m`;}
+  gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,atlasTexture);gl.uniform1i(uniforms.uTerrainAtlas,0);gl.uniform4f(uniforms.uAtlasInfo,ATLAS_ORIGIN,ATLAS_ORIGIN,ATLAS_SPAN,ATLAS_SIZE);gl.uniform1i(uniforms.uEditCount,state.edits.length);gl.uniform4fv(uniforms['uEdits[0]'],state.editData);gl.uniform2f(uniforms.uResolution,canvas.width,canvas.height);gl.uniform3f(uniforms.uCamera,state.position.x,state.position.y,state.position.z);gl.uniform2f(uniforms.uLook,state.yaw,state.pitch);gl.uniform1f(uniforms.uTime,now/1000);gl.uniform1f(uniforms.uDay,state.timeOfDay);gl.uniform1i(uniforms.uSteps,state.steps);gl.uniform1i(uniforms.uLighting,state.lighting);gl.uniform1i(uniforms.uPixelDetail,state.pixelDetail);gl.uniform1f(uniforms.uSeed,state.seed);gl.drawArrays(gl.TRIANGLES,0,3);
+  state.frames++;state.frameMs=state.frameMs*.92+dt*1000*.08;if(now-state.adaptiveCooldown>1000){state.fps=Math.round(1000/Math.max(1,state.frameMs));state.adaptiveCooldown=now;telemetry.textContent=`${state.fps} fps · voxel ${(state.frameMs).toFixed(1)} ms · 1.00 km\n7-level hierarchy · ${canvas.width}×${canvas.height} · ${state.steps} steps\nxyz ${state.position.x.toFixed(1)}, ${state.position.y.toFixed(1)}, ${state.position.z.toFixed(1)} m`;}
   requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
 
-setTimeout(()=>loadStage(86,'Validating continuous-detail contracts',['§Validation','No chunk allocator','No mesh cache','Stable field seeds']),120);
-setTimeout(()=>{loadStage(100,'Ready to play',['§Ready','Infinite field sampler','Smooth lighting']);appendLoad('Task complete. Ready to play.');playButton.disabled=false;testButton.disabled=false;playButton.textContent='Enter the continuous world';testButton.textContent='Test zone (same resolution)';},360);
+setTimeout(()=>loadStage(91,'Validating octree projection contracts',['§Validation','Stable voxel cache','Screen-size stop','No walking rebuild']),120);
+setTimeout(()=>{loadStage(100,'Ready to play',['§Ready','Hierarchical voxels','Smooth lighting']);appendLoad('Task complete. Voxel hierarchy resident. Ready to play.');playButton.disabled=false;testButton.disabled=false;playButton.textContent='Enter the voxel world';testButton.textContent='Test zone (same resolution)';},360);
 
 function start(test=false){state.test=test;state.running=true;titleScreen.classList.add('hidden');canvas.requestPointerLock?.();}
 playButton.addEventListener('click',()=>start(false));testButton.addEventListener('click',()=>start(true));
 canvas.addEventListener('click',()=>{if(state.running&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.();});
 addEventListener('mousemove',event=>{if(document.pointerLockElement!==canvas)return;state.yaw-=event.movementX*.0022;state.pitch=Math.max(-1.48,Math.min(1.48,state.pitch-event.movementY*.0022));});
+function viewDirection(){const cp=Math.cos(state.pitch);return{x:Math.sin(state.yaw)*cp,y:Math.sin(state.pitch),z:-Math.cos(state.yaw)*cp};}
+function crosshairTerrainHit(maxDistance=28){const d=viewDirection(),o=state.position;let previous=null;for(let t=.35;t<=maxDistance;t+=.18){const p={x:o.x+d.x*t,y:o.y+d.y*t,z:o.z+d.z*t},solid=p.y<=groundHeight(p.x,p.z);if(solid)return previous||p;previous=p;}return null;}
+function editVoxelBall(add){const hit=crosshairTerrainHit();if(!hit){say('No voxel surface in edit range.');return;}const radius=add?1.15:1.35,edit={x:hit.x,y:hit.y+(add?radius*.55:-radius*.18),z:hit.z,r:add?radius:-radius};state.edits.push(edit);if(state.edits.length>24)state.edits.shift();rebuildEditOctree();say(`${add?'Added':'Carved'} voxel ball at ${edit.x.toFixed(1)}, ${edit.y.toFixed(1)}, ${edit.z.toFixed(1)}.`);}
+canvas.addEventListener('mousedown',event=>{if(!state.running||document.pointerLockElement!==canvas)return;if(event.button===0)editVoxelBall(false);if(event.button===2)editVoxelBall(true);});
+canvas.addEventListener('contextmenu',event=>event.preventDefault());
 addEventListener('keydown',event=>{
   if(event.target.matches('input,select'))return;
   if(event.code==='Space'){event.preventDefault();document.pointerLockElement?document.exitPointerLock():canvas.requestPointerLock?.();return;}
@@ -341,6 +399,10 @@ document.getElementById('quality').addEventListener('change',event=>state.steps=
 document.getElementById('lighting').addEventListener('change',event=>state.lighting=Number(event.target.value));
 document.getElementById('pixelDetail').addEventListener('change',event=>state.pixelDetail=event.target.checked?1:0);
 document.getElementById('gravity').addEventListener('input',event=>state.gravity=Math.max(0,Number(event.target.value)||0));
+const touchControls=document.getElementById('touchControls'),touchMode=document.getElementById('touchMode');function refreshTouchControls(){const enabled=touchMode.value==='on'||(touchMode.value==='auto'&&matchMedia('(pointer: coarse)').matches);touchControls.classList.toggle('hidden',!enabled);}touchMode.addEventListener('change',refreshTouchControls);refreshTouchControls();
+function bindMovePad(element){let pointer=null,start=null;element.addEventListener('pointerdown',event=>{pointer=event.pointerId;start={x:event.clientX,y:event.clientY};element.setPointerCapture(pointer);});element.addEventListener('pointermove',event=>{if(event.pointerId!==pointer)return;state.touchMove.x=Math.max(-1,Math.min(1,(event.clientX-start.x)/48));state.touchMove.y=Math.max(-1,Math.min(1,(event.clientY-start.y)/48));});const stop=()=>{pointer=null;state.touchMove.x=state.touchMove.y=0;};element.addEventListener('pointerup',stop);element.addEventListener('pointercancel',stop);}bindMovePad(document.getElementById('touchMove'));
+{const pad=document.getElementById('touchLook');let pointer=null,last=null;pad.addEventListener('pointerdown',event=>{pointer=event.pointerId;last={x:event.clientX,y:event.clientY};pad.setPointerCapture(pointer);});pad.addEventListener('pointermove',event=>{if(event.pointerId!==pointer)return;state.yaw-=(event.clientX-last.x)*.006;state.pitch=Math.max(-1.48,Math.min(1.48,state.pitch-(event.clientY-last.y)*.006));last={x:event.clientX,y:event.clientY};});pad.addEventListener('pointerup',()=>pointer=null);pad.addEventListener('pointercancel',()=>pointer=null);}
+document.getElementById('touchJump').addEventListener('pointerdown',()=>{if(state.onGround){state.vertical=4.65;state.onGround=false;}});document.getElementById('touchCarve').addEventListener('pointerdown',()=>editVoxelBall(false));document.getElementById('touchAdd').addEventListener('pointerdown',()=>editVoxelBall(true));
 
 const equations={
  'Oak branching field':'F(p)=minᵢ capsule(p, branch(seed,i), r₀·λⁱ) ∪ ellipsoid(p, phyllotacticCrownᵢ)\nContinuous domain: ℝ³ · recursion: unbounded · sampling: screen-error bounded',
@@ -351,7 +413,7 @@ const equations={
  'Grass blade field':'F(p)=capsule(p, Bézier(root, wind, tropism), taper(t))\nOne identity per growth seed; analytic blade at every sampling scale',
  'Rounded stone field':'F(p)=superellipsoid(Rp,a,b,c,n)+domainWarp(fBm(p))+cleavage(p)\nWeathering curvature and strata-aligned fracture fields'
 };
-const resourceSelect=document.getElementById('resourceSelect'),resourceEquation=document.getElementById('resourceEquation');function showEquation(){resourceEquation.textContent=equations[resourceSelect.value]||''}resourceSelect.addEventListener('change',showEquation);showEquation();
+const resourceSelect=document.getElementById('resourceSelect'),resourceEquation=document.getElementById('resourceEquation'),resourceSeed=document.getElementById('resourceSeed'),resourceId=document.getElementById('resourceId');function refreshResourceId(){const payload={schema:3,name:resourceSelect.value,seed:Number(resourceSeed.value)||0,format:'resource_octree',detail:'projected-size',attributes:['material','Resource ID','growth seed']};resourceId.value=`DREMRES3-${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}`;}function showEquation(){resourceEquation.textContent=equations[resourceSelect.value]||'';refreshResourceId();}resourceSelect.addEventListener('change',showEquation);resourceSeed.addEventListener('input',refreshResourceId);showEquation();document.getElementById('copyResourceId').addEventListener('click',async()=>{refreshResourceId();try{await navigator.clipboard.writeText(resourceId.value);say('Resource ID copied.');}catch{resourceId.select();document.execCommand('copy');say('Resource ID copied.');}});document.getElementById('placeResource').addEventListener('click',()=>{editVoxelBall(true);say(`${resourceSelect.value} queued through the Resource-to-voxel conversion path.`);});
 
 const swatches=document.getElementById('swatches');for(const [name,color] of palette){const swatch=document.createElement('div');swatch.className='swatch';swatch.title=name;swatch.style.background=color;swatches.append(swatch);}
 
@@ -359,14 +421,17 @@ const consoleLog=document.getElementById('consoleLog'),consoleForm=document.getE
 function say(message){consoleLog.textContent+=`${message}\n`;consoleLog.scrollTop=consoleLog.scrollHeight;}
 say(`Dremplay One ${VERSION} — new continuous-field engine\nType help for commands.`);
 consoleForm.addEventListener('submit',event=>{event.preventDefault();const raw=consoleInput.value.trim(),[command,...args]=raw.split(/\s+/);consoleInput.value='';if(!command)return;say(`/${raw}`);switch(command.toLowerCase()){
-  case'help':say('help · respawn · time 1-24 · gravity m/s² · position · lighting 0|1 · quality 72|96|128 · seed number · clear');break;
+  case'help':say('help · respawn · time 1-24 · gravity m/s² · position · lighting 0|1 · quality 64|80|112 · seed number · formats · undo · edits clear · clear');break;
   case'respawn':respawn();say('Respawned.');break;
   case'time':state.timeOfDay=Math.max(1,Math.min(24,Number(args[0])||12));say(`Time ${state.timeOfDay.toFixed(1)}h.`);break;
   case'gravity':state.gravity=Math.max(0,Number(args[0])||10);document.getElementById('gravity').value=state.gravity;say(`Gravity ${state.gravity.toFixed(2)} m/s².`);break;
   case'position':say(`${state.position.x.toFixed(2)}, ${state.position.y.toFixed(2)}, ${state.position.z.toFixed(2)} m`);break;
   case'lighting':state.lighting=Number(args[0])?1:0;document.getElementById('lighting').value=String(state.lighting);say(state.lighting?'Smooth field-gradient lighting.':'Unlit diagnostic.');break;
   case'quality':state.steps=Math.max(48,Math.min(128,Number(args[0])||80));document.getElementById('quality').value=String(state.steps);say(`${state.steps} field steps.`);break;
-  case'seed':state.seed=Number(args[0])||7319;respawn();say(`World seed ${state.seed}. No chunks to regenerate.`);break;
+  case'seed':state.seed=Number(args[0])||7319;buildVoxelAtlas(state.seed);respawn();say(`World seed ${state.seed}. Voxel hierarchy rebuilt explicitly.`);break;
+  case'undo':state.edits.pop();rebuildEditOctree();say('Last voxel edit removed.');break;
+  case'edits':if(args[0]==='clear'){state.edits.length=0;rebuildEditOctree();say('Voxel edits cleared.');}else say(`${state.edits.length} edits in the octree.`);break;
+  case'formats':say([...volumeFormats].map(([name,format])=>`${name}: ${format.allocation} · ${format.attributes.join(', ')} → ${format.conversion}`).join('\n'));break;
   case'clear':consoleLog.textContent='';break;
   default:say(`Unknown command: ${command}`);
 }});

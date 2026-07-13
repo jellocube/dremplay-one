@@ -2,7 +2,20 @@
 
 **Infinite Detail Engine**
 
-Current release: **v0.0.1.1**
+Current release: **v0.0.1.2**
+
+## v0.0.1.2 hierarchical voxel conversion
+
+- Replaced per-ray perfect-resolution terrain mathematics with a persistent 2048² GPU voxel atlas covering 4.096 km at 2 m source spacing. World equations run once during the explicit bake; walking samples the resident cache and cannot regenerate terrain or material noise.
+- Built seven mipmapped hierarchy levels and select them from projected size and range. This adapts the useful concepts in Euclideon's octree patent—hierarchical portions, screen-size stopping and front-to-back visibility—to a WebGL-safe voxel cache.
+- Added a true sparse 3D octree for editable CSG voxel balls and established separate tagged formats for mathematical sources, terrain rendering, Resource voxels, edits, water state and ecology seeds.
+- Adopted John Lin's allocation/tagging/conversion principle: each system uses the volume format suited to its work instead of forcing rendering, physics, ecology, networking and editing through one brittle structure.
+- Resource equations now quantize into 10 cm, 20 cm, 50 cm and 2 m voxel representations according to the established distance bands. Definitions and Resource IDs remain resolution-independent.
+- Restored crosshair editing: left mouse carves a voxel ball and right mouse adds one. Edits are indexed by the sparse octree, retain CSG operation data, render immediately, and support `undo` and `edits clear` console commands.
+- Expanded procedural ecology with adult trees, shrubs, recursive seven-frond ferns, grass blades, rounded stones and strict five/seven-sided crystals. Resource growth remains deterministic by seed.
+- Water now advects its pixel-scale waves along the cached terrain gradient while retaining Fresnel reflection and depression-only placement.
+- Added a volume-format registry and `formats` console command exposing allocation, attributes and conversion routes for future mods and editing GUIs.
+- References: [Euclideon patent US9842425B2](https://patents.google.com/patent/US9842425B2/en) and [John Lin, “The Perfect Voxel Engine”](https://voxely.net/blog/the-perfect-voxel-engine/).
 
 ## v0.0.1.1 continuous voxel world rewrite
 
