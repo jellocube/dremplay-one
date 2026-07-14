@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.8 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.9 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.8';
-  const CURRENT_REVISION = 37;
+  const CURRENT_VERSION = '0.0.1.4.9';
+  const CURRENT_REVISION = 38;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.8 · Infinite Detail Voxel Engine · supplied SW–NE heightmap</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.9 · Infinite Detail Voxel Engine · continuous 300 m terrain handoff</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.8 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.9 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.8</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">supplied 3×5 km SW–NE island · continuous height field · 300 m voxel invariant</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.9</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">supplied 3×5 km SW–NE island · continuous height field · verified 300 m terrain handoff</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=37"></script>
+<script src="heightmap-world-v2.js?v=38"></script>
 <script>
 (() => {
 "use strict";
@@ -1293,16 +1293,27 @@ vec3 materialColor(uint m, ivec3 p, int detailScale){
 }
 
 bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface,out float hitT){
-  if(uViewDistance<=650.0||startT>=uViewDistance||rd.y>.35)return false;
+  if(uViewDistance<=650.0||rd.y>.35)return false;
   // The compact height/material atlas is normally the 250 ft+ LOD. After the
   // exact passes miss, it may begin at 50 ft as a non-editable continuity view.
   // If an exact resident/merged ray found no matter, the compact regional
   // preview is the continuity fallback from 50 ft onward. It no longer leaves
   // a blank 50–250 ft band while an exact sector is still being prepared.
-  float t=max(startT,uLodDistances.y),stepLen=160.0;
+  // This fallback must begin *inside* the resident ring. Starting at the DDA
+  // exit made a ray which was already below the coarse height field report
+  // the ring boundary itself as a hit, producing the apparent brown world
+  // edge. Exact voxels still win whenever they are present; this trace only
+  // supplies continuous terrain behind a missing or late detail sector.
+  float t=min(max(uLodDistances.y,1.0),uViewDistance),stepLen=160.0;
   vec3 startP=ro+rd*t;vec4 startData=farVoxelTerrainAt(startP.xz,t);if(startData.x<0.0)return false;
   float startDelta=startP.y-startData.x;
-  if(startDelta<=0.0){hitT=t;hitP=startP;surface=startData;return true;}
+  if(startDelta<=0.0){
+    vec4 cameraData=farVoxelTerrainAt(ro.xz,0.0);float cameraDelta=ro.y-cameraData.x;
+    if(cameraData.x<0.0||cameraDelta<=0.0)return false;
+    float lo=0.0,hi=t;
+    for(int refine=0;refine<7;refine++){float probe=(lo+hi)*.5;vec3 q=ro+rd*probe;float d=q.y-farVoxelTerrainAt(q.xz,probe).x;if(d>0.0)lo=probe;else hi=probe;}
+    hitT=(lo+hi)*.5;hitP=ro+rd*hitT;surface=farVoxelTerrainAt(hitP.xz,hitT);return true;
+  }
   for(int i=0;i<40;i++){
     if(t>=uViewDistance)break;
     float nextT=min(t+stepLen,uViewDistance),midT=(t+nextT)*.5,footprint=max((nextT-t)*length(rd.xz),1.0);
@@ -3203,6 +3214,16 @@ const PLAYER_R = 0.30, PLAYER_H = 1.50, EYE_H = 1.38, CRAWL_EYE_H=.62;
 let currentEyeH=EYE_H,velY = 0, grounded = false,jumpWasDown=false;
 function solidAt(wx,wy,wz){
   const vx = Math.floor(wx/VS), vy = Math.floor(wy/VY), vz = Math.floor(wz/VS);
+  const {cx,cy,cz}=worldToChunk(vx,vy,vz),key=chunkKey(cx,cy,cz);
+  // Collision is never allowed to depend on decoder timing. The shipped
+  // height field is the authoritative world, so a late fine chunk falls back
+  // to its bounded mathematical surface instead of becoming an air cliff.
+  // Once the chunk arrives, ordinary voxel collision (including edits, caves,
+  // water and Resources) takes over without changing player coordinates.
+  if(!generatedChunks.has(key)){
+    const terrain=terrainSample(vx,vz);
+    return vy<=terrain.height;
+  }
   const material=getVoxelA(vx,vy,vz);
   if(material===MAT_GRASS&&getVoxelResourceId(vx,vy,vz))return false;
   return material!==MAT_AIR && material!==MAT_WATER && material!==MAT_MOSS && material!==MAT_TALL_GRASS && material!==MAT_FLOWER && material!==MAT_LEAVES;

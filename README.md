@@ -2,7 +2,14 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.8**
+Current release: **v0.0.1.4.9**
+
+## v0.0.1.4.9 continuous terrain handoff
+
+- Fixed the false vertical terrain curtain at the edge of the 76.8 m editable voxel ring. The mathematical height-field trace now begins inside the resident ring and solves the real surface crossing instead of treating the decoder boundary as terrain.
+- Made the immutable supplied height field authoritative for collision while a fine chunk is pending. Walking can no longer turn a late decoder job into an air cliff or world edge.
+- Kept exact voxels, edits, caves, water, and Resources authoritative as soon as their chunk is resident; the fallback changes no world coordinates and requires no procedural world regeneration.
+- Advanced the cache revision so browsers replace the broken boundary shader and collision path immediately.
 
 ## v0.0.1.4.8 supplied heightmap island
 
