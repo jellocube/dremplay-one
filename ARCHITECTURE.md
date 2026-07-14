@@ -44,6 +44,8 @@ As of v0.0.1.4.1, sector conversion has an explicit prepare/commit boundary. Chu
 
 v0.0.1.4.2 makes the compact regional atlas the latency-hiding lead representation. It refreshes independently of exact-sector work and may fill an otherwise empty ray from 50 ft onward, but it never accepts edits or simulation state. Exact prediction is ordered surface-first, and an eight-chunk recent-region guard prevents heading jitter from immediately evicting work that was just completed. The resident ring remains the sole editable authority and changes only at the verified atomic handoff.
 
+v0.0.1.4.3 restores the preview as a mathematical elevation and hydrography field rather than a flat sky-colored placeholder. Its reduction pyramid preserves relief, ridges, and stream coverage through the 10/20/40/80 m preview octaves. Directional Worker requests solve the same terrain equations on the upcoming 0.8 m lattice; no preview object instances are transferred. Ecology candidates and instance variation are threshold evaluations of continuous quasiperiodic fields, advancing the Resource system away from stored placements and toward definitions that can be reevaluated at arbitrary detail.
+
 ## Volume pipeline
 
 | Format | Allocation | Important tags | Typical conversions |

@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.3 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.2';
-  const CURRENT_REVISION = 31;
+  const CURRENT_VERSION = '0.0.1.4.3';
+  const CURRENT_REVISION = 32;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.2 · Infinite Detail Voxel Engine · preview-led regional streaming</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.3 · Infinite Detail Voxel Engine · mathematical elevation preview</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.3 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -314,7 +314,7 @@
 <div id="materialDesigner" class="tool-window" role="dialog" aria-label="Material Designer">
   <div class="titlebar"><span>Material editor</span><button class="window-close" aria-label="Close material designer">×</button></div>
   <div class="window-body designer-grid">
-    <details class="editor-section" open><summary id="materialPickerSummary">Material library</summary><div class="section-body"><canvas id="materialPreview" width="480" height="126"></canvas><canvas id="materialAtlas" width="320" height="192" aria-label="Material preview picker"></canvas><select id="designerMaterial" hidden></select></div></details>
+    <details class="editor-section" open><summary id="materialPickerSummary">Material library</summary><div class="section-body"><canvas id="materialPreview" width="480" height="126"></canvas><canvas id="materialAtlas" width="320" height="240" aria-label="Material preview picker"></canvas><select id="designerMaterial" hidden></select></div></details>
     <details class="editor-section"><summary>Palette and shades</summary><div class="section-body"><div class="shade-tabs"><button class="tool-button active" data-shade="0">Base</button><button class="tool-button" data-shade="1">Light</button><button class="tool-button" data-shade="2">Dark</button></div><canvas id="paletteAtlas" width="320" height="144" aria-label="Complete palette image sampler"></canvas><div id="paletteHoverName" class="palette-readout" aria-live="polite">Move over a swatch to read its palette name; click to choose it.</div><select id="designerBase" hidden aria-label="Base palette shade"></select><select id="designerLight" hidden aria-label="Light palette shade"></select><select id="designerDark" hidden aria-label="Dark palette shade"></select></div></details>
     <details class="editor-section"><summary>Surface generation</summary><div class="section-body"><label for="designerNoise">Noise strength</label><div class="range-row"><input id="designerNoise" type="range" min="0" max="1" step="0.01"><span id="designerNoiseValue" class="range-value"></span></div><label for="designerScale">Pattern scale</label><div class="range-row"><input id="designerScale" type="range" min="1" max="12" step="0.25"><span id="designerScaleValue" class="range-value"></span></div><label for="designerBlur">Softness</label><div class="range-row"><input id="designerBlur" type="range" min="0" max="1" step="0.01"><span id="designerBlurValue" class="range-value"></span></div><label for="designerPattern">Generator</label><select id="designerPattern"><option value="0">Solid</option><option value="1">Granular</option><option value="2">Soft fBm</option><option value="3">Warped strata</option><option value="4">Cellular aggregate</option><option value="5">Mineral veins</option><option value="6">Mixed geology</option></select></div></details>
     <details class="editor-section"><summary>Identity and transfer</summary><div class="section-body"><label>Properties ID</label><div class="property-row"><input id="materialPropertyId" aria-label="Material properties ID" spellcheck="false"><button id="designerLoadId" class="tool-button">Load</button><button id="designerCopyId" class="tool-button">Copy</button></div></div></details>
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Preview-led regional streaming · stable resident sectors · visible distance octaves</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.3</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Mathematical elevation preview · analytic ecology · directional octave solving</p></div>
 </div>
 
 <script>
@@ -452,7 +452,7 @@ const MAT_WATER=10, MAT_SNOW=11, MAT_MOSS=12;
 const MAT_MUD=13, MAT_SAND=14, MAT_CLAY=15, MAT_PEAT=16, MAT_DRY_GRASS=17, MAT_TALL_GRASS=18;
 const MAT_ALPINE_GRASS=19, MAT_LICHEN=20, MAT_GRANITE=21, MAT_MARBLE=22, MAT_QUARTZ=23;
 const MAT_SLATE=24, MAT_BASALT=25, MAT_LIMESTONE=26, MAT_GRAVEL=27, MAT_BARK=28, MAT_WOOD=29;
-const MAT_LEAVES=30, MAT_FLOWER=31;
+const MAT_LEAVES=30, MAT_FLOWER=31, MAT_BLUE_SPRUCE_FROND=32;
 const WATER_LEVEL=40;                  // 4 m valley pool datum
 const SNOW_LINE=265;                   // 26.5 m; wind/slope modify this locally
 
@@ -507,7 +507,7 @@ function terrainSample(wx,wz){
   const valley=42+alluvium*3.2+micro*.75-poolDepth;
   const raw=valley*(1-mountainMask)+mountains*mountainMask;
   const height=Math.max(2,Math.min(350,Math.round(raw)));
-  return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,riverMask,continental,ridges};
+  return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,riverMask,riverDistance,continental,ridges};
 }
 
 // Shared plan samples remove duplicated fBm/ridge work along chunk borders.
@@ -538,7 +538,7 @@ ${ridged2.toString()}
 ${smoothstep.toString()}
 ${warpedCoords.toString()}
 ${terrainSample.toString()}
-self.onmessage=event=>{const p=event.data,rows=[];for(let x=p.minX;x<=p.maxX;x+=16)for(let z=p.minZ;z<=p.maxZ;z+=16){if(x>=p.innerMinX&&x<=p.innerMaxX&&z>=p.innerMinZ&&z<=p.innerMaxZ)continue;const v=terrainSample(x,z);rows.push([x,z,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask,v.continental,v.ridges]);if(rows.length===2048)self.postMessage({id:p.id,rows:rows.splice(0),done:false});}self.postMessage({id:p.id,rows,done:true});};`;
+self.onmessage=event=>{const p=event.data,rows=[],step=p.step||16;for(let x=p.minX;x<=p.maxX;x+=step)for(let z=p.minZ;z<=p.maxZ;z+=step){if(x>=p.innerMinX&&x<=p.innerMaxX&&z>=p.innerMinZ&&z<=p.innerMaxZ)continue;const v=terrainSample(x,z);rows.push([x,z,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask,v.continental,v.ridges]);if(rows.length===2048)self.postMessage({id:p.id,rows:rows.splice(0),done:false});}self.postMessage({id:p.id,rows,done:true});};`;
   try{terrainPlannerWorker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));terrainPlannerWorker.onmessage=event=>{const {id,rows,done}=event.data;if(id!==terrainPlanRequest)return;for(const row of rows)terrainPlanCache.set(`${row[0]},${row[1]}`,{height:row[2],rawHeight:row[3],valleyMask:row[4],poolMask:row[5],poolDepth:row[6],riverMask:row[7],continental:row[8],ridges:row[9]});terrainPlanAccepted+=rows.length;trimOldestMap(terrainPlanCache,cacheLimitForDevice(18000,30000,42000));if(done){terrainPlanPending=false;loadingLog('Octave planner',`${terrainPlanAccepted} outer terrain samples accepted from worker · ${terrainPlanCache.size} cached`);}};terrainPlannerWorker.onerror=()=>{terrainPlanPending=false;terrainPlannerWorker?.terminate();terrainPlannerWorker=null;};}catch{return null;}
   return terrainPlannerWorker;
 }
@@ -547,6 +547,18 @@ function queueTerrainPlanReserve(minCX,minCZ,span,margin=TERRAIN_PLAN_MARGIN){
   terrainPlanPending=true;terrainPlanAccepted=0;const id=++terrainPlanRequest;
   worker.postMessage({id,minX:(minCX-margin)*CHUNK_SIZE-8,minZ:(minCZ-margin)*CHUNK_SIZE-8,maxX:(minCX+span+margin)*CHUNK_SIZE+8,maxZ:(minCZ+span+margin)*CHUNK_SIZE+8,innerMinX:minCX*CHUNK_SIZE-8,innerMinZ:minCZ*CHUNK_SIZE-8,innerMaxX:(minCX+span)*CHUNK_SIZE+8,innerMaxZ:(minCZ+span)*CHUNK_SIZE+8});
   loadingLog('Octave planner',`${margin}-chunk mathematical terrain reserve dispatched to worker`);
+}
+let directionalTerrainPlanSignature='';
+function queueDirectionalTerrainPlan(minCX,minCZ,maxCX,maxCZ,prediction,depth){
+  const signature=`${minCX},${minCZ},${prediction.dx},${prediction.dz},${depth}`;
+  if(signature===directionalTerrainPlanSignature||terrainPlanPending)return;
+  const worker=ensureTerrainPlannerWorker();if(!worker)return;
+  let aheadMinCX=minCX,aheadMaxCX=maxCX,aheadMinCZ=minCZ,aheadMaxCZ=maxCZ;
+  if(prediction.dx<0)aheadMinCX-=depth;else if(prediction.dx>0)aheadMaxCX+=depth;
+  if(prediction.dz<0)aheadMinCZ-=depth;else if(prediction.dz>0)aheadMaxCZ+=depth;
+  terrainPlanPending=true;terrainPlanAccepted=0;directionalTerrainPlanSignature=signature;const id=++terrainPlanRequest;
+  worker.postMessage({id,step:8,minX:aheadMinCX*CHUNK_SIZE-8,minZ:aheadMinCZ*CHUNK_SIZE-8,maxX:(aheadMaxCX+1)*CHUNK_SIZE+8,maxZ:(aheadMaxCZ+1)*CHUNK_SIZE+8,innerMinX:minCX*CHUNK_SIZE-8,innerMinZ:minCZ*CHUNK_SIZE-8,innerMaxX:(maxCX+1)*CHUNK_SIZE+8,innerMaxZ:(maxCZ+1)*CHUNK_SIZE+8});
+  loadingLog('Octave predictor',`${prediction.label} · exact 0.8 m mathematical lattice dispatched ${depth} chunks ahead`);
 }
 
 // Chunk storage (sparse, can grow to millions of chunks for huge worlds)
@@ -838,8 +850,14 @@ function assembleTerrainWeatherGrid(){
 function alignedFarOrigin(center){return Math.floor((center-FAR_SPAN_VOXELS*.5)/FAR_CELL_VOXELS)*FAR_CELL_VOXELS;}
 function fillFarTerrainRow(grid,originX,originZ,row){
   for(let x=0;x<FAR_MAP_SIZE;x++){
-    const wx=originX+(x+.5)*FAR_CELL_VOXELS,wz=originZ+(row+.5)*FAR_CELL_VOXELS,t=terrainSample(wx,wz),water=t.poolMask>.30&&t.height<WATER_LEVEL,renderHeight=water?Math.min(WATER_LEVEL,t.height+20):t.height,moisture=Math.max(0,Math.min(1,.24+t.valleyMask*.52+t.poolMask*.38)),i=(x+row*FAR_MAP_SIZE)*4;
-    grid[i]=Math.round(Math.max(0,Math.min(400,renderHeight))/400*255);grid[i+1]=Math.round(moisture*255);grid[i+2]=Math.round(Math.max(0,Math.min(1,t.poolMask))*255);grid[i+3]=Math.round(Math.max(0,Math.min(1,t.ridges))*255);
+    const wx=originX+(x+.5)*FAR_CELL_VOXELS,wz=originZ+(row+.5)*FAR_CELL_VOXELS,t=terrainSample(wx,wz);
+    // A stream can be narrower than one 10 m atlas cell. riverDistance is an
+    // analytic distance field from the same warped watershed equation, so a
+    // conservative footprint test preserves it without adding placed geometry
+    // or evaluating four more full terrain stacks per texel.
+    const riverFootprint=t.valleyMask*(1-smoothstep(24+FAR_CELL_VOXELS*.58,36+FAR_CELL_VOXELS*.58,t.riverDistance));
+    const hydro=Math.max(t.poolMask,riverFootprint),water=hydro>.30&&t.height<WATER_LEVEL,renderHeight=water?Math.min(WATER_LEVEL,t.height+20):t.height,moisture=Math.max(0,Math.min(1,.24+t.valleyMask*.52+hydro*.38)),i=(x+row*FAR_MAP_SIZE)*4;
+    grid[i]=Math.round(Math.max(0,Math.min(400,renderHeight))/400*255);grid[i+1]=Math.round(moisture*255);grid[i+2]=Math.round(Math.max(0,Math.min(1,hydro))*255);grid[i+3]=Math.round(Math.max(0,Math.min(1,t.ridges))*255);
   }
 }
 function buildFarTerrainMap(centerX,centerZ){
@@ -852,6 +870,26 @@ function buildFarMaxHeightLevels(grid){
   while(size>1){const nextSize=Math.max(1,size>>1),next=new Uint8Array(nextSize*nextSize);for(let y=0;y<nextSize;y++)for(let x=0;x<nextSize;x++){const sx=x*2,sy=y*2,i=sx+sy*size;next[x+y*nextSize]=Math.max(source[i],source[Math.min(i+1,source.length-1)],source[Math.min(i+size,source.length-1)],source[Math.min(i+size+1,source.length-1)]);}levels.push(next);source=next;size=nextSize;}
   return levels;
 }
+function buildFarTerrainLevels(grid){
+  let size=FAR_MAP_SIZE,source=grid,levels=[source];
+  while(size>1){
+    const nextSize=Math.max(1,size>>1),next=new Uint8Array(nextSize*nextSize*4);
+    for(let y=0;y<nextSize;y++)for(let x=0;x<nextSize;x++){
+      const sx=x*2,sy=y*2,sx1=Math.min(sx+1,size-1),sy1=Math.min(sy+1,size-1),d=(x+y*nextSize)*4,a=(sx+sy*size)*4,b=(sx1+sy*size)*4,c=(sx+sy1*size)*4,e=(sx1+sy1*size)*4;
+      next[d]=Math.max(source[a],source[b],source[c],source[e]);
+      next[d+1]=Math.round((source[a+1]+source[b+1]+source[c+1]+source[e+1])*.25);
+      next[d+2]=Math.max(source[a+2],source[b+2],source[c+2],source[e+2]);
+      next[d+3]=Math.max(source[a+3],source[b+3],source[c+3],source[e+3]);
+    }
+    levels.push(next);source=next;size=nextSize;
+  }
+  return levels;
+}
+function uploadFarTerrainPyramid(grid){
+  const levels=buildFarTerrainLevels(grid);gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);
+  for(let level=0,size=FAR_MAP_SIZE;level<levels.length;level++,size=Math.max(1,size>>1))gl.texImage2D(gl.TEXTURE_2D,level,gl.RGBA8,size,size,0,gl.RGBA,gl.UNSIGNED_BYTE,levels[level]);
+  return levels.reduce((bytes,level)=>bytes+level.byteLength,0);
+}
 function uploadFarHeightPyramid(grid){
   const levels=buildFarMaxHeightLevels(grid);gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
   for(let level=0,size=FAR_MAP_SIZE;level<levels.length;level++,size=Math.max(1,size>>1))gl.texImage2D(gl.TEXTURE_2D,level,gl.R8,size,size,0,gl.RED,gl.UNSIGNED_BYTE,levels[level]);
@@ -863,8 +901,8 @@ function queueFarTerrainRefresh(centerX,centerZ){
 function processFarTerrainRefresh(budgetMs=1){
   if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.row<FAR_MAP_SIZE&&performance.now()-started<budgetMs)fillFarTerrainRow(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,farTerrainTask.row++);
   if(farTerrainTask.row<FAR_MAP_SIZE)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
-  gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,farTerrainGrid);const hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
-  loadingLog('Far horizon',`atomic atlas + ${(hierarchyBytes/1024).toFixed(1)} KiB max-height hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
+  const previewBytes=uploadFarTerrainPyramid(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
+  loadingLog('Far horizon',`atomic elevation/hydrography preview ${(previewBytes/1024).toFixed(1)} KiB + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
 }
 
 function copyChunkToLoadedGrid(worldCX,worldCY,worldCZ){
@@ -953,9 +991,9 @@ uniform float uNearDetail;
 uniform vec3 uLodDistances;
 uniform float uHour;
 uniform sampler2D uPaletteTex;
-uniform ivec3 uMaterialSlots[32];
-uniform vec3 uMaterialParams[32]; // strength, scale, blur
-uniform int uMaterialModes[32];
+uniform ivec3 uMaterialSlots[33];
+uniform vec3 uMaterialParams[33]; // strength, scale, blur
+uniform int uMaterialModes[33];
 
 const int MAX_STEPS = 1200;
 const int MAX_FINE_STEPS = 384;
@@ -985,7 +1023,12 @@ float cloudNoise2(vec2 p,int salt){
 vec4 farTerrainAt(vec2 worldXZ){
   vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return vec4(-1.0);
-  vec4 packed=texture(uFarTerrain,uv);return vec4(packed.r*400.0,packed.gba);
+  vec4 packed=textureLod(uFarTerrain,uv,0.0);return vec4(packed.r*400.0,packed.gba);
+}
+vec4 farTerrainAtLod(vec2 worldXZ,float lod){
+  vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
+  if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return vec4(-1.0);
+  vec4 packed=textureLod(uFarTerrain,uv,lod);return vec4(packed.r*400.0,packed.gba);
 }
 float farMaxHeightAt(vec2 worldXZ,float lod){
   vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
@@ -1002,7 +1045,7 @@ float farVoxelCellSize(float dist){return uFarTerrainInfo.z*exp2(farVoxelLevel(d
 vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
   float level=farVoxelLevel(dist),cell=uFarTerrainInfo.z*exp2(level);
   vec2 center=uFarTerrainInfo.xy+(floor((worldXZ-uFarTerrainInfo.xy)/cell)+.5)*cell;
-  vec4 data=farTerrainAt(center);if(data.x<0.0)return data;
+  vec4 data=farTerrainAtLod(center,level);if(data.x<0.0)return data;
   // The height hierarchy stores maxima, so enlarging a voxel preserves peaks
   // and ridge silhouettes rather than averaging mountains down.
   data.x=farMaxHeightAt(center,level);return data;
@@ -1194,7 +1237,7 @@ float smoothMaterialNoise(vec3 x){
 }
 
 vec3 materialColor(uint m, ivec3 p, int detailScale){
-  int id=clamp(int(m),0,31);
+  int id=clamp(int(m),0,32);
   ivec3 slots=uMaterialSlots[id];
   vec3 params=uMaterialParams[id];
   // Fine hits pass 5 cm coordinates and a scale of two. Coarse hits retain
@@ -1262,7 +1305,7 @@ vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float tap=farVoxelCellSize(dist),hx0=farVoxelTerrainAt(p.xz-vec2(tap,0),dist).x,hx1=farVoxelTerrainAt(p.xz+vec2(tap,0),dist).x,hz0=farVoxelTerrainAt(p.xz-vec2(0,tap),dist).x,hz1=farVoxelTerrainAt(p.xz+vec2(0,tap),dist).x;
   vec3 normal=normalize(vec3(hx0-hx1,tap*2.0,hz0-hz1)),grass=vec3(56,116,52)/255.0,dry=vec3(96,152,76)/255.0,earth=vec3(132,80,44)/255.0,stone=vec3(124,124,152)/255.0,snow=vec3(224,224,224)/255.0,water=vec3(80,164,252)/255.0;
   float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w,rock=smoothstep(.58,.88,ridges)*smoothstep(90.0,250.0,height),snowAmount=smoothstep(255.0,310.0,height);
-  vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.28,.44,pool)*step(height,44.0));
+  vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.24,.48,pool));
   float diffuse=max(dot(normal,sunDirection()),0.0),light=.28+.72*sqrt(diffuse)*daylightAmount();vec3 lit=floor(base*light*16.0+.5)/16.0;
   float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-uFogStart)*adaptiveDensity);return mix(lit,skyColor(rd,false),clamp(fog,0.0,1.0));
 }
@@ -1550,14 +1593,14 @@ function naturalPaletteName(hex,index){
   return `${shade} ${family} ${String(index).padStart(3,'0')}`;
 }
 OFFICIAL_MYARA_HEX.split(',').forEach((hex,i)=>PALETTE.push([naturalPaletteName(hex,i),'#'+hex]));
-const MATERIAL_NAMES=['air','meadow_grass','brown_earth','fieldstone','builder_stone','red','blue','gold','purple','teal','meltwater','peak_snow','velvet_moss','mere_mud','sunwash_sand','ochre_clay','black_peat','summer_straw','reed_grass','alpine_turf','silver_lichen','storm_granite','moon_marble','star_quartz','blue_slate','night_basalt','old_limestone','river_gravel','ironbark','amberwood','greenleaf','foxglove'];
+const MATERIAL_NAMES=['air','meadow_grass','brown_earth','fieldstone','builder_stone','red','blue','gold','purple','teal','meltwater','peak_snow','velvet_moss','mere_mud','sunwash_sand','ochre_clay','black_peat','summer_straw','reed_grass','alpine_turf','silver_lichen','storm_granite','moon_marble','star_quartz','blue_slate','night_basalt','old_limestone','river_gravel','ironbark','amberwood','greenleaf','foxglove','blue_spruce_frond'];
 const DEFAULT_MATERIAL_SLOTS=[
   [0,0,0],[2,1,3],[5,4,6],[8,9,7],[11,10,12],
   [14,13,15],[17,16,18],[20,19,21],[23,22,24],[26,25,27],[29,28,30],
   [32,31,33],[2,1,3],
   [35,34,36],[38,37,39],[41,40,42],[44,43,45],[47,46,48],[149,148,150],[50,49,51],
   [53,52,54],[56,55,57],[59,58,60],[62,61,63],[65,64,66],[68,67,69],
-  [71,70,72],[74,73,75],[77,76,78],[80,79,81],[83,82,84],[86,85,87]
+  [71,70,72],[74,73,75],[77,76,78],[80,79,81],[83,82,84],[86,85,87],[11,133,12]
 ];
 // strength, pattern scale in voxels, softness. Stone is deliberately broad and
 // blurred; decorative colors retain crisp, granular microvoxel texture.
@@ -1567,9 +1610,11 @@ const DEFAULT_MATERIAL_PARAMS=[
   [0.12,5,0.70],[0.25,2.25,.30],
   [.14,5,.72],[.12,7,.86],[.18,5,.66],[.10,8,.92],[.18,3,.46],[.14,2.2,.42],
   [.24,3.5,.66],[.20,4,.78],[.22,7,.92],[.12,9,.94],[.24,6,.86],[.21,7,.88],
-  [.24,4,.82],[.18,5,.88],[.23,3,.44],[.16,5,.72],[.17,4,.76],[.16,4,.66],[.18,2,.28]
+  [.24,4,.82],[.18,5,.88],[.23,3,.44],[.16,5,.72],[.17,4,.76],[.16,4,.66],[.18,2,.28],[0x1f/255,1+0xa2/255*11,0xc7/255]
 ];
-const DEFAULT_MATERIAL_MODES=[0,2,3,2,2,1,1,1,1,1,2,2,2,2,2,3,2,2,2,2,4,6,5,5,3,4,4,6,3,3,4,1];
+// Slot 32 is a new blue-spruce material carrying the aesthetic payload from
+// source properties ID 0xD304000B0085000C1FA2C702 without replacing slot 4.
+const DEFAULT_MATERIAL_MODES=[0,2,3,2,2,1,1,1,1,1,2,2,2,2,2,3,2,2,2,2,4,6,5,5,3,4,4,6,3,3,4,1,2];
 let materialSlots=DEFAULT_MATERIAL_SLOTS.map(v=>v.slice());
 let materialParams=DEFAULT_MATERIAL_PARAMS.map(v=>v.slice());
 let materialModes=DEFAULT_MATERIAL_MODES.slice();
@@ -1698,8 +1743,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);
-  gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,farTerrainGrid);
-  const hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);loadingLog('GPU transfer',`${(hierarchyBytes/1024).toFixed(1)} KiB hierarchical max-height atlas enables empty-distance skipping to 1 km`);
+  const previewBytes=uploadFarTerrainPyramid(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);loadingLog('GPU transfer',`${(previewBytes/1024).toFixed(1)} KiB elevation/hydrography preview + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy cover 1 km`);
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
@@ -1827,7 +1871,7 @@ function initGL(){
   // This texture is voxel data, not a photograph. Linear filtering was
   // erasing the far-octave cell boundaries and making mountains look like a
   // smooth height field even while traversal used coarse samples.
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
   farMaxHeightTex=gl.createTexture();gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
   paletteTex=gl.createTexture();
@@ -2083,7 +2127,7 @@ function renderPickerAtlases(){
   const pc=paletteAtlas.getContext('2d'),cols=20,cellW=paletteAtlas.width/cols,rows=Math.ceil(PALETTE.length/cols),cellH=paletteAtlas.height/rows;
   pc.clearRect(0,0,paletteAtlas.width,paletteAtlas.height);
   PALETTE.forEach(([,hex],i)=>{const x=i%cols*cellW,y=Math.floor(i/cols)*cellH;pc.fillStyle=hex;pc.fillRect(x,y,cellW+1,cellH+1);if(materialSlots[Number(designerMaterial.value)||1][activeShade]===i){pc.strokeStyle='#54fc54';pc.lineWidth=3;pc.strokeRect(x+1,y+1,cellW-2,cellH-2);}});
-  const mc=materialAtlas.getContext('2d'),mcols=8,mw=materialAtlas.width/mcols,mh=materialAtlas.height/4;
+  const mc=materialAtlas.getContext('2d'),mcols=8,mrows=Math.ceil(MATERIAL_NAMES.length/mcols),mw=materialAtlas.width/mcols,mh=materialAtlas.height/mrows;
   mc.clearRect(0,0,materialAtlas.width,materialAtlas.height);
   for(let id=0;id<MATERIAL_NAMES.length;id++){
     const x=id%mcols*mw,y=Math.floor(id/mcols)*mh,slots=materialSlots[id];
@@ -2097,8 +2141,9 @@ function paletteSwatchAt(e){const r=paletteAtlas.getBoundingClientRect(),cols=20
 paletteAtlas.addEventListener('pointermove',e=>{const id=paletteSwatchAt(e);if(id<0)return;const [name,hex]=PALETTE[id],channel=['Base','Light','Dark'][activeShade];paletteHoverName.textContent=`${channel} · palette ${id} · ${name} · ${hex}`;});
 paletteAtlas.addEventListener('pointerleave',()=>{const slot=materialSlots[Number(designerMaterial.value)||1][activeShade],[name,hex]=PALETTE[slot];paletteHoverName.textContent=`Selected · palette ${slot} · ${name} · ${hex}`;});
 paletteAtlas.addEventListener('click',e=>{const id=paletteSwatchAt(e);if(id<0)return;[designerBase,designerLight,designerDark][activeShade].value=String(id);applyDesigner();const [name,hex]=PALETTE[id];paletteHoverName.textContent=`Selected · palette ${id} · ${name} · ${hex}`;});
-materialAtlas.addEventListener('pointermove',e=>{const r=materialAtlas.getBoundingClientRect(),id=Math.floor((e.clientX-r.left)/r.width*8)+Math.floor((e.clientY-r.top)/r.height*4)*8;if(id>=0&&id<MATERIAL_NAMES.length){const slot=materialSlots[id][0],[name,hex]=PALETTE[slot];paletteHoverName.textContent=`Material ${id} · ${MATERIAL_NAMES[id].replaceAll('_',' ')} · ${name} · ${hex}`;}});
-materialAtlas.addEventListener('click',e=>{const r=materialAtlas.getBoundingClientRect(),id=Math.floor((e.clientX-r.left)/r.width*8)+Math.floor((e.clientY-r.top)/r.height*4)*8;if(id>0&&id<MATERIAL_NAMES.length){designerMaterial.value=String(id);loadDesignerMaterial();}});
+function materialAtlasIdAt(e){const r=materialAtlas.getBoundingClientRect(),rows=Math.ceil(MATERIAL_NAMES.length/8);return Math.floor((e.clientX-r.left)/r.width*8)+Math.floor((e.clientY-r.top)/r.height*rows)*8;}
+materialAtlas.addEventListener('pointermove',e=>{const id=materialAtlasIdAt(e);if(id>=0&&id<MATERIAL_NAMES.length){const slot=materialSlots[id][0],[name,hex]=PALETTE[slot];paletteHoverName.textContent=`Material ${id} · ${MATERIAL_NAMES[id].replaceAll('_',' ')} · ${name} · ${hex}`;}});
+materialAtlas.addEventListener('click',e=>{const id=materialAtlasIdAt(e);if(id>0&&id<MATERIAL_NAMES.length){designerMaterial.value=String(id);loadDesignerMaterial();}});
 function materialPropertiesId(id){
   const p=materialParams[id],slots=materialSlots[id],bytes=[0xd3,id,slots[0]>>8,slots[0]&255,slots[1]>>8,slots[1]&255,slots[2]>>8,slots[2]&255,Math.round(p[0]*255),Math.round((p[1]-1)/11*255),Math.round(p[2]*255),materialModes[id]];
   return '0x'+bytes.map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('').toUpperCase();
@@ -2176,15 +2221,15 @@ const resourceDefinitions=new Map([
   ['white_oak_sapling',{name:'white_oak_sapling',role:'tree',growthStage:'sapling',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BARK,fractal:'space colonization',seed:32452867,scale:20,sizeVariance:.31,subsurface:.07,radial:6,angle:41,iterations:5,tropism:.44,influence:9,kill:2,components:[]}],
   ['balsam_fir_tree',{name:'balsam_fir_tree',role:'tree',growthStage:'adult',shape:'branch graph',material:MAT_TEAL,secondary:MAT_BARK,fractal:'L-system',seed:49979687,scale:64,sizeVariance:.21,subsurface:.05,radial:6,angle:71,iterations:7,tropism:.90,influence:13,kill:2,components:[]}],
   ['balsam_fir_sapling',{name:'balsam_fir_sapling',role:'tree',growthStage:'sapling',shape:'branch graph',material:MAT_TEAL,secondary:MAT_BARK,fractal:'L-system',seed:49979711,scale:19,sizeVariance:.27,subsurface:.03,radial:5,angle:66,iterations:5,tropism:.94,influence:8,kill:2,components:[]}],
-  ['blue_spruce_tree',{name:'blue_spruce_tree',role:'tree',growthStage:'adult',shape:'branch graph',material:MAT_BLUE,secondary:MAT_BARK,fractal:'L-system',seed:67867967,scale:64,sizeVariance:.22,subsurface:.05,radial:7,angle:76,iterations:8,tropism:.92,influence:14,kill:2,components:[]}],
-  ['blue_spruce_sapling',{name:'blue_spruce_sapling',role:'tree',growthStage:'sapling',shape:'branch graph',material:MAT_BLUE,secondary:MAT_BARK,fractal:'L-system',seed:67868023,scale:20,sizeVariance:.28,subsurface:.03,radial:5,angle:70,iterations:5,tropism:.95,influence:8,kill:2,components:[]}],
+  ['blue_spruce_tree',{name:'blue_spruce_tree',role:'tree',growthStage:'adult',shape:'branch graph',material:MAT_BLUE_SPRUCE_FROND,secondary:MAT_BARK,fractal:'L-system',seed:67867967,scale:64,sizeVariance:.22,subsurface:.05,radial:7,angle:76,iterations:8,tropism:.92,influence:14,kill:2,components:[]}],
+  ['blue_spruce_sapling',{name:'blue_spruce_sapling',role:'tree',growthStage:'sapling',shape:'branch graph',material:MAT_BLUE_SPRUCE_FROND,secondary:MAT_BARK,fractal:'L-system',seed:67868023,scale:20,sizeVariance:.28,subsurface:.03,radial:5,angle:70,iterations:5,tropism:.95,influence:8,kill:2,components:[]}],
   ['birch_leaf_spray',{name:'birch_leaf_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_PLATFORM,fractal:'phyllotaxis',seed:86028121,scale:7,sizeVariance:.24,subsurface:.04,radial:13,angle:29,iterations:6,tropism:.58,influence:6,kill:1,components:[]}],
   ['blueberry_leaf_berry_spray',{name:'blueberry_leaf_berry_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BLUE,fractal:'phyllotaxis',seed:86028157,scale:5,sizeVariance:.33,subsurface:.08,radial:11,angle:41,iterations:5,tropism:.32,influence:5,kill:1,components:[]}],
   ['elderberry_leaf_fruit_spray',{name:'elderberry_leaf_fruit_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_PURPLE,fractal:'phyllotaxis',seed:86028169,scale:7,sizeVariance:.28,subsurface:.08,radial:13,angle:39,iterations:6,tropism:.38,influence:6,kill:1,components:[]}],
   ['apple_leaf_fruit_spray',{name:'apple_leaf_fruit_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_RED,fractal:'phyllotaxis',seed:86028193,scale:8,sizeVariance:.24,subsurface:.09,radial:14,angle:43,iterations:6,tropism:.31,influence:6,kill:1,components:[]}],
   ['oak_leaf_spray',{name:'oak_leaf_spray',role:'foliage',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_LEAVES,fractal:'phyllotaxis',seed:86028209,scale:9,sizeVariance:.27,subsurface:.10,radial:15,angle:52,iterations:7,tropism:.24,influence:7,kill:1,components:[]}],
   ['fir_needle_spray',{name:'fir_needle_spray',role:'foliage',shape:'branch graph',material:MAT_TEAL,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028221,scale:6,sizeVariance:.22,subsurface:.04,radial:12,angle:71,iterations:6,tropism:.66,influence:5,kill:1,components:[]}],
-  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}],
+  ['blue_spruce_needle_spray',{name:'blue_spruce_needle_spray',role:'foliage',shape:'branch graph',material:MAT_BLUE_SPRUCE_FROND,secondary:MAT_TEAL,fractal:'phyllotaxis',seed:86028239,scale:6,sizeVariance:.23,subsurface:.04,radial:14,angle:76,iterations:7,tropism:.69,influence:5,kill:1,components:[]}],
   // Mathematical exemplars: compact equations remain valid at every octave.
   // Crystals intentionally use only five- and seven-fold symmetry.
   ['pentagonal_quartz_cluster',{name:'pentagonal_quartz_cluster',role:'crystal',growthStage:'adult',shape:'cone',material:MAT_QUARTZ,secondary:MAT_MARBLE,fractal:'cluster aggregation',seed:96174893,scale:18,sizeVariance:.37,subsurface:.04,radial:5,angle:17,iterations:5,tropism:.08,influence:8,kill:2,components:[]}],
@@ -2329,10 +2374,17 @@ function pointSegmentDistance(px,py,pz,a,b){
   const t=Math.max(0,Math.min(1,((px-a.x)*abx+(py-a.y)*aby+(pz-a.z)*abz)/den));
   return Math.hypot(px-(a.x+abx*t),py-(a.y+aby*t),pz-(a.z+abz*t));
 }
+function analyticEcologyField(x,z,phase=0){
+  // A continuous quasiperiodic field replaces cell-hash object placement.
+  // Irrationally related waves have no repeating tile; threshold crossings
+  // define candidates, species variation and seeds at any requested detail.
+  const a=Math.sin((x*.754877666+z*.569840291+phase*.438579021)*Math.PI*2),b=Math.sin((x*.318309886-z*.414213562+phase*.271828183)*Math.PI*2);
+  return Math.max(0,Math.min(1,.5+a*.25+b*.25));
+}
 function variedResource(def,wx,wz,salt=0){
   // Three uniforms approximate a centered bell curve; exponentiation produces
   // bounded lognormal-like biological size variation without tiny/giant outliers.
-  const a=hash3(wx,def.seed|0,wz,5101+salt),b=hash3(wz,wx,def.seed|0,5119+salt),c=hash3(def.seed|0,wz,wx,5147+salt);
+  const a=analyticEcologyField(wx,wz,(def.seed|0)*.000031+salt),b=analyticEcologyField(wz,wx,(def.seed|0)*.000047+salt+11),c=analyticEcologyField(wx+wz,wz-wx,(def.seed|0)*.000061+salt+23);
   const bell=(a+b+c-1.5)/1.5,variance=def.sizeVariance??.28;
   let scale=Math.max(2,Math.min(70,Math.round(def.scale*Math.exp(bell*variance*.88))));
   // A tree Resource is classified as adult in this generator. With the trunk
@@ -2340,7 +2392,7 @@ function variedResource(def,wx,wz,salt=0){
   if(def.role==='tree'&&woodyProfile(def).form==='shrub')scale=Math.max(7,Math.min(34,scale));
   else if(def.role==='tree'&&(def.growthStage||'adult')==='adult')scale=Math.max(43,scale);
   else if(def.role==='tree'&&def.growthStage==='sapling')scale=Math.max(8,Math.min(28,scale));
-  const instanceSeed=(Math.imul(wx|0,73856093)^Math.imul(wz|0,19349663)^Math.imul((def.seed+salt)|0,83492791))>>>0;
+  const instanceSeed=Math.floor(analyticEcologyField(wx*.37,wz*.37,(def.seed|0)*.000013+salt+41)*4294967295)>>>0;
   return {...def,scale,seed:instanceSeed,radial:Math.max(1,Math.round(def.radial+(b-.5)*2)),angle:Math.max(5,Math.min(85,def.angle+(c-.5)*9)),tropism:Math.max(-1,Math.min(1,def.tropism+(a-.5)*.16)),influence:Math.max(2,Math.round(def.influence*(.90+b*.20)))};
 }
 function treeArchitecture(def){
@@ -2392,13 +2444,12 @@ function treeArchitecture(def){
   const result={segments,leaves};resourceArchitectureCache.set(key,result);trimOldestMap(resourceArchitectureCache,cacheLimitForDevice(32,48,64));return result;
 }
 function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
-  // Trees use their own jittered candidates, independent from rocks/flowers.
-  // A low-frequency recruitment field forms groves: mature canopy is sparse,
-  // while saplings occur more often in the same moist, soil-covered habitat.
-  const lx=4+Math.floor(hash3(cx,n,cz,6037)*24),lz=4+Math.floor(hash3(cx,n,cz,6043)*24),col=columns[lx+lz*CHUNK_SIZE];if(!col)return null;
+  // Candidate coordinates are threshold samples of continuous quasiperiodic
+  // ecology fields, not entries in a placed-object table or cell hash.
+  const lx=4+Math.floor(analyticEcologyField(cx,cz,n+6.037)*24),lz=4+Math.floor(analyticEcologyField(cz,cx,n+6.043)*24),col=columns[lx+lz*CHUNK_SIZE];if(!col)return null;
   const wx=baseX+lx,wz=baseZ+lz;
   if(col.exposedRock||col.snowy||col.terrain.poolMask>.22||col.moisture<.40||col.slope>4.2)return null;
-  const recruitment=fbm2(wx*.0063-51,wz*.0063+37,3,2,.52,6073),roll=hash3(cx,n,cz,6089),ecotone=fbm2(wx*.0031+71,wz*.0031-43,3,2,.52,6091);
+  const recruitment=fbm2(wx*.0063-51,wz*.0063+37,3,2,.52,6073),roll=analyticEcologyField(cx,cz,n+6.089),ecotone=fbm2(wx*.0031+71,wz*.0031-43,3,2,.52,6091);
   const adultThreshold=.972-Math.max(0,recruitment)*.045,saplingThreshold=.83-Math.max(0,recruitment)*.17;
   if(roll<=saplingThreshold)return null;
   const juvenile=roll<=adultThreshold;
@@ -2410,19 +2461,19 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
   if(col.h>235||(col.h>175&&col.moisture<.58))species=ecotone>.05?'blue_spruce':'balsam_fir';
   else if(col.moisture>.76)species=ecotone>.12?'silver_birch':'balsam_fir';
   else if(col.moisture<.48)species='white_oak';
-  else if(ecotone>.58&&hash3(wx,col.h,wz,6097)>.82)species='apple';
+  else if(ecotone>.58&&analyticEcologyField(wx,wz,col.h*.001+6.097)>.82)species='apple';
   else species=ecotone>-.05?'silver_birch':'white_oak';
   const source=resourceDefinitions.get(`${species}_${juvenile?'sapling':'tree'}`);
   return source?{def:variedResource(source,wx,wz,n+71),wx,wy:col.h+1,wz}:null;
 }
 function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   const result=[];for(let n=0;n<2;n++){
-    const wx=baseX+3+Math.floor(hash3(cx,n,cz,3101)*26),wz=baseZ+3+Math.floor(hash3(cx,n,cz,3103)*26),col=columns[(wx-baseX)+(wz-baseZ)*CHUNK_SIZE];if(!col)continue;
-    const wy=col.h+1,r=hash3(cx,n,cz,3119);if(col.exposedRock||col.snowy||col.terrain.poolMask>.3)continue;
+    const wx=baseX+3+Math.floor(analyticEcologyField(cx,cz,n+3.101)*26),wz=baseZ+3+Math.floor(analyticEcologyField(cz,cx,n+3.103)*26),col=columns[(wx-baseX)+(wz-baseZ)*CHUNK_SIZE];if(!col)continue;
+    const wy=col.h+1,r=analyticEcologyField(cx,cz,n+3.119);if(col.exposedRock||col.snowy||col.terrain.poolMask>.3)continue;
     if(r>.82&&col.stoneField>.08)result.push({def:{...variedResource(resourceDefinitions.get('field_boulder'),wx,wz,n),material:col.rockMaterial},wx,wy,wz});
     else if(col.grassy&&col.moisture>.72&&r>.68)result.push({def:variedResource(resourceDefinitions.get('moss_cushion'),wx,wz,n),wx,wy,wz});
     else if(r>.91&&col.grassy)result.push({def:variedResource(resourceDefinitions.get('foxglove'),wx,wz,n),wx,wy,wz});
-    const shrubPatch=fbm2(wx*.012+29,wz*.012-61,3,2,.50,3137),shrubRoll=hash3(cx,n,cz,3163);
+    const shrubPatch=fbm2(wx*.012+29,wz*.012-61,3,2,.50,3137),shrubRoll=analyticEcologyField(cx,cz,n+3.163);
     if(col.grassy&&col.slope<5.2&&shrubRoll>.70-shrubPatch*.10){
       const shrubName=(col.moisture>.72||col.terrain.poolMask>.08)?'elderberry_bush':'blueberry_bush',shrub=resourceDefinitions.get(shrubName);
       if(shrub)result.push({def:variedResource(shrub,wx,wz,n+113),wx,wy,wz});
@@ -3295,8 +3346,12 @@ function rebuildPrefetchQueue(){
   }
   if(cacheNoticeActive){cacheNoticeTotal=Math.max(1,prefetchJobs.length);loadingLog('Vector predictor',`${prediction.label} · ${cells.size} horizontal cells · ${prefetchJobs.length} missing chunks`);}
 }
+function queueCurrentDirectionalTerrainPlan(){
+  const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE),maxCX=minCX+LOADED_CHUNKS_XZ-1,maxCZ=minCZ+LOADED_CHUNKS_XZ-1,prediction=predictedSectorDirection(),depth=predictiveDepthChunks();
+  queueDirectionalTerrainPlan(minCX,minCZ,maxCX,maxCZ,prediction,depth);
+}
 function processBackgroundPrefetch(now=performance.now(),moving=false){
-  if(testZoneMode)return;rebuildPrefetchQueue();
+  if(testZoneMode)return;rebuildPrefetchQueue();queueCurrentDirectionalTerrainPlan();
   if(now>=nextCacheNoticeAt){nextCacheNoticeAt=now+20000;cacheNoticeActive=true;cacheNoticeTotal=Math.max(1,prefetchJobs.length);cacheNoticeHideAt=0;showLoading(prefetchJobs.length?`Precomputing ${prefetchSectorLabel} landscape sectors`:'Predictive sector ready',prefetchJobs.length?0:1,true);loadingLog('Vector predictor',prefetchJobs.length?`${prefetchSectorLabel} · ${prefetchJobs.length} chunks ordered into broad sectors`:'current predicted sector is resident');if(!prefetchJobs.length)cacheNoticeHideAt=now+1000;}
   const profileBudget=DEVICE_PROFILE.tier==='mobile'?.65:DEVICE_PROFILE.tier==='high'?1.5:1.0;
   // Never force one uninterruptible terrain/Resource chunk into every walking

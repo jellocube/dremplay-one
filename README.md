@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.2**
+Current release: **v0.0.1.4.3**
+
+## v0.0.1.4.3 mathematical elevation preview
+
+- Restored elevation and stream visibility in the non-editable regional preview. The atlas now carries a complete nearest-voxel mip pyramid: elevation and ridges use conservative maxima, moisture is averaged, and hydrography uses conservative coverage at every distance octave.
+- Added an analytic river-distance footprint. Streams narrower than a 10 m preview texel remain represented without placing stream meshes or evaluating multiple complete terrain stacks per cell.
+- Removed the low-valley-only restriction from preview hydrography, allowing mathematically generated upland streams to remain blue as they descend toward pools.
+- Re-aims the terrain-planning Worker along the current movement/camera prediction. Exact 0.8 m elevation, basin, ridge, and stream samples are solved ahead of the player before dense editable voxel and Resource synthesis reaches them.
+- Natural tree, sapling, shrub, boulder, moss, flower, size, and instance-seed selection now derives from continuous quasiperiodic ecology fields rather than stored object placements or cell hashes.
+- Added a dedicated `blue_spruce_frond` material slot. Its aesthetic payload comes from `0xD304000B0085000C1FA2C702`; builder stone remains a separate unchanged material, and only blue spruce trees, saplings, and needle sprays use the new slot.
 
 ## v0.0.1.4.2 preview-led regional streaming
 
