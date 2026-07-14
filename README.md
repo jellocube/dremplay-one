@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.1**
+Current release: **v0.0.1.4.2**
+
+## v0.0.1.4.2 preview-led regional streaming
+
+- Restored the compact height/material region preview as the continuity layer whenever exact resident or merged voxels have not arrived. It can now fill a missing 50–250 ft interval instead of leaving sky until the former 250 ft gate.
+- Removed preview starvation during exact-sector preparation. The 2.56 km atlas refresh receives a small independent frame budget, recenters after 90 m instead of 180 m, and remains visible while dense editable matter is prepared.
+- Fixed needless sector regeneration after turning. The memory recycler now keeps an eight-chunk recent-region guard rather than deleting everything more than three chunks behind the instantaneous predicted heading.
+- Changed predictive work order from empty sky first to terrain surface first. Each ahead column resolves its visible surface, neighboring subsurface, deep rock, and empty upper chunks in useful order.
+- Recovery handoffs likewise prioritize surface-bearing chunks while retaining the v0.0.1.4.1 invariant: incoming data is staged offscreen and cannot modify the live resident ring before the atomic origin change.
+- The coarse preview is never authoritative for edits. Carving, placement, water, Resources, and collision transfer to the exact resident representation only after its verified handoff.
 
 ## v0.0.1.4.1 atomic resident-sector fix
 

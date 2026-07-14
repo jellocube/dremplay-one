@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.1';
-  const CURRENT_REVISION = 27;
+  const CURRENT_VERSION = '0.0.1.4.2';
+  const CURRENT_REVISION = 31;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.1 · Infinite Detail Voxel Engine · atomic sector streaming</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.2 · Infinite Detail Voxel Engine · preview-led regional streaming</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Atomic sector streaming · visible distance octaves · worker-planned terrain</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Preview-led regional streaming · stable resident sectors · visible distance octaves</p></div>
 </div>
 
 <script>
@@ -610,7 +610,10 @@ function getVoxelResourceId(wx,wy,wz){
 function evictDistantCleanChunks(){
   const minCX=Math.floor(windowMinX/CHUNK_SIZE), minCZ=Math.floor(windowMinZ/CHUNK_SIZE);
   const maxCX=minCX+LOADED_CHUNKS_XZ-1, maxCZ=minCZ+LOADED_CHUNKS_XZ-1;
-  const prediction=predictedSectorDirection(),behind=3;
+  // Keep a genuine recent-region guard on every side. v0.0.1.4.1 retained
+  // only three chunks behind the instantaneous heading, so a turn could evict
+  // a sector that had just been prepared and force it to be generated again.
+  const prediction=predictedSectorDirection(),behind=8;
   const keepMinCX=minCX-(prediction.dx<0?PREFETCH_MARGIN:behind),keepMaxCX=maxCX+(prediction.dx>0?PREFETCH_MARGIN:behind);
   const keepMinCZ=minCZ-(prediction.dz<0?PREFETCH_MARGIN:behind),keepMaxCZ=maxCZ+(prediction.dz>0?PREFETCH_MARGIN:behind);
   let released=0;
@@ -811,8 +814,8 @@ let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
 // A 10 m/sample, 2.56 km square far field supplies the one-kilometer horizon
 // without allocating distant editable microvoxels. It uses the same exact CPU
 // terrain sampler, interpolates on the GPU, and refreshes atomically in the
-// background after the player travels 180 m from its center.
-const FAR_MAP_SIZE=256,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_RECENTER_VOXELS=1800;
+// background after the player travels 90 m from its center.
+const FAR_MAP_SIZE=256,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_RECENTER_VOXELS=900;
 let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
 let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
 let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
@@ -1223,9 +1226,12 @@ vec3 materialColor(uint m, ivec3 p, int detailScale){
 
 bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface,out float hitT){
   if(uViewDistance<=650.0||startT>=uViewDistance||rd.y>.35)return false;
-  // The compact height/material atlas is the 250 ft+ LOD. It cannot replace
-  // nearer Resource silhouettes, so it is deliberately gated behind tier 3.
-  float t=max(startT,uLodDistances.z),stepLen=300.0;
+  // The compact height/material atlas is normally the 250 ft+ LOD. After the
+  // exact passes miss, it may begin at 50 ft as a non-editable continuity view.
+  // If an exact resident/merged ray found no matter, the compact regional
+  // preview is the continuity fallback from 50 ft onward. It no longer leaves
+  // a blank 50–250 ft band while an exact sector is still being prepared.
+  float t=max(startT,uLodDistances.y),stepLen=160.0;
   vec3 startP=ro+rd*t;vec4 startData=farVoxelTerrainAt(startP.xz,t);if(startData.x<0.0)return false;
   float startDelta=startP.y-startData.x;
   if(startDelta<=0.0){hitT=t;hitP=startP;surface=startData;return true;}
@@ -3138,12 +3144,15 @@ function loop(now){
   lastT = now;
 
   const moving=movementInputActive();if(moving)lastMovementInputAt=now;
+  // Regional preview has priority over dense editable matter. The old gate
+  // paused its refresh for the full lifetime of every sector task, exactly
+  // when the preview was needed to conceal that sector's latency.
+  const farCenterX=farTerrainOriginX+FAR_SPAN_VOXELS*.5,farCenterZ=farTerrainOriginZ+FAR_SPAN_VOXELS*.5,playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS;
+  if(!farTerrainTask&&Math.hypot(playerVX-farCenterX,playerVZ-farCenterZ)>FAR_RECENTER_VOXELS)queueFarTerrainRefresh(playerVX,playerVZ);
+  if(farTerrainTask)processFarTerrainRefresh(moving?.75:3.0);
   if(streamTask)processStreamTask();
   else processBackgroundPrefetch(now,moving);
   performIdleMemoryMaintenance(now);
-  const farCenterX=farTerrainOriginX+FAR_SPAN_VOXELS*.5,farCenterZ=farTerrainOriginZ+FAR_SPAN_VOXELS*.5,playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS;
-  if(!farTerrainTask&&Math.hypot(playerVX-farCenterX,playerVZ-farCenterZ)>FAR_RECENTER_VOXELS)queueFarTerrainRefresh(playerVX,playerVZ);
-  if(farTerrainTask&&!streamTask)processFarTerrainRefresh(moving?.55:2.5);
   if (gameControlActive()) {
     updatePlayer(dt);
     if(!streamTask)updateLoadedWindow();
@@ -3270,7 +3279,20 @@ function rebuildPrefetchQueue(){
   if(prediction.dx)for(let d=1;d<=depth;d++){const cx=prediction.dx>0?maxCX+d:minCX-d;for(let cz=minCZ;cz<=maxCZ;cz++)addCell(cx,cz,d+Math.abs(cz-(minCZ+maxCZ)/2)*.015);}
   if(prediction.dz)for(let d=1;d<=depth;d++){const cz=prediction.dz>0?maxCZ+d:minCZ-d;for(let cx=minCX;cx<=maxCX;cx++)addCell(cx,cz,d+Math.abs(cx-(minCX+maxCX)/2)*.015);}
   if(prediction.dx&&prediction.dz)for(let depthX=1;depthX<=depth;depthX++)for(let depthZ=1;depthZ<=depth;depthZ++)addCell(prediction.dx>0?maxCX+depthX:minCX-depthX,prediction.dz>0?maxCZ+depthZ:minCZ-depthZ,Math.max(depthX,depthZ));
-  const ordered=[...cells.values()].sort((a,b)=>b.distance-a.distance);for(const cell of ordered)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++){const job=[cell.cx,minCY+cy,cell.cz];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);}
+  // The stack is consumed with pop(). Enqueue far columns first and put each
+  // column's surface-bearing chunk last, followed by nearby subsurface chunks.
+  // The previous bottom-to-top order spent early prediction work on empty sky.
+  const ordered=[...cells.values()].sort((a,b)=>b.distance-a.distance);
+  for(const cell of ordered){
+    const sample=terrainSample((cell.cx+.5)*CHUNK_SIZE,(cell.cz+.5)*CHUNK_SIZE);
+    const surfaceCY=Math.max(minCY,Math.min(minCY+LOADED_CHUNKS_Y-1,Math.floor(sample.height/CHUNK_SIZE)));
+    const desired=[surfaceCY];
+    for(let offset=1;desired.length<LOADED_CHUNKS_Y;offset++){
+      if(surfaceCY-offset>=minCY)desired.push(surfaceCY-offset);
+      if(surfaceCY+offset<minCY+LOADED_CHUNKS_Y)desired.push(surfaceCY+offset);
+    }
+    for(let i=desired.length-1;i>=0;i--){const job=[cell.cx,desired[i],cell.cz];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);}
+  }
   if(cacheNoticeActive){cacheNoticeTotal=Math.max(1,prefetchJobs.length);loadingLog('Vector predictor',`${prediction.label} · ${cells.size} horizontal cells · ${prefetchJobs.length} missing chunks`);}
 }
 function processBackgroundPrefetch(now=performance.now(),moving=false){
@@ -3280,10 +3302,10 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   // Never force one uninterruptible terrain/Resource chunk into every walking
   // frame. Title/idle time fills the reserve rapidly; motion borrows a slot
   // only after a healthy frame and then observes a cooldown.
-  if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.65))return;
+  if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.35))return;
   const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
   while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){generateChunk(...prefetchJobs.pop());worked=true;lastPrefetchWorkAt=performance.now();}
-  if(moving&&worked)nextMovingPrefetchAt=performance.now()+120;
+  if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
 function queueStreamShift(shiftX,shiftZ){
@@ -3292,6 +3314,11 @@ function queueStreamShift(shiftX,shiftZ){
   const minCX=Math.floor(newMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(newMinZ/CHUNK_SIZE),widthX=Math.abs(shiftX)/CHUNK_SIZE,widthZ=Math.abs(shiftZ)/CHUNK_SIZE;
   if(shiftX)for(let sx=0;sx<widthX;sx++){const cx=minCX+(shiftX>0?LOADED_CHUNKS_XZ-widthX+sx:sx);for(let cz=0;cz<LOADED_CHUNKS_XZ;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(cx,minCY+cy,minCZ+cz);}
   if(shiftZ)for(let sz=0;sz<widthZ;sz++){const cz=minCZ+(shiftZ>0?LOADED_CHUNKS_XZ-widthZ+sz:sz);for(let cx=0;cx<LOADED_CHUNKS_XZ;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(minCX+cx,minCY+cy,cz);}
+  // Visible surface chunks resolve before deep rock and empty sky when the
+  // predictor missed. This does not alter deterministic generation or expose
+  // a partial commit; it only makes the unavoidable recovery work useful first.
+  const surfaceChunkCache=new Map(),surfaceDistance=job=>{const hk=`${job[0]},${job[2]}`;let sy=surfaceChunkCache.get(hk);if(sy===undefined){sy=Math.floor(terrainSample((job[0]+.5)*CHUNK_SIZE,(job[2]+.5)*CHUNK_SIZE).height/CHUNK_SIZE);surfaceChunkCache.set(hk,sy);}return Math.abs(job[1]-sy);};
+  jobs.sort((a,b)=>surfaceDistance(a)-surfaceDistance(b));
   streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],stageDone:0,prepared:[]};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
 }
 function buildStreamUploadBoxes(task){
