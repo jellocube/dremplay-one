@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.4 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.5 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.4';
-  const CURRENT_REVISION = 33;
+  const CURRENT_VERSION = '0.0.1.4.5';
+  const CURRENT_REVISION = 34;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -156,6 +156,9 @@
   .property-row { display:grid; grid-template-columns:1fr auto auto; gap:7px; }
   #materialPropertyId { min-width:0; background:#24243c; border:1px solid #444460; color:#50a4fc; font:inherit; padding:7px; }
   .option-row { display:grid; grid-template-columns:130px 1fr 54px; gap:10px; align-items:center; margin:10px 0; }
+  #optionsWindow.bugtesting .option-row { grid-template-columns:130px minmax(110px,1fr) 62px 48px; gap:7px; }
+  .option-copy { display:none; padding:3px 4px; min-width:0; font-size:10px; }
+  #optionsWindow.bugtesting .option-copy { display:block; }
   .option-section { margin:0 0 9px; border:1px solid #444460; background:#101810; }
   .option-section summary { padding:7px 9px; color:#bcdcff; cursor:pointer; user-select:none; }
   .option-section-body { padding:2px 9px 8px; border-top:1px solid #444460; }
@@ -276,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.4 · Infinite Detail Voxel Engine · 10× regional preview</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.5 · Infinite Detail Voxel Engine · 100 m regional streaming</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.4 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.5 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -357,7 +360,6 @@
     <details class="option-section" open><summary>Performance and display</summary><div class="option-section-body">
       <div class="option-row"><label for="optionPreset">Preset</label><select id="optionPreset"><option value="quality">Quality</option><option value="balanced">Balanced</option><option value="performance">Performance</option><option value="custom">Custom</option></select><span></span></div>
       <div class="option-row"><label for="optionResolution">Resolution</label><select id="optionResolution"><option value="0.35">70% of standard</option><option value="0.45">90% of standard</option><option value="0.50">Standard</option><option value="0.65">High</option><option value="0.80">Very high</option><option value="1.00">Native</option></select><span id="optionResolutionValue"></span></div>
-      <div class="option-row"><label for="optionNearDetail">Voxel LOD ladder</label><select id="optionNearDetail"><option value="0">Coarse / fastest</option><option value="3">5 cm within 3 m</option><option value="6.096">5 cm within 20 ft</option></select><span id="optionNearDetailValue"></span></div>
       <div class="option-row"><label for="optionPlatformMode">Platform</label><select id="optionPlatformMode"><option value="auto">Auto-detect</option><option value="touch">Touch / iPad</option><option value="desktop">Mouse + keyboard</option></select><span id="optionPlatformValue"></span></div>
       <div class="option-row"><label for="optionViewDistance">View distance</label><input id="optionViewDistance" type="range" min="1000" max="1000" step="1" value="1000" disabled><span id="optionViewDistanceValue"></span></div>
       <div class="option-row"><label for="optionLightingQuality">Lighting</label><select id="optionLightingQuality"><option value="0">Hard / fastest</option><option value="1">Fast soft</option><option value="2">Full soft</option></select><span></span></div>
@@ -365,6 +367,16 @@
       <div class="option-row"><label for="optionCloudQuality">Clouds</label><select id="optionCloudQuality"><option value="0">Off</option><option value="1">Coarse weather voxels · 2.4 m</option><option value="2">Fine weather voxels · 0.8 m</option></select><span></span></div>
       <div class="option-row"><label for="optionWaterQuality">Water shader</label><select id="optionWaterQuality"><option value="0">Solid / fastest</option><option value="1">Pixel flow facets</option><option value="2">Reflective voxel water</option></select><span></span></div>
       <div id="optionMetrics"></div>
+    </div></details>
+    <details class="option-section" open><summary>Distance detail laboratory</summary><div class="option-section-body">
+      <div class="option-row"><label for="optionDetailDistance">Detail voxels</label><input id="optionDetailDistance" type="range" min="0" max="40" step="1" value="20"><span id="optionDetailDistanceValue">20 ft</span></div>
+      <div class="option-row"><label for="optionNearDistance">Near distance</label><input id="optionNearDistance" type="range" min="20" max="120" step="5" value="50"><span id="optionNearDistanceValue">50 ft</span></div>
+      <div class="option-row"><label for="optionFarDistance">Far away</label><input id="optionFarDistance" type="range" min="100" max="500" step="10" value="400"><span id="optionFarDistanceValue">400 ft</span></div>
+      <div class="option-row"><label for="optionFarVoxel">Far voxel size</label><select id="optionFarVoxel"><option value="0.5">0.5 m</option><option value="1" selected>1 m</option><option value="2">2 m</option><option value="4">4 m</option></select><span id="optionFarVoxelValue">1 m</span></div>
+      <div class="option-row"><label for="optionBackgroundDistance">Background</label><input id="optionBackgroundDistance" type="range" min="400" max="1000" step="25" value="500"><span id="optionBackgroundDistanceValue">500 ft</span></div>
+      <div class="option-row"><label for="optionBackgroundVoxel">Background voxel</label><select id="optionBackgroundVoxel"><option value="4">4 m</option><option value="8">8 m</option><option value="16" selected>16 m</option><option value="32">32 m</option><option value="64">64 m</option></select><span id="optionBackgroundVoxelValue">16 m</span></div>
+      <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Vector matte</option><option value="2" selected>Combined mask</option></select><span id="optionBackgroundModeValue">Combined</span></div>
+      <div class="option-row"><label for="optionBugtesting">Bugtesting mode</label><select id="optionBugtesting"><option value="1" selected>On</option><option value="0">Off</option></select><span id="optionBugtestingValue">On</span></div>
     </div></details>
     <details class="option-section"><summary>Fog and atmosphere</summary><div class="option-section-body">
       <div class="option-row"><label for="optionFogEnabled">Fog</label><select id="optionFogEnabled"><option value="1">On</option><option value="0">Off</option></select><span></span></div>
@@ -417,7 +429,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.4</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">10× mathematical reconstruction · three guaranteed preview rings · analytic ecology</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.5</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">100 m regions · 300 m guaranteed radius · configurable mathematical LOD</p></div>
 </div>
 
 <script>
@@ -721,7 +733,7 @@ function prepareTerrainColumns(cx,cz){
   // High empty chunks can then stay implicit without clipping a 20-foot tree
   // or allocating throwaway 32 KiB arrays all the way to the world ceiling.
   let maxResourceTop=maxSurface+12;
-  for(let n=0;n<2;n++){const tree=naturalTreeCandidate(cx,cz,n,data,baseX,baseZ);if(tree)maxResourceTop=Math.max(maxResourceTop,tree.wy+resourceBounds(tree.def).y1);}
+  for(let n=0;n<3;n++){const tree=naturalTreeCandidate(cx,cz,n,data,baseX,baseZ);if(tree)maxResourceTop=Math.max(maxResourceTop,tree.wy+resourceBounds(tree.def).y1);}
   data.minSurface=minSurface;data.maxSurface=maxSurface;data.maxResourceTop=maxResourceTop;data.minSoilBottom=minSoilBottom;terrainColumnPlans.set(key,data);trimOldestMap(terrainColumnPlans,cacheLimitForDevice(128,256,512));terrainColumnCacheKey=key;terrainColumnCache=data;return data;
 }
 
@@ -824,10 +836,10 @@ let loadedGrid = new Uint8Array(activeUploadBytes());
 // can update both textures with the same broad sector commits.
 let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
 // A 10 m/sample, 2.56 km square far field supplies the one-kilometer horizon
-// without allocating distant editable microvoxels. It uses the same exact CPU
-// terrain sampler, interpolates on the GPU, and refreshes atomically in the
-// background after the player travels 90 m from its center.
-const FAR_MAP_SIZE=256,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_RECENTER_VOXELS=900;
+// without allocating distant editable microvoxels. Refresh work is partitioned
+// into world-aligned 100×100 m regions; the central 7×7 neighborhood guarantees
+// 300 m of preview coverage in every direction while exposed edge regions load.
+const FAR_MAP_SIZE=256,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3;
 let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
 let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
 let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
@@ -847,9 +859,8 @@ function assembleTerrainWeatherGrid(){
     }
   }
 }
-function alignedFarOrigin(center){return Math.floor((center-FAR_SPAN_VOXELS*.5)/FAR_CELL_VOXELS)*FAR_CELL_VOXELS;}
-function fillFarTerrainRow(grid,originX,originZ,row){
-  for(let x=0;x<FAR_MAP_SIZE;x++){
+function alignedFarOrigin(center){return Math.floor((center-FAR_SPAN_VOXELS*.5)/FAR_REGION_VOXELS)*FAR_REGION_VOXELS;}
+function fillFarTerrainCell(grid,originX,originZ,x,row){
     const wx=originX+(x+.5)*FAR_CELL_VOXELS,wz=originZ+(row+.5)*FAR_CELL_VOXELS,t=terrainSample(wx,wz);
     // A stream can be narrower than one 10 m atlas cell. riverDistance is an
     // analytic distance field from the same warped watershed equation, so a
@@ -858,8 +869,8 @@ function fillFarTerrainRow(grid,originX,originZ,row){
     const riverFootprint=t.valleyMask*(1-smoothstep(24+FAR_CELL_VOXELS*.58,36+FAR_CELL_VOXELS*.58,t.riverDistance));
     const hydro=Math.max(t.poolMask,riverFootprint),water=hydro>.30&&t.height<WATER_LEVEL,renderHeight=water?Math.min(WATER_LEVEL,t.height+20):t.height,moisture=Math.max(0,Math.min(1,.24+t.valleyMask*.52+hydro*.38)),i=(x+row*FAR_MAP_SIZE)*4;
     grid[i]=Math.round(Math.max(0,Math.min(400,renderHeight))/400*255);grid[i+1]=Math.round(moisture*255);grid[i+2]=Math.round(Math.max(0,Math.min(1,hydro))*255);grid[i+3]=Math.round(Math.max(0,Math.min(1,t.ridges))*255);
-  }
 }
+function fillFarTerrainRow(grid,originX,originZ,row){for(let x=0;x<FAR_MAP_SIZE;x++)fillFarTerrainCell(grid,originX,originZ,x,row);}
 function buildFarTerrainMap(centerX,centerZ){
   farTerrainOriginX=alignedFarOrigin(centerX);farTerrainOriginZ=alignedFarOrigin(centerZ);farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4);
   for(let row=0;row<FAR_MAP_SIZE;row++)fillFarTerrainRow(farTerrainGrid,farTerrainOriginX,farTerrainOriginZ,row);
@@ -879,13 +890,22 @@ function uploadFarHeightPyramid(grid){
   gl.activeTexture(gl.TEXTURE0);return levels.reduce((bytes,level)=>bytes+level.byteLength,0);
 }
 function queueFarTerrainRefresh(centerX,centerZ){
-  if(farTerrainTask)return;const originX=alignedFarOrigin(centerX),originZ=alignedFarOrigin(centerZ);farTerrainTask={originX,originZ,grid:new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),row:0,started:performance.now()};loadingLog('Far horizon',`queued 2.56 km terrain atlas at ${originX},${originZ}`);
+  if(farTerrainTask)return;const originX=alignedFarOrigin(centerX),originZ=alignedFarOrigin(centerZ);if(originX===farTerrainOriginX&&originZ===farTerrainOriginZ)return;
+  const grid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),shiftX=Math.round((originX-farTerrainOriginX)/FAR_CELL_VOXELS),shiftZ=Math.round((originZ-farTerrainOriginZ)/FAR_CELL_VOXELS),tileKeys=new Set();
+  for(let z=0;z<FAR_MAP_SIZE;z++)for(let x=0;x<FAR_MAP_SIZE;x++){
+    const oldX=x+shiftX,oldZ=z+shiftZ,target=(x+z*FAR_MAP_SIZE)*4;
+    if(oldX>=0&&oldX<FAR_MAP_SIZE&&oldZ>=0&&oldZ<FAR_MAP_SIZE){const source=(oldX+oldZ*FAR_MAP_SIZE)*4;grid[target]=farTerrainGrid[source];grid[target+1]=farTerrainGrid[source+1];grid[target+2]=farTerrainGrid[source+2];grid[target+3]=farTerrainGrid[source+3];}
+    else tileKeys.add(`${Math.floor(x/FAR_REGION_CELLS)},${Math.floor(z/FAR_REGION_CELLS)}`);
+  }
+  const playerCellX=(centerX-originX)/FAR_CELL_VOXELS,playerCellZ=(centerZ-originZ)/FAR_CELL_VOXELS,tiles=[...tileKeys].map(key=>{const [tx,tz]=key.split(',').map(Number),x0=tx*FAR_REGION_CELLS,z0=tz*FAR_REGION_CELLS,w=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-x0),h=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-z0);return {tx,tz,x0,z0,w,h,cursor:0,distance:Math.hypot(x0+w*.5-playerCellX,z0+h*.5-playerCellZ)};}).sort((a,b)=>a.distance-b.distance);
+  farTerrainTask={originX,originZ,grid,tiles,tileIndex:0,started:performance.now(),reusedCells:FAR_MAP_SIZE*FAR_MAP_SIZE-tiles.reduce((n,t)=>n+t.w*t.h,0)};
+  loadingLog('Regional preview',`${tiles.length} exposed 100×100 m squares queued · ${farTerrainTask.reusedCells} control cells reused · guaranteed radius ${FAR_REQUIRED_RADIUS*100} m`);
 }
 function processFarTerrainRefresh(budgetMs=1){
-  if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.row<FAR_MAP_SIZE&&performance.now()-started<budgetMs)fillFarTerrainRow(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,farTerrainTask.row++);
-  if(farTerrainTask.row<FAR_MAP_SIZE)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
+  if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.tileIndex<farTerrainTask.tiles.length&&performance.now()-started<budgetMs){const tile=farTerrainTask.tiles[farTerrainTask.tileIndex],x=tile.x0+tile.cursor%tile.w,z=tile.z0+Math.floor(tile.cursor/tile.w);fillFarTerrainCell(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,x,z);tile.cursor++;if(tile.cursor>=tile.w*tile.h)farTerrainTask.tileIndex++;}
+  if(farTerrainTask.tileIndex<farTerrainTask.tiles.length)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
   const previewBytes=uploadFarTerrainControlField(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
-  loadingLog('Far horizon',`atomic mathematical control field ${(previewBytes/1024).toFixed(1)} KiB + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
+  loadingLog('Regional preview',`${farTerrainTask.tiles.length} new 100×100 m squares committed atomically · mathematical control field ${(previewBytes/1024).toFixed(1)} KiB · ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
 }
 
 function copyChunkToLoadedGrid(worldCX,worldCY,worldCZ){
@@ -972,6 +992,8 @@ uniform int uCloudQuality;
 uniform int uWaterQuality;
 uniform float uNearDetail;
 uniform vec3 uLodDistances;
+uniform vec4 uPreviewLod; // far end, background start, far cell, background cell (voxels)
+uniform int uBackgroundMode; // 0 chunky, 1 vector matte, 2 combined
 uniform float uHour;
 uniform sampler2D uPaletteTex;
 uniform ivec3 uMaterialSlots[33];
@@ -1013,24 +1035,21 @@ float farMaxHeightAt(vec2 worldXZ,float lod){
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return -1.0;
   return textureLod(uFarMaxHeight,uv,lod).r*400.0;
 }
-float farVoxelLevel(float dist){
-  // Three complete resident-region widths are guaranteed outside the player:
-  // 1 m reconstructed voxels through ring 1, 2 m through ring 2, and 4 m
-  // through ring 3. An 8 m octave carries the remaining kilometer horizon.
-  float region=max(float(uGrid.x),1.0);
-  if(dist<region*2.0)return 0.0;
-  if(dist<region*3.0)return 1.0;
-  if(dist<region*4.0)return 2.0;
-  return 3.0;
+float farVoxelCellSize(float dist){
+  if(dist<uPreviewLod.x)return uPreviewLod.z;
+  if(dist<uPreviewLod.y)return uPreviewLod.z*2.0;
+  if(uBackgroundMode==1)return max(1.0,uPreviewLod.z*.5);
+  return uPreviewLod.w;
 }
-float farVoxelCellSize(float dist){return (uFarTerrainInfo.z*.1)*exp2(farVoxelLevel(dist));}
 vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
-  float level=farVoxelLevel(dist),cell=(uFarTerrainInfo.z*.1)*exp2(level);
+  float cell=farVoxelCellSize(dist);
   vec2 center=uFarTerrainInfo.xy+(floor((worldXZ-uFarTerrainInfo.xy)/cell)+.5)*cell;
   // The compact atlas is control data. Linear reconstruction evaluates its
   // continuous elevation/hydrography field on the virtual 1/2/4/8 m lattice;
   // the separate max hierarchy remains conservative traversal acceleration.
-  return farTerrainAt(center);
+  vec4 voxel=farTerrainAt(center);if(voxel.x<0.0)return voxel;
+  if(dist>=uPreviewLod.y&&uBackgroundMode>0){vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;voxel=mix(voxel,matte,.62);}
+  return voxel;
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
   // Inside the resident ring this is the exact height/moisture pair produced
@@ -1479,7 +1498,7 @@ void main(){
   fragColor = vec4(finalCol, 1.0);
 }`;
 
-let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uTerrainWeather, uFarTerrain, uFarMaxHeight, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, terrainWeatherTex, farTerrainTex, farMaxHeightTex, paletteTex, vao;
+let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uTerrainWeather, uFarTerrain, uFarMaxHeight, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uPreviewLod, uBackgroundMode, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, terrainWeatherTex, farTerrainTex, farMaxHeightTex, paletteTex, vao;
 let playerPos, yaw=Math.PI*0.25, pitch=-0.15;
 let spawnPos;
 // Fixed per-mode internal resolution: never adapt it during play (which caused
@@ -1497,7 +1516,23 @@ let editReachMeters=6, carveRadius=7, placeRadius=4;
 let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
 const FIXED_VIEW_DISTANCE_METERS=1000;
 let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
-let nearDetailMeters=clampOption(Number(bootOptions.get('nearDetail'))||6.096,0,6.096);
+const FEET_TO_METERS=.3048;
+let detailDistanceMeters=clampOption(Number(bootOptions.get('detailFeet'))||20,0,40)*FEET_TO_METERS;
+let nearDistanceMeters=clampOption(Number(bootOptions.get('nearFeet'))||50,20,120)*FEET_TO_METERS;
+let farDistanceMeters=clampOption(Number(bootOptions.get('farFeet'))||400,100,500)*FEET_TO_METERS;
+let backgroundDistanceMeters=clampOption(Number(bootOptions.get('backgroundFeet'))||500,400,1000)*FEET_TO_METERS;
+let farPreviewVoxelMeters=clampOption(Number(bootOptions.get('farVoxel'))||1,.5,4);
+let backgroundVoxelMeters=clampOption(Number(bootOptions.get('backgroundVoxel'))||16,4,64);
+let backgroundMode=clampOption(Number(bootOptions.get('backgroundMode'))||2,0,2)|0;
+let bugtestingMode=bootOptions.get('bugtesting')!=='0',nearDetailMeters=detailDistanceMeters;
+function normalizeLodDistances(){
+  detailDistanceMeters=clampOption(detailDistanceMeters,0,40*FEET_TO_METERS);
+  nearDistanceMeters=clampOption(Math.max(nearDistanceMeters,detailDistanceMeters+.1),20*FEET_TO_METERS,120*FEET_TO_METERS);
+  farDistanceMeters=clampOption(Math.max(farDistanceMeters,nearDistanceMeters+.1),100*FEET_TO_METERS,500*FEET_TO_METERS);
+  backgroundDistanceMeters=clampOption(Math.max(backgroundDistanceMeters,farDistanceMeters+.1),400*FEET_TO_METERS,1000*FEET_TO_METERS);
+  nearDetailMeters=detailDistanceMeters;
+}
+normalizeLodDistances();
 // Remix architecture: definitions, simulation, rendering and streaming are
 // different tagged volume formats. The current renderer is the first stable
 // conversion target; later targets can be added without changing Resource IDs.
@@ -1826,6 +1861,8 @@ function initGL(){
   uWaterQuality = gl.getUniformLocation(prog,'uWaterQuality');
   uNearDetail = gl.getUniformLocation(prog,'uNearDetail');
   uLodDistances = gl.getUniformLocation(prog,'uLodDistances');
+  uPreviewLod = gl.getUniformLocation(prog,'uPreviewLod');
+  uBackgroundMode = gl.getUniformLocation(prog,'uBackgroundMode');
   uHour = gl.getUniformLocation(prog,'uHour');
   uPaletteTex = gl.getUniformLocation(prog,'uPaletteTex');
   uMaterialSlots = gl.getUniformLocation(prog,'uMaterialSlots[0]');
@@ -2425,14 +2462,18 @@ function treeArchitecture(def){
   }
   const result={segments,leaves};resourceArchitectureCache.set(key,result);trimOldestMap(resourceArchitectureCache,cacheLimitForDevice(32,48,64));return result;
 }
+function isRockSurfaceMaterial(material){return material===MAT_STONE||material===MAT_GRANITE||material===MAT_MARBLE||material===MAT_QUARTZ||material===MAT_SLATE||material===MAT_BASALT||material===MAT_LIMESTONE||material===MAT_GRAVEL;}
+function isPlantableSurfaceMaterial(material){return material===MAT_GRASS||material===MAT_DIRT||material===MAT_MOSS||material===MAT_MUD||material===MAT_SAND||material===MAT_CLAY||material===MAT_PEAT||material===MAT_DRY_GRASS||material===MAT_TALL_GRASS||material===MAT_ALPINE_GRASS;}
 function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   // Candidate coordinates are threshold samples of continuous quasiperiodic
   // ecology fields, not entries in a placed-object table or cell hash.
   const lx=4+Math.floor(analyticEcologyField(cx,cz,n+6.037)*24),lz=4+Math.floor(analyticEcologyField(cz,cx,n+6.043)*24),col=columns[lx+lz*CHUNK_SIZE];if(!col)return null;
   const wx=baseX+lx,wz=baseZ+lz;
-  if(col.exposedRock||col.snowy||col.terrain.poolMask>.22||col.moisture<.40||col.slope>4.2)return null;
+  const mountainPine=col.h>125&&col.moisture>.28&&col.slope<6.8;
+  if(n===2&&!mountainPine)return null;
+  if(col.exposedRock||isRockSurfaceMaterial(col.surfaceMaterial)||!isPlantableSurfaceMaterial(col.surfaceMaterial)||col.snowy||col.terrain.poolMask>.22||(!mountainPine&&col.moisture<.40)||(!mountainPine&&col.slope>4.2))return null;
   const recruitment=fbm2(wx*.0063-51,wz*.0063+37,3,2,.52,6073),roll=analyticEcologyField(cx,cz,n+6.089),ecotone=fbm2(wx*.0031+71,wz*.0031-43,3,2,.52,6091);
-  const adultThreshold=.972-Math.max(0,recruitment)*.045,saplingThreshold=.83-Math.max(0,recruitment)*.17;
+  const adultThreshold=(mountainPine?.935:.972)-Math.max(0,recruitment)*.045,saplingThreshold=(mountainPine?.66:.83)-Math.max(0,recruitment)*.17;
   if(roll<=saplingThreshold)return null;
   const juvenile=roll<=adultThreshold;
   let species;
@@ -2440,7 +2481,7 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
   // the individual seed perturbs form. Conifers occupy cool ridges, fir and
   // birch favor moist ground, oak favors warm mesic slopes, and apple is a
   // rare lowland gap tree rather than an evenly scattered decoration.
-  if(col.h>235||(col.h>175&&col.moisture<.58))species=ecotone>.05?'blue_spruce':'balsam_fir';
+  if(mountainPine||col.h>235||(col.h>175&&col.moisture<.58))species=ecotone>.05?'blue_spruce':'balsam_fir';
   else if(col.moisture>.76)species=ecotone>.12?'silver_birch':'balsam_fir';
   else if(col.moisture<.48)species='white_oak';
   else if(ecotone>.58&&analyticEcologyField(wx,wz,col.h*.001+6.097)>.82)species='apple';
@@ -2451,12 +2492,13 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
 function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   const result=[];for(let n=0;n<2;n++){
     const wx=baseX+3+Math.floor(analyticEcologyField(cx,cz,n+3.101)*26),wz=baseZ+3+Math.floor(analyticEcologyField(cz,cx,n+3.103)*26),col=columns[(wx-baseX)+(wz-baseZ)*CHUNK_SIZE];if(!col)continue;
-    const wy=col.h+1,r=analyticEcologyField(cx,cz,n+3.119);if(col.exposedRock||col.snowy||col.terrain.poolMask>.3)continue;
+    const wy=col.h+1,r=analyticEcologyField(cx,cz,n+3.119),plantable=isPlantableSurfaceMaterial(col.surfaceMaterial)&&!isRockSurfaceMaterial(col.surfaceMaterial)&&!col.exposedRock&&!col.snowy;
+    if(col.snowy||col.terrain.poolMask>.3)continue;
     if(r>.82&&col.stoneField>.08)result.push({def:{...variedResource(resourceDefinitions.get('field_boulder'),wx,wz,n),material:col.rockMaterial},wx,wy,wz});
-    else if(col.grassy&&col.moisture>.72&&r>.68)result.push({def:variedResource(resourceDefinitions.get('moss_cushion'),wx,wz,n),wx,wy,wz});
-    else if(r>.91&&col.grassy)result.push({def:variedResource(resourceDefinitions.get('foxglove'),wx,wz,n),wx,wy,wz});
+    else if(plantable&&col.grassy&&col.moisture>.72&&r>.68)result.push({def:variedResource(resourceDefinitions.get('moss_cushion'),wx,wz,n),wx,wy,wz});
+    else if(plantable&&r>.91&&col.grassy)result.push({def:variedResource(resourceDefinitions.get('foxglove'),wx,wz,n),wx,wy,wz});
     const shrubPatch=fbm2(wx*.012+29,wz*.012-61,3,2,.50,3137),shrubRoll=analyticEcologyField(cx,cz,n+3.163);
-    if(col.grassy&&col.slope<5.2&&shrubRoll>.70-shrubPatch*.10){
+    if(plantable&&col.grassy&&col.slope<5.2&&shrubRoll>.70-shrubPatch*.10){
       const shrubName=(col.moisture>.72||col.terrain.poolMask>.08)?'elderberry_bush':'blueberry_bush',shrub=resourceDefinitions.get(shrubName);
       if(shrub)result.push({def:variedResource(shrub,wx,wz,n+113),wx,wy,wz});
     }
@@ -2466,7 +2508,7 @@ function resourceCeilingForChunk(cx,cz,columns){
   const key=`${cx},${cz}`,cached=resourceCeilingCache.get(key);if(cached!==undefined)return cached;
   const x0=cx*CHUNK_SIZE,x1=x0+CHUNK_SIZE-1,z0=cz*CHUNK_SIZE,z1=z0+CHUNK_SIZE-1;let top=columns.maxSurface+12;
   const consider=entry=>{if(!entry)return;const b=resourceBounds(entry.def);if(entry.wx+b.x<x0||entry.wx-b.x>x1||entry.wz+b.z<z0||entry.wz-b.z>z1)return;top=Math.max(top,entry.wy+b.y1);};
-  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))consider(entry);for(let n=0;n<2;n++)consider(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));}
+  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))consider(entry);for(let n=0;n<3;n++)consider(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));}
   resourceCeilingCache.set(key,top);trimOldestMap(resourceCeilingCache,cacheLimitForDevice(512,1024,2048));return top;
 }
 function rockResourceVoxel(def,x,y,z){
@@ -2563,14 +2605,14 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const key=chunkKey(cx,cy,cz);let metadata=resourceChunks.get(key);
   const tag=(i,rid)=>{if(!rid)return;if(!metadata){metadata=new Map();resourceChunks.set(key,metadata);}metadata.set(i,rid);};
   const put=(x,y,z,m,rid,airOnly=false)=>{const lx=x-baseX,ly=y-baseY,lz=z-baseZ;if(lx>=0&&ly>=0&&lz>=0&&lx<32&&ly<32&&lz<32){const i=lx+ly*32+lz*1024;if(airOnly&&chunk[i]!==MAT_AIR)return;chunk[i]=m;tag(i,rid);}};
-  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const rid=registerResourceName(def.name),foliageRid=def.role==='tree'?registerResourceName(foliageResourceName(def)):rid;for(const [x,y,z,material] of voxelizedResource(def))put(wx+x,wy+y,wz+z,material,def.role==='tree'&&material!==def.secondary?foliageRid:rid);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
+  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const rid=registerResourceName(def.name),foliageRid=def.role==='tree'?registerResourceName(foliageResourceName(def)):rid,plant=def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material] of voxelizedResource(def))put(wx+x,wy+y,wz+z,material,def.role==='tree'&&material!==def.secondary?foliageRid:rid,plant);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
   // Main props are emitted from every neighboring origin chunk whose true
   // occupied bounds overlap this chunk. This removes the old invisible chunk
   // box that sheared foxglove bells, boulders and broad tree crowns at borders.
   for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){
     const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;
     for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))stamp(entry.def,entry.wx,entry.wy,entry.wz);
-    for(let n=0;n<2;n++){const tree=naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ);if(tree)stamp(tree.def,tree.wx,tree.wy,tree.wz);}
+    for(let n=0;n<3;n++){const tree=naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ);if(tree)stamp(tree.def,tree.wx,tree.wy,tree.wz);}
   }
 
   // Surface micro-Resources are reconstructed from a jittered 2×2 voxel lattice.
@@ -2593,7 +2635,7 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
       continue;
     }
     if(col.snowy)continue;
-    if(col.grassy&&!col.exposedRock){
+    if(col.grassy&&!col.exposedRock&&!isRockSurfaceMaterial(col.surfaceMaterial)&&isPlantableSurfaceMaterial(col.surfaceMaterial)){
       // Clumped density, but no flat-ground restriction: soil-covered slopes
       // keep blades until they become true exposed cliffs.
       const density=Math.max(.30,Math.min(.92,.50+col.moisture*.24+patch*.18-col.slope*.008));
@@ -2712,34 +2754,39 @@ document.getElementById('resourcePlace').addEventListener('click',()=>{
 refreshResourceLibrary();resourceLibrary.value='field_boulder';loadResource('field_boulder');document.getElementById('resourceStatus').textContent=`Resource ID ${registerResourceName('field_boulder')} · field boulder`;
 renderResourcePreview();
 
-const optionFov=document.getElementById('optionFov'),optionTime=document.getElementById('optionTime'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionNearDetail=document.getElementById('optionNearDetail'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics');
+const optionFov=document.getElementById('optionFov'),optionTime=document.getElementById('optionTime'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics'),optionDetailDistance=document.getElementById('optionDetailDistance'),optionNearDistance=document.getElementById('optionNearDistance'),optionFarDistance=document.getElementById('optionFarDistance'),optionFarVoxel=document.getElementById('optionFarVoxel'),optionBackgroundDistance=document.getElementById('optionBackgroundDistance'),optionBackgroundVoxel=document.getElementById('optionBackgroundVoxel'),optionBackgroundMode=document.getElementById('optionBackgroundMode'),optionBugtesting=document.getElementById('optionBugtesting');
+function currentLodSnapshot(){return {detailFeet:Math.round(detailDistanceMeters/FEET_TO_METERS),nearFeet:Math.round(nearDistanceMeters/FEET_TO_METERS),farFeet:Math.round(farDistanceMeters/FEET_TO_METERS),farVoxelMeters:farPreviewVoxelMeters,backgroundFeet:Math.round(backgroundDistanceMeters/FEET_TO_METERS),backgroundVoxelMeters,backgroundMode};}
+function optionTransferId(control){const bytes=new TextEncoder().encode(JSON.stringify({schema:'DOP1',engine:CURRENT_VERSION,option:control.id,value:control.value,lod:currentLodSnapshot()}));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return `DOP1.${btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}`;}
+function setBugtestingMode(enabled){bugtestingMode=!!enabled;document.getElementById('optionsWindow').classList.toggle('bugtesting',bugtestingMode);optionBugtesting.value=bugtestingMode?'1':'0';document.getElementById('optionBugtestingValue').textContent=bugtestingMode?'On':'Off';}
+for(const row of document.querySelectorAll('#optionsWindow .option-row')){const control=row.querySelector('input,select');if(!control)continue;const button=document.createElement('button');button.type='button';button.className='tool-button option-copy';button.textContent='Copy';button.title=`Copy ${control.id} identity and transfer ID`;button.addEventListener('click',async()=>{const id=optionTransferId(control);try{await navigator.clipboard.writeText(id);}catch{const temp=document.createElement('textarea');temp.value=id;document.body.appendChild(temp);temp.select();document.execCommand('copy');temp.remove();}optionStatus.textContent=`Copied ${control.id} transfer ID · ${id}`;});row.appendChild(button);}
 function syncOptionsWindow(){
   viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;
   optionFov.value=String(fovDegrees);optionTime.value=String(timeOfDay||24);
-  optionResolution.value=Number(pendingRenderScale).toFixed(2);optionNearDetail.value=String(nearDetailMeters);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
+  optionResolution.value=Number(pendingRenderScale).toFixed(2);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
+  optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
-  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionNearDetailValue').textContent=nearDetailMeters?'20 / 50 / 250 ft':'coarse';document.getElementById('optionViewDistanceValue').textContent=viewDistanceMeters>=1000?'1.00 km':`${viewDistanceMeters.toFixed(0)} m`;document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
+  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft':'10 cm 0–50 ft · 20 cm 50–250 ft'}\nHorizon voxels 10 / 20 / 40 / 80 m with distance · 1.00 km fixed\nMax-height preservation hierarchy 85.3 KiB\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n100×100 m streaming regions · 7×7 neighborhood · 300 m guaranteed every direction\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
 function applyLiveOptions(){
-  nearDetailMeters=Number(optionNearDetail.value);viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Number(optionFogStart.value);fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
+  detailDistanceMeters=Number(optionDetailDistance.value)*FEET_TO_METERS;nearDistanceMeters=Number(optionNearDistance.value)*FEET_TO_METERS;farDistanceMeters=Number(optionFarDistance.value)*FEET_TO_METERS;farPreviewVoxelMeters=Number(optionFarVoxel.value);backgroundDistanceMeters=Number(optionBackgroundDistance.value)*FEET_TO_METERS;backgroundVoxelMeters=Number(optionBackgroundVoxel.value);backgroundMode=Number(optionBackgroundMode.value)|0;bugtestingMode=optionBugtesting.value==='1';normalizeLodDistances();viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Number(optionFogStart.value);fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
 }
 function applyOptionsPreset(name){
-  const presets={quality:{resolution:.65,nearDetail:6.096,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:24,fogDensity:.008,stream:3,vegetation:2},balanced:{resolution:.50,nearDetail:6.096,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:12,fogDensity:.018,stream:2,vegetation:2},performance:{resolution:.35,nearDetail:0,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:7,fogDensity:.032,stream:1,vegetation:1}};
-  const p=presets[name];if(!p)return;pendingRenderScale=p.resolution;pendingVegetationDetail=p.vegetation;nearDetailMeters=p.nearDetail;viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=p.lighting;lightMode=p.lighting===0?0:1;materialQuality=p.materials;cloudQuality=p.clouds;waterRenderQuality=p.waterShader;fogEnabled=true;fogStartMeters=p.fogStart;fogDensity=p.fogDensity;streamingBudgetMs=p.stream;syncOptionsWindow();optionPreset.value=name;
+  const presets={quality:{resolution:.65,detail:20,near:50,far:400,farVoxel:.5,background:500,backgroundVoxel:8,backgroundMode:1,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:24,fogDensity:.008,stream:3,vegetation:2},balanced:{resolution:.50,detail:20,near:50,far:400,farVoxel:1,background:500,backgroundVoxel:16,backgroundMode:2,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:12,fogDensity:.018,stream:2,vegetation:2},performance:{resolution:.35,detail:0,near:50,far:300,farVoxel:2,background:500,backgroundVoxel:32,backgroundMode:0,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:7,fogDensity:.032,stream:1,vegetation:1}};
+  const p=presets[name];if(!p)return;pendingRenderScale=p.resolution;pendingVegetationDetail=p.vegetation;detailDistanceMeters=p.detail*FEET_TO_METERS;nearDistanceMeters=p.near*FEET_TO_METERS;farDistanceMeters=p.far*FEET_TO_METERS;farPreviewVoxelMeters=p.farVoxel;backgroundDistanceMeters=p.background*FEET_TO_METERS;backgroundVoxelMeters=p.backgroundVoxel;backgroundMode=p.backgroundMode;normalizeLodDistances();viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=p.lighting;lightMode=p.lighting===0?0:1;materialQuality=p.materials;cloudQuality=p.clouds;waterRenderQuality=p.waterShader;fogEnabled=true;fogStartMeters=p.fogStart;fogDensity=p.fogDensity;streamingBudgetMs=p.stream;syncOptionsWindow();optionPreset.value=name;
 }
 optionPreset.addEventListener('change',()=>applyOptionsPreset(optionPreset.value));
 optionResolution.addEventListener('change',()=>{pendingRenderScale=Number(optionResolution.value);markOptionsCustom();syncOptionsWindow();});
 optionVegetationDetail.addEventListener('change',()=>{pendingVegetationDetail=Number(optionVegetationDetail.value);markOptionsCustom();syncOptionsWindow();});
-for(const control of [optionNearDetail,optionViewDistance,optionLightingQuality,optionMaterialQuality,optionCloudQuality,optionWaterQuality,optionFogEnabled,optionFogStart,optionFogDensity,optionStreamBudget])control.addEventListener('input',()=>{markOptionsCustom();applyLiveOptions();});
+for(const control of [optionDetailDistance,optionNearDistance,optionFarDistance,optionFarVoxel,optionBackgroundDistance,optionBackgroundVoxel,optionBackgroundMode,optionBugtesting,optionViewDistance,optionLightingQuality,optionMaterialQuality,optionCloudQuality,optionWaterQuality,optionFogEnabled,optionFogStart,optionFogDensity,optionStreamBudget])control.addEventListener('input',()=>{markOptionsCustom();applyLiveOptions();});
 optionPlatformMode.addEventListener('change',()=>{applyPlatformMode(optionPlatformMode.value);syncOptionsWindow();});
 optionFov.addEventListener('input',()=>{fovDegrees=Number(optionFov.value);markOptionsCustom();syncOptionsWindow();});
 optionTime.addEventListener('input',()=>{timeOfDay=Number(optionTime.value)%24;syncOptionsWindow();});
-document.getElementById('optionApplyReload').addEventListener('click',()=>{const params=new URLSearchParams(location.search);params.set('resolution',pendingRenderScale.toFixed(2));params.set('vegetation',String(pendingVegetationDetail));params.set('nearDetail',nearDetailMeters.toFixed(1));location.search=params.toString();});
+document.getElementById('optionApplyReload').addEventListener('click',()=>{const params=new URLSearchParams(location.search);params.set('resolution',pendingRenderScale.toFixed(2));params.set('vegetation',String(pendingVegetationDetail));params.set('detailFeet',String(Math.round(detailDistanceMeters/FEET_TO_METERS)));params.set('nearFeet',String(Math.round(nearDistanceMeters/FEET_TO_METERS)));params.set('farFeet',String(Math.round(farDistanceMeters/FEET_TO_METERS)));params.set('farVoxel',String(farPreviewVoxelMeters));params.set('backgroundFeet',String(Math.round(backgroundDistanceMeters/FEET_TO_METERS)));params.set('backgroundVoxel',String(backgroundVoxelMeters));params.set('backgroundMode',String(backgroundMode));params.set('bugtesting',bugtestingMode?'1':'0');location.search=params.toString();});
 document.getElementById('optionReset').addEventListener('click',()=>applyOptionsPreset('balanced'));
 optionPreset.value='balanced';
 const serverGravity=document.getElementById('serverGravity'),serverWaterEnabled=document.getElementById('serverWaterEnabled'),serverWaterBudget=document.getElementById('serverWaterBudget'),serverWaterSpread=document.getElementById('serverWaterSpread'),serverNaturalSources=document.getElementById('serverNaturalSources'),serverSpawnX=document.getElementById('serverSpawnX'),serverSpawnY=document.getElementById('serverSpawnY'),serverSpawnZ=document.getElementById('serverSpawnZ'),serverStatus=document.getElementById('serverStatus');
@@ -3154,7 +3201,7 @@ function describeActiveFrameWork(){
     return `frontier terrain chunk ${Math.min(streamTask.done+1,streamTask.jobs.length)}/${streamTask.jobs.length}`;
   }
   if(prefetchJobs.length&&performance.now()-lastPrefetchWorkAt<100)return `predictive frontier generation · ${prefetchJobs.length} chunks remain`;
-  if(farTerrainTask)return `far-horizon atlas row ${farTerrainTask.row}/${FAR_MAP_SIZE}`;
+  if(farTerrainTask){const tile=farTerrainTask.tiles[farTerrainTask.tileIndex];return `100 m preview region ${Math.min(farTerrainTask.tileIndex+1,farTerrainTask.tiles.length)}/${farTerrainTask.tiles.length}${tile?` · cell ${tile.cursor}/${tile.w*tile.h}`:''}`;}
   if(waterQueue.length)return `water simulation queue · ${waterQueue.length} cells remain`;
   return 'raymarch render and simulation · no world load active';
 }
@@ -3180,8 +3227,8 @@ function loop(now){
   // Regional preview has priority over dense editable matter. The old gate
   // paused its refresh for the full lifetime of every sector task, exactly
   // when the preview was needed to conceal that sector's latency.
-  const farCenterX=farTerrainOriginX+FAR_SPAN_VOXELS*.5,farCenterZ=farTerrainOriginZ+FAR_SPAN_VOXELS*.5,playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS;
-  if(!farTerrainTask&&Math.hypot(playerVX-farCenterX,playerVZ-farCenterZ)>FAR_RECENTER_VOXELS)queueFarTerrainRefresh(playerVX,playerVZ);
+  const playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS,desiredFarX=alignedFarOrigin(playerVX),desiredFarZ=alignedFarOrigin(playerVZ);
+  if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(playerVX,playerVZ);
   if(farTerrainTask)processFarTerrainRefresh(moving?.75:3.0);
   if(streamTask)processStreamTask();
   else processBackgroundPrefetch(now,moving);
@@ -3438,7 +3485,9 @@ function render(){
   gl.uniform1i(uCloudQuality,cloudQuality);
   gl.uniform1i(uWaterQuality,waterRenderQuality);
   gl.uniform1f(uNearDetail,nearDetailMeters/VS);
-  gl.uniform3f(uLodDistances,nearDetailMeters/VS,15.24/VS,76.2/VS);
+  gl.uniform3f(uLodDistances,detailDistanceMeters/VS,nearDistanceMeters/VS,farDistanceMeters/VS);
+  gl.uniform4f(uPreviewLod,farDistanceMeters/VS,backgroundDistanceMeters/VS,farPreviewVoxelMeters/VS,backgroundVoxelMeters/VS);
+  gl.uniform1i(uBackgroundMode,backgroundMode);
   gl.uniform4f(uFarTerrainInfo,farTerrainOriginX,farTerrainOriginZ,FAR_CELL_VOXELS,FAR_MAP_SIZE);
   gl.uniform1f(uHour,timeOfDay);
   if(materialUniformsDirty){

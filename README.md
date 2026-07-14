@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.4**
+Current release: **v0.0.1.4.5**
+
+## v0.0.1.4.5 regional detail laboratory
+
+- Partitioned distant preview updates into world-aligned 100×100 m regions. The active mathematical horizon always contains the player’s current region plus three complete region rings: a 7×7 neighborhood guaranteeing 300 m in every direction.
+- Reuses overlapping preview control cells when crossing a region boundary and calculates only newly exposed 100 m edge regions. New regions are ordered nearest-first and the complete field is committed atomically, so the visible preview never becomes a partially replaced strip.
+- Added live Detail, Near, Far, and Background distance controls. Far and background voxel pitch are independently adjustable, with chunky voxels, a continuous vector background matte, or a combined matte-over-voxel view.
+- Added Bugtesting mode, enabled by default. Every Options row gains a Copy button that emits a versioned option identity/transfer ID containing the individual setting and complete LOD snapshot.
+- Plants now require an explicit soil or grass substrate and their procedural voxels only occupy air. Trees, saplings, shrubs, flowers, moss, and grass therefore cannot grow from or overwrite exposed stone.
+- Increased fir and blue-spruce recruitment in suitable hill and mountain habitats, including an extra deterministic upland conifer candidate, while retaining slope, snow, water, moisture, and geology exclusions.
 
 ## v0.0.1.4.4 tenfold regional preview
 
