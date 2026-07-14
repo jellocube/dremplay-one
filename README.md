@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.0**
+Current release: **v0.0.1.5.1**
+
+## v0.0.1.5.1 mathematical surface first
+
+- Corrected the data model: the continuous height/material/Resource fields are authoritative; resident voxels are disposable view samples rather than world ownership.
+- Added an in-shader mathematical terrain proxy for every pending cache cell. It supplies surface material, hydrography and one implicit stone volume, so fine chunks can refine without visible construction walls.
+- Reordered startup, prediction and moving-cache work globally. Every surface cell across the requested region now resolves before shallow subsurface or canopy samples; the old per-column vertical-stack order is gone.
+- Reduced routine materialization from thirteen vertical chunks per terrain column to the surface, two shallow editable chunks (about twenty feet), and three optional canopy chunks.
+- Deep bedrock is no longer streamed as ordinary voxel chunks. It remains an implicit mathematical solid until digging, editing or a close query explicitly requests that location.
+- Predictive terrain generation no longer instantiates procedural Resources while walking. Deterministic Resource definitions refine later under idle budgets.
+- Documented the resolution consequence honestly: doubling linear voxel resolution does not increase mathematical world data, but the previous cache implementation performed eight times the local voxel work and shifted twice as often. This update removes most of that inappropriate work.
 
 ## v0.0.1.5.0 whole-world moving clipmap
 

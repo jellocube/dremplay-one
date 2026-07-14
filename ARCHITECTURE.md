@@ -4,7 +4,7 @@
 
 The default playable level is finite and immutable at the macro scale. `heightmap-world-v2.js` is built directly from the supplied 1254×1254 grayscale map. Principal-axis fitting maps the island to 5 km SW–NE by 3 km cross-axis inside a 6 km ocean atlas. Its 751×751 control lattice is sampled every 8 m and indexed as 3,600 world-aligned 100×100 m regions. Elevation, valleys, water, drainage, and ridge strength are direct bounded lookups with smooth quintic-bilinear interpolation at runtime. The offline bake script is the only terrain-authoring stage; it is not a runtime fallback generator.
 
-The resident 10 cm voxel texture is deliberately not a second copy of the whole level. It is a local decoded/editable overlay for collision, carving, water, and Resources. Distance rendering reads the immutable atlas at configured voxel octaves. This separation keeps the complete map immediately available while bounding CPU and GPU memory on iPad and mobile browsers.
+The resident 10 cm voxel texture is deliberately not a second copy of the whole level. It is a disposable view cache for collision, carving, water, and Resources. Distance rendering reads the immutable atlas at configured voxel octaves. The moving cache cannot own terrain or Resource identity; invalid cells evaluate their continuous mathematical parent until a finer sample becomes available.
 
 The first 300 m around the player is a hard visibility invariant. Startup verifies atlas coverage on all four sides before enabling play. Within this radius, terrain remains a quantized voxel representation and cannot be replaced by fog or the optional vector background matte. Local editable-overlay decoding is independent and cannot remove this coarse resident landscape.
 
@@ -13,6 +13,14 @@ The first 300 m around the player is a hard visibility invariant. Startup verifi
 Dremplay One is a browser-first voxel engine for mathematical worlds. It is designed to run on iPads, laptops, and modern smartphones through portable GPU facilities, bounded memory, deterministic procedural data, and resolution that follows visual need rather than a single global grid.
 
 “Infinite detail” describes the source definition: a Resource or terrain field may be evaluated at any requested scale. A particular frame remains finite and budgeted. The engine must never promise infinite work, memory, or pixels.
+
+## Continuous scene contract
+
+World data is expressed in world units, never in cache-cell adjacency. Terrain is a continuous height/material field. Bedrock is an implicit solid. A Resource is a deterministic equation plus seed, transform, material field, and provenance. A pebble field, for example, defines continuous center positions, radii, shapes, and separation; it does not define a prebuilt collection of pebble voxels.
+
+View-dependent voxels are filtered observations of this scene. A distant riverbed sample may carry aggregate coverage, mean normal, roughness, and occlusion. Refinement evaluates the same deterministic field and reveals gravel clusters, then individual pebbles, then their continuous rounded surfaces. Changing cache resolution cannot move a pebble, alter its real separation, or create a shadow solely because sampled cells became adjacent.
+
+Lighting consumes continuous surface position, normal, material response, and mathematical visibility. Voxel-neighbor occupancy may accelerate a local query but is not authoritative geometry or occlusion. Sparse user edits are constructive-solid-geometry operations layered over the mathematical scene and must survive every cache eviction and resolution change.
 
 ## Influences
 
@@ -40,19 +48,21 @@ Source: <https://www.atomontage.com/>
 
 1. The main thread must remain responsive. Procedural generation, conversion, compression, and persistence are incremental or off-thread.
 2. Resolution transitions must be stable. Camera motion cannot regenerate material noise, change Resource identity, or visibly reshuffle silhouettes.
-3. New data becomes visible atomically by region. The engine may prepare a sector in the background but must not expose strips, holes, or half-converted chunks.
+3. Every fine-cache cell has a complete mathematical parent. A newly refined cell becomes valid atomically, but missing children can never expose strips, holes, or half-converted terrain.
 4. The closest required data is scheduled first, but work is predicted in broad directional sectors rather than narrow strips.
 5. A frame has explicit CPU, upload, memory, and pixel budgets derived from the device profile.
 6. Lighting consumes a common surface contract so octave changes do not change brightness or create black facets.
 7. Mathematical definitions and edits are authoritative. Render voxels are caches and may be discarded or rebuilt.
 
-### Atomic resident-ring handoff
+### Legacy atomic resident-ring handoff
 
 As of v0.0.1.4.1, sector conversion has an explicit prepare/commit boundary. Chunk and weather tiles are assembled in CPU-owned immutable buffers while the live ring remains untouched. After every buffer and the player's handoff corridor have been verified, all GPU subimage transfers execute in one render interval and the ring origin changes before drawing resumes. A cancelled prediction discards staging buffers; it never repairs or regenerates the current sector because that sector was never modified.
 
 v0.0.1.4.2 makes the compact regional atlas the latency-hiding lead representation. It refreshes independently of exact-sector work and may fill an otherwise empty ray from 50 ft onward, but it never accepts edits or simulation state. Exact prediction is ordered surface-first, and an eight-chunk recent-region guard prevents heading jitter from immediately evicting work that was just completed. The resident ring remains the sole editable authority and changes only at the verified atomic handoff.
 
 v0.0.1.4.3 restores the preview as a mathematical elevation and hydrography field rather than a flat sky-colored placeholder. Its reduction pyramid preserves relief, ridges, and stream coverage through the 10/20/40/80 m preview octaves. Directional Worker requests solve the same terrain equations on the upcoming 0.8 m lattice; no preview object instances are transferred. Ecology candidates and instance variation are threshold evaluations of continuous quasiperiodic fields, advancing the Resource system away from stored placements and toward definitions that can be reevaluated at arbitrary detail.
+
+v0.0.1.5.0 retires the blocking handoff. A toroidal clipmap changes origin immediately and uses a compact validity texture to distinguish reusable physical storage from current world samples. v0.0.1.5.1 adds a mathematical proxy for every invalid child, globally prioritizes surface samples, and leaves deep bedrock implicit. These changes make voxels disposable observations of the world rather than the world database itself.
 
 v0.0.1.4.4 treats the 10 m RGBA atlas strictly as mathematical control data. The fragment tracer reconstructs its continuous field on explicit 1/2/4/8 m virtual voxel lattices, providing tenfold near-preview sampling without tenfold samples along both atlas axes. Three resident-region-width rings are a renderer invariant and remain available independently of exact-sector readiness. The maximum-height texture remains a separate conservative acceleration structure; it proves empty intervals but no longer replaces reconstructed elevation with block maxima.
 

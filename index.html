@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.0 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.0';
-  const CURRENT_REVISION = 39;
+  const CURRENT_VERSION = '0.0.1.5.1';
+  const CURRENT_REVISION = 40;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.0 · Infinite Detail Voxel Engine · whole-world sparse editing</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.1 · Infinite Detail Voxel Engine · mathematical world / disposable voxel cache</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.0 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.0</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">6×6 km editable atlas · moving voxel clipmap · continuous mathematical parent terrain</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · disposable view-dependent voxels · implicit bedrock</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=39"></script>
+<script src="heightmap-world-v2.js?v=40"></script>
 <script>
 (() => {
 "use strict";
@@ -1161,14 +1161,31 @@ bool chunkResident(ivec3 p){
   return texelFetch(uChunkValidity,physicalChunk,0).r!=0u;
 }
 
+uint mathematicalProxyMaterial(ivec3 p){
+  ivec3 worldP=p+uWorldOrigin;vec4 field=farTerrainAt(vec2(worldP.xz));if(field.x<0.0)return 0u;
+  float depth=field.x-float(worldP.y);if(depth<0.0)return 0u;
+  // The parent height field is complete before any fine cache work begins.
+  // It supplies a visually stable surface and one implicit stone volume;
+  // ordinary 32^3 storage is required only when that region is refined or
+  // edited. Hydrography uses a one-voxel proxy skin until exact water arrives.
+  if(field.z>.30&&depth<1.5)return 10u;
+  if(depth>12.0)return 3u;
+  if(depth>1.5)return 2u;
+  if(field.x>265.0)return 11u;
+  if(field.w>.62&&field.x>90.0)return 3u;
+  if(field.x>200.0)return 19u;
+  return field.y<.34?17u:1u;
+}
+
 float getDensity(ivec3 p){
-  if (!inBounds(p)||!chunkResident(p)) return 0.0;
+  if (!inBounds(p)) return 0.0;
+  if(!chunkResident(p))return mathematicalProxyMaterial(p)==0u?0.0:1.0;
   ivec3 tp = ivec3((p.x+uRing.x)%uGrid.x, p.y, (p.z+uRing.z)%uGrid.z);
   return texelFetch(uVoxels, tp, 0).r == 0u ? 0.0 : 1.0;
 }
 
 uint getMaterial(ivec3 p){
-  if(!chunkResident(p))return 0u;
+  if(!chunkResident(p))return mathematicalProxyMaterial(p);
   ivec3 tp = ivec3((p.x+uRing.x)%uGrid.x, p.y, (p.z+uRing.z)%uGrid.z);
   return texelFetch(uVoxels, tp, 0).r;
 }
@@ -1816,7 +1833,9 @@ function finishInitialWorld(loadToken=initialLoadToken){
   showLoading('Uploading resident voxel volume',0.965,false);loadingLog('GPU transfer',`writing ${(activeUploadBytes()/1048576).toFixed(1)} MiB R8UI voxels + ${(terrainWeatherGrid.byteLength/1048576).toFixed(1)} MiB RG16UI weather relief`);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
   gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);
-  chunkValidityGrid.fill(1);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);
+  chunkValidityGrid.fill(0);const residentMinCX=Math.floor(windowMinX/CHUNK_SIZE),residentMinCY=Math.floor(windowMinY/CHUNK_SIZE),residentMinCZ=Math.floor(windowMinZ/CHUNK_SIZE),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE;
+  for(let cx=0;cx<gx;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)for(let cz=0;cz<gz;cz++)if(generatedChunks.has(chunkKey(residentMinCX+cx,residentMinCY+cy,residentMinCZ+cz)))chunkValidityGrid[cx+cy*gx+cz*gx*LOADED_CHUNKS_Y]=1;
+  gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);
   gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX/CHUNK_SIZE,LOADED_CHUNKS_Y,activeGridSizeZ/CHUNK_SIZE,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,chunkValidityGrid);
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);
@@ -1874,12 +1893,17 @@ function beginInitialWorldLoad(useTestZone=false){
   const minCX=useTestZone?residentMinCX:residentMinCX-BOOT_PREFETCH_MARGIN;
   const minCZ=useTestZone?residentMinCZ:residentMinCZ-BOOT_PREFETCH_MARGIN;
   if(!useTestZone)queueTerrainPlanReserve(minCX,minCZ,span);
-  for(let cx=0;cx<span;cx++)for(let cz=0;cz<span;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)jobs.push([minCX+cx,minCY+cy,minCZ+cz]);
+  const bootCenterCX=residentMinCX+activeGridSizeX/CHUNK_SIZE*.5,bootCenterCZ=residentMinCZ+activeGridSizeZ/CHUNK_SIZE*.5;
+  for(let cx=0;cx<span;cx++)for(let cz=0;cz<span;cz++){
+    const worldCX=minCX+cx,worldCZ=minCZ+cz,surfaceCY=Math.max(minCY,Math.min(minCY+LOADED_CHUNKS_Y-1,Math.floor(terrainSample((worldCX+.5)*CHUNK_SIZE,(worldCZ+.5)*CHUNK_SIZE).height/CHUNK_SIZE))),distance=Math.hypot(worldCX-bootCenterCX,worldCZ-bootCenterCZ);
+    for(const [cy,tier] of [[surfaceCY,0],[surfaceCY-1,10],[surfaceCY-2,20],[surfaceCY+1,100],[surfaceCY+2,110],[surfaceCY+3,120]])if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y)jobs.push([worldCX,cy,worldCZ,tier*100000+distance]);
+  }
+  jobs.sort((a,b)=>a[3]-b[3]);
   let done=0,lastLoggedStep=-1;
   const batch=()=>{
     if(loadToken!==initialLoadToken)return;
     const started=performance.now();
-    while(done<jobs.length&&performance.now()-started<14){const job=jobs[done++];generateChunk(...job);copyChunkToLoadedGrid(...job);}
+    while(done<jobs.length&&performance.now()-started<14){const job=jobs[done++],coords=job.slice(0,3);generateChunk(...coords,false);copyChunkToLoadedGrid(...coords);const key=chunkKey(...coords);if(baseOnlyChunks.has(key)&&!deferredDecorationKeys.has(key)){deferredDecorationKeys.add(key);deferredDecorationJobs.push(coords);}}
     const work=done/jobs.length;
     showLoading(`Decoding ${span}×${span} ${useTestZone?'chunk Test zone':'chunk moving voxel cache'}`,initialLoadProgress(work),false);
     const logStep=Math.floor(work*20);
@@ -1891,7 +1915,7 @@ function beginInitialWorldLoad(useTestZone=false){
     if(done<jobs.length){requestAnimationFrame(batch);return;}
     assembleTerrainWeatherGrid();loadingLog('Weather relief',`${activeGridSizeX}×${activeGridSizeZ} exact height/moisture texels assembled for orographic clouds`);
     const farCenterX=windowMinX+activeGridSizeX*.5,farCenterZ=windowMinZ+activeGridSizeZ*.5,farStarted=performance.now();buildFarTerrainMap(farCenterX,farCenterZ);loadingLog('Far horizon',`${FAR_MAP_SIZE}×${FAR_MAP_SIZE} atlas lookups assembled by complete 100 m squares · ${(performance.now()-farStarted).toFixed(1)} ms`);
-    persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident ring indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${span}×${span}×${LOADED_CHUNKS_Y} chunks indexed continuously during generation`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
+    persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident surface cache indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${jobs.length} view-dependent surface/shallow/canopy samples cached · deep bedrock remains implicit`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
   };
   requestAnimationFrame(batch);
 }
@@ -3449,20 +3473,19 @@ function rebuildPrefetchQueue(){
   if(prediction.dx)for(let d=1;d<=depth;d++){const cx=prediction.dx>0?maxCX+d:minCX-d;for(let cz=minCZ;cz<=maxCZ;cz++)addCell(cx,cz,d+Math.abs(cz-(minCZ+maxCZ)/2)*.015);}
   if(prediction.dz)for(let d=1;d<=depth;d++){const cz=prediction.dz>0?maxCZ+d:minCZ-d;for(let cx=minCX;cx<=maxCX;cx++)addCell(cx,cz,d+Math.abs(cx-(minCX+maxCX)/2)*.015);}
   if(prediction.dx&&prediction.dz)for(let depthX=1;depthX<=depth;depthX++)for(let depthZ=1;depthZ<=depth;depthZ++)addCell(prediction.dx>0?maxCX+depthX:minCX-depthX,prediction.dz>0?maxCZ+depthZ:minCZ-depthZ,Math.max(depthX,depthZ));
-  // The stack is consumed with pop(). Enqueue far columns first and put each
-  // column's surface-bearing chunk last, followed by nearby subsurface chunks.
-  // The previous bottom-to-top order spent early prediction work on empty sky.
-  const ordered=[...cells.values()].sort((a,b)=>b.distance-a.distance);
-  for(const cell of ordered){
+  // Voxels are a view cache, not world data. Predict only the mathematical
+  // surface, two editable shallow layers (about 20 ft), and three possible
+  // canopy layers. Deep bedrock remains one implicit SDF until requested.
+  const candidates=[];
+  for(const cell of cells.values()){
     const sample=terrainSample((cell.cx+.5)*CHUNK_SIZE,(cell.cz+.5)*CHUNK_SIZE);
     const surfaceCY=Math.max(minCY,Math.min(minCY+LOADED_CHUNKS_Y-1,Math.floor(sample.height/CHUNK_SIZE)));
-    const desired=[surfaceCY];
-    for(let offset=1;desired.length<LOADED_CHUNKS_Y;offset++){
-      if(surfaceCY-offset>=minCY)desired.push(surfaceCY-offset);
-      if(surfaceCY+offset<minCY+LOADED_CHUNKS_Y)desired.push(surfaceCY+offset);
-    }
-    for(let i=desired.length-1;i>=0;i--){const job=[cell.cx,desired[i],cell.cz];if(!generatedChunks.has(chunkKey(...job)))prefetchJobs.push(job);}
+    const desired=[[surfaceCY,0],[surfaceCY-1,10],[surfaceCY-2,20],[surfaceCY+1,100],[surfaceCY+2,110],[surfaceCY+3,120]];
+    for(const [cy,tier] of desired)if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y){const job=[cell.cx,cy,cell.cz];if(!generatedChunks.has(chunkKey(...job)))candidates.push({job,priority:tier*1000+cell.distance});}
   }
+  // pop() consumes the smallest priority: every visible surface across the
+  // predicted region resolves before any subsurface or canopy cache cell.
+  candidates.sort((a,b)=>b.priority-a.priority);prefetchJobs=candidates.map(candidate=>candidate.job);
   if(cacheNoticeActive){cacheNoticeTotal=Math.max(1,prefetchJobs.length);loadingLog('Vector predictor',`${prediction.label} · ${cells.size} horizontal cells · ${prefetchJobs.length} missing chunks`);}
 }
 function queueCurrentDirectionalTerrainPlan(){
@@ -3478,7 +3501,7 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   // only after a healthy frame and then observes a cooldown.
   if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.35))return;
   const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
-  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){generateChunk(...prefetchJobs.pop());worked=true;lastPrefetchWorkAt=performance.now();}
+  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);const key=chunkKey(...job);if(baseOnlyChunks.has(key)&&!deferredDecorationKeys.has(key)){deferredDecorationKeys.add(key);deferredDecorationJobs.push(job);}worked=true;lastPrefetchWorkAt=performance.now();}
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
@@ -3493,14 +3516,26 @@ function collectIncomingClipmapJobs(shiftX,shiftZ){
   const b=residentChunkBounds(),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE,widthX=Math.abs(shiftX)/CHUNK_SIZE,widthZ=Math.abs(shiftZ)/CHUNK_SIZE,cells=new Map(),addCell=(cx,cz)=>cells.set(`${cx},${cz}`,[cx,cz]);
   if(shiftX)for(let x=0;x<widthX;x++){const cx=shiftX>0?b.maxCX-widthX+1+x:b.minCX+x;for(let cz=b.minCZ;cz<=b.maxCZ;cz++)addCell(cx,cz);}
   if(shiftZ)for(let z=0;z<widthZ;z++){const cz=shiftZ>0?b.maxCZ-widthZ+1+z:b.minCZ+z;for(let cx=b.minCX;cx<=b.maxCX;cx++)addCell(cx,cz);}
-  const jobs=[];for(const [cx,cz] of cells.values()){const surfaceCY=Math.max(b.minCY,Math.min(b.maxCY,Math.floor(terrainSample((cx+.5)*CHUNK_SIZE,(cz+.5)*CHUNK_SIZE).height/CHUNK_SIZE))),order=[surfaceCY];for(let offset=1;order.length<LOADED_CHUNKS_Y;offset++){if(surfaceCY-offset>=b.minCY)order.push(surfaceCY-offset);if(surfaceCY+offset<=b.maxCY)order.push(surfaceCY+offset);}for(const cy of order){setResidentChunkValidity(cx,cy,cz,0);jobs.push([cx,cy,cz,surfaceCY]);}}
-  return jobs;
+  const jobs=[],seen=new Set(),targetX=playerPos.x/VS+movementHeadingX*1000,targetZ=playerPos.z/VS+movementHeadingZ*1000;
+  const addJob=(cx,cy,cz,surfaceCY,tier)=>{if(cy<b.minCY||cy>b.maxCY)return;const key=chunkKey(cx,cy,cz);if(seen.has(key))return;seen.add(key);const distance=Math.hypot((cx+.5)*CHUNK_SIZE-targetX,(cz+.5)*CHUNK_SIZE-targetZ);jobs.push([cx,cy,cz,surfaceCY,tier*100000+distance]);};
+  for(const [cx,cz] of cells.values()){
+    const surfaceCY=Math.max(b.minCY,Math.min(b.maxCY,Math.floor(terrainSample((cx+.5)*CHUNK_SIZE,(cz+.5)*CHUNK_SIZE).height/CHUNK_SIZE)));
+    // Every physical slot is invalidated, but only view-relevant mathematical
+    // samples are materialized. Invalid deep/sky cells render from the parent
+    // field and therefore never expose stale voxels or a rectangular hole.
+    for(let cy=b.minCY;cy<=b.maxCY;cy++)setResidentChunkValidity(cx,cy,cz,0);
+    addJob(cx,surfaceCY,cz,surfaceCY,0);
+    addJob(cx,surfaceCY-1,cz,surfaceCY,10);addJob(cx,surfaceCY-2,cz,surfaceCY,20);
+    addJob(cx,surfaceCY+1,cz,surfaceCY,100);addJob(cx,surfaceCY+2,cz,surfaceCY,110);addJob(cx,surfaceCY+3,cz,surfaceCY,120);
+  }
+  jobs.sort((a,b)=>a[4]-b[4]);return jobs;
 }
 function queueStreamShift(shiftX,shiftZ){
   const started=performance.now(),continuing=!!streamTask;if(!continuing)clipmapProgressFloor=0;windowMinX+=shiftX;windowMinZ+=shiftZ;ringX=mod(ringX+shiftX,activeGridSizeX);ringZ=mod(ringZ+shiftZ,activeGridSizeZ);
   const fresh=collectIncomingClipmapJobs(shiftX,shiftZ),pending=[],keys=new Set();
   if(streamTask)for(let i=streamTask.cursor;i<streamTask.jobs.length;i++){const job=streamTask.jobs[i],key=chunkKey(job[0],job[1],job[2]);if(chunkInsideResident(job[0],job[1],job[2])&&!keys.has(key)){keys.add(key);pending.push(job);}}
   for(const job of fresh){const key=chunkKey(job[0],job[1],job[2]);if(!keys.has(key)){keys.add(key);pending.push(job);}}
+  pending.sort((a,b)=>(a[4]||0)-(b[4]||0));
   streamTask={jobs:pending,cursor:0,started,total:pending.length,weatherDone:new Set()};uploadChunkValidity();prefetchSignature='';lastStreamShiftAt=performance.now();
   showLoading('Refining moving voxel clipmap',pending.length?clipmapProgressFloor:1,true);loadingLog('Clipmap shift',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m toroidal advance committed immediately · ${fresh.length} fine cells refining · mathematical parent remains visible`);
 }
