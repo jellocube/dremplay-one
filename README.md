@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.5**
+Current release: **v0.0.1.4.6**
+
+## v0.0.1.4.6 pre-baked example world
+
+- Replaced unbounded runtime macro-terrain generation with `Long Island Example`, a finite 3 km × 3 km world baked into the release. Its 376×376 immutable control lattice contains elevation, valleys, water, stream distance, and ridge data at 8 m spacing, with smooth mathematical interpolation between samples.
+- The world is indexed as 900 world-aligned 100×100 m regions. Region data is already present at startup; movement performs bounded array lookup and interpolation rather than evaluating terrain noise.
+- Changed far-atlas assembly and refresh scheduling from rows to complete 100 m squares. A square is solved as one indivisible unit, and the next atlas center is predicted about 150 m ahead of movement.
+- Increased moving/idle atlas budgets now that every terrain sample is a cheap lookup. Newly exposed squares are packed much faster without exposing partial rows or columns.
+- Kept the high-resolution editable voxel ring local to the player. It decodes collision, materials, Resources, water, and authored edits from the immutable world atlas instead of pretending the whole 3 km level can fit in a mobile GPU as 10 cm voxels.
+- Added a hard ocean boundary at the edge of the finite example level. Missing world assets disable play rather than silently falling back to a different procedurally generated map.
 
 ## v0.0.1.4.5 regional detail laboratory
 

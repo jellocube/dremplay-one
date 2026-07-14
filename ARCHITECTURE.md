@@ -1,5 +1,11 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Pre-baked example world
+
+The default playable level is finite and immutable at the macro scale. `example-world-v1.js` contains a build-time-baked 3 km × 3 km atlas sampled every 8 m and indexed as 900 world-aligned 100×100 m regions. Elevation, valley membership, water coverage, pool depth, river coverage/distance, and ridge strength are direct bounded lookups with smooth interpolation at runtime. The offline terrain equations remain authoring tools; they are not a fallback world generator.
+
+The resident 10 cm voxel texture is deliberately not a second copy of the whole level. It is a local decoded/editable overlay for collision, carving, water, and Resources. Distance rendering reads the immutable atlas at configured voxel octaves. This separation keeps the complete map immediately available while bounding CPU and GPU memory on iPad and mobile browsers.
+
 ## Product focus
 
 Dremplay One is a browser-first voxel engine for mathematical worlds. It is designed to run on iPads, laptops, and modern smartphones through portable GPU facilities, bounded memory, deterministic procedural data, and resolution that follows visual need rather than a single global grid.

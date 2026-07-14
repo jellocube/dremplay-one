@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.5 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.6 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.5';
-  const CURRENT_REVISION = 34;
+  const CURRENT_VERSION = '0.0.1.4.6';
+  const CURRENT_REVISION = 35;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.5 · Infinite Detail Voxel Engine · 100 m regional streaming</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.6 · Infinite Detail Voxel Engine · pre-baked example world</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.5 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.6 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,9 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.5</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">100 m regions · 300 m guaranteed radius · configurable mathematical LOD</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.6</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">finite 3 km example world · immutable 100 m regions · local voxel decoding</p></div>
 </div>
 
+<script src="example-world-v1.js?v=35"></script>
 <script>
 (() => {
 "use strict";
@@ -487,7 +488,7 @@ function fbm2(x,z,oct=5,lac=2,gain=.5,salt=0){let sum=0,amp=.5,norm=0;for(let i=
 function ridged2(x,z,oct=5,salt=0){let sum=0,amp=.58,norm=0;for(let i=0;i<oct;i++){let n=1-Math.abs(valueNoise2(x,z,salt+i*131));n*=n;sum+=n*amp;norm+=amp;x*=2.05;z*=2.05;amp*=.49;}return sum/norm;}
 function smoothstep(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x);}
 function warpedCoords(wx,wz){const qx=fbm2(wx*.0024,wz*.0024,4,2,.52,701),qz=fbm2(wx*.0024+19,wz*.0024-11,4,2,.52,907);return [wx+qx*96,wz+qz*96];}
-function terrainSample(wx,wz){
+function proceduralTerrainSample(wx,wz){
   const [x,z]=warpedCoords(wx,wz);
   // The low-frequency continental field makes valleys about five times wider.
   const continental=fbm2(x*.00135,z*.00135,5,2,.5,1103);
@@ -522,14 +523,27 @@ function terrainSample(wx,wz){
   return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,riverMask,riverDistance,continental,ridges};
 }
 
+// The shipped example level is an immutable 3 km × 3 km atlas baked at build
+// time. Runtime world sampling is only bounded array lookup/interpolation; the
+// expensive octave stack above remains as an offline-authoring fallback.
+function bakedField(bytes,i00,i10,i01,i11,offset,tx,tz,scale=1){const a=bytes[i00+offset]+(bytes[i10+offset]-bytes[i00+offset])*tx,b=bytes[i01+offset]+(bytes[i11+offset]-bytes[i01+offset])*tx;return (a+(b-a)*tz)*scale;}
+function terrainSample(wx,wz){
+  const world=globalThis.DREMPLAY_EXAMPLE_WORLD;if(!world)return {height:2,rawHeight:2,valleyMask:0,poolMask:1,poolDepth:20,riverMask:0,riverDistance:255,continental:-1,ridges:0};
+  if(wx<world.minVoxel||wz<world.minVoxel||wx>world.maxVoxel||wz>world.maxVoxel)return {height:2,rawHeight:2,valleyMask:0,poolMask:1,poolDepth:20,riverMask:0,riverDistance:255,continental:-1,ridges:0};
+  const fx=(wx-world.minVoxel)/world.stepVoxels,fz=(wz-world.minVoxel)/world.stepVoxels,x0=Math.floor(fx),z0=Math.floor(fz),x1=Math.min(world.size-1,x0+1),z1=Math.min(world.size-1,z0+1),tx=fade(fx-x0),tz=fade(fz-z0),stride=world.stride,bytes=world.bytes,i00=(x0+z0*world.size)*stride,i10=(x1+z0*world.size)*stride,i01=(x0+z1*world.size)*stride,i11=(x1+z1*world.size)*stride;
+  const h00=bytes[i00]|bytes[i00+1]<<8,h10=bytes[i10]|bytes[i10+1]<<8,h01=bytes[i01]|bytes[i01+1]<<8,h11=bytes[i11]|bytes[i11+1]<<8,ha=h00+(h10-h00)*tx,hb=h01+(h11-h01)*tx,height=Math.round(ha+(hb-ha)*tz);
+  return {height,rawHeight:height,valleyMask:bakedField(bytes,i00,i10,i01,i11,2,tx,tz,1/255),poolMask:bakedField(bytes,i00,i10,i01,i11,3,tx,tz,1/255),poolDepth:bakedField(bytes,i00,i10,i01,i11,4,tx,tz,20/255),riverMask:bakedField(bytes,i00,i10,i01,i11,5,tx,tz,1/255),riverDistance:bakedField(bytes,i00,i10,i01,i11,6,tx,tz),continental:0,ridges:bakedField(bytes,i00,i10,i01,i11,7,tx,tz,1/255)};
+}
+
 // Shared plan samples remove duplicated fBm/ridge work along chunk borders.
 // A compact persistent cache makes later launches warm without storing the much
 // larger voxel volume; storage failures on file:// are harmless.
 const TERRAIN_PLAN_CACHE_KEY='dremplay:terrain-plan:1337:v12';
 const terrainPlanCache=new Map();
-try{if(typeof localStorage!=='undefined'){const saved=JSON.parse(localStorage.getItem(TERRAIN_PLAN_CACHE_KEY)||'[]');for(const row of saved){terrainPlanCache.set(row[0],{height:row[1],rawHeight:row[2],valleyMask:row[3],poolMask:row[4],poolDepth:row[5],riverMask:row[6],continental:row[7],ridges:row[8]});}}}catch{}
-function cachedTerrainSample(wx,wz){const key=`${wx},${wz}`;let value=terrainPlanCache.get(key);if(value){terrainPlanCache.delete(key);terrainPlanCache.set(key,value);return value;}value=terrainSample(wx,wz);terrainPlanCache.set(key,value);trimOldestMap(terrainPlanCache,cacheLimitForDevice(16000,24000,30000));return value;}
+try{if(!globalThis.DREMPLAY_EXAMPLE_WORLD&&typeof localStorage!=='undefined'){const saved=JSON.parse(localStorage.getItem(TERRAIN_PLAN_CACHE_KEY)||'[]');for(const row of saved){terrainPlanCache.set(row[0],{height:row[1],rawHeight:row[2],valleyMask:row[3],poolMask:row[4],poolDepth:row[5],riverMask:row[6],continental:row[7],ridges:row[8]});}}}catch{}
+function cachedTerrainSample(wx,wz){if(globalThis.DREMPLAY_EXAMPLE_WORLD)return terrainSample(wx,wz);const key=`${wx},${wz}`;let value=terrainPlanCache.get(key);if(value){terrainPlanCache.delete(key);terrainPlanCache.set(key,value);return value;}value=terrainSample(wx,wz);terrainPlanCache.set(key,value);trimOldestMap(terrainPlanCache,cacheLimitForDevice(16000,24000,30000));return value;}
 function persistTerrainPlanCache(){
+  if(globalThis.DREMPLAY_EXAMPLE_WORLD)return;
   if(terrainPlanCache.size>30000)return;
   try{if(typeof localStorage!=='undefined'){const rows=[];for(const [key,v] of terrainPlanCache)rows.push([key,v.height,v.rawHeight,v.valleyMask,v.poolMask,v.poolDepth,v.riverMask||0,v.continental,v.ridges]);localStorage.setItem(TERRAIN_PLAN_CACHE_KEY,JSON.stringify(rows));loadingLog('Plan cache',`${rows.length} shared terrain samples retained for future launches`);}}catch{}
 }
@@ -540,6 +554,9 @@ function persistTerrainPlanCache(){
 // have their expensive warped/ridged octave samples waiting in the LRU.
 let terrainPlannerWorker=null,terrainPlanRequest=0,terrainPlanPending=false,terrainPlanAccepted=0;
 function ensureTerrainPlannerWorker(){
+  // A baked atlas already contains every macro terrain sample. There is no
+  // procedural world-generation job to dispatch while the game is running.
+  if(globalThis.DREMPLAY_EXAMPLE_WORLD)return null;
   if(terrainPlannerWorker||typeof Worker==='undefined')return terrainPlannerWorker;
   const source=`"use strict";
 ${hash3.toString()}
@@ -835,11 +852,11 @@ let loadedGrid = new Uint8Array(activeUploadBytes());
 // It shares the world's circular ring coordinates, so directional streaming
 // can update both textures with the same broad sector commits.
 let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
-// A 10 m/sample, 2.56 km square far field supplies the one-kilometer horizon
+// A 10 m/sample, 2.60 km square far field supplies the one-kilometer horizon
 // without allocating distant editable microvoxels. Refresh work is partitioned
 // into world-aligned 100×100 m regions; the central 7×7 neighborhood guarantees
 // 300 m of preview coverage in every direction while exposed edge regions load.
-const FAR_MAP_SIZE=256,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3;
+const FAR_MAP_SIZE=260,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3;
 let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
 let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
 let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
@@ -870,10 +887,15 @@ function fillFarTerrainCell(grid,originX,originZ,x,row){
     const hydro=Math.max(t.poolMask,riverFootprint),water=hydro>.30&&t.height<WATER_LEVEL,renderHeight=water?Math.min(WATER_LEVEL,t.height+20):t.height,moisture=Math.max(0,Math.min(1,.24+t.valleyMask*.52+hydro*.38)),i=(x+row*FAR_MAP_SIZE)*4;
     grid[i]=Math.round(Math.max(0,Math.min(400,renderHeight))/400*255);grid[i+1]=Math.round(moisture*255);grid[i+2]=Math.round(Math.max(0,Math.min(1,hydro))*255);grid[i+3]=Math.round(Math.max(0,Math.min(1,t.ridges))*255);
 }
-function fillFarTerrainRow(grid,originX,originZ,row){for(let x=0;x<FAR_MAP_SIZE;x++)fillFarTerrainCell(grid,originX,originZ,x,row);}
+function fillFarTerrainRegion(grid,originX,originZ,tile){
+  // A region is indivisible scheduling work: all of its 10×10 mathematical
+  // control cells are solved together. No row or column is ever advertised as
+  // a loaded map region.
+  for(let z=tile.z0;z<tile.z0+tile.h;z++)for(let x=tile.x0;x<tile.x0+tile.w;x++)fillFarTerrainCell(grid,originX,originZ,x,z);
+}
 function buildFarTerrainMap(centerX,centerZ){
   farTerrainOriginX=alignedFarOrigin(centerX);farTerrainOriginZ=alignedFarOrigin(centerZ);farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4);
-  for(let row=0;row<FAR_MAP_SIZE;row++)fillFarTerrainRow(farTerrainGrid,farTerrainOriginX,farTerrainOriginZ,row);
+  for(let tz=0;tz<FAR_MAP_SIZE;tz+=FAR_REGION_CELLS)for(let tx=0;tx<FAR_MAP_SIZE;tx+=FAR_REGION_CELLS)fillFarTerrainRegion(farTerrainGrid,farTerrainOriginX,farTerrainOriginZ,{x0:tx,z0:tz,w:Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-tx),h:Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-tz)});
 }
 function buildFarMaxHeightLevels(grid){
   let size=FAR_MAP_SIZE,source=new Uint8Array(size*size);for(let i=0;i<source.length;i++)source[i]=grid[i*4];
@@ -901,8 +923,8 @@ function queueFarTerrainRefresh(centerX,centerZ){
   farTerrainTask={originX,originZ,grid,tiles,tileIndex:0,started:performance.now(),reusedCells:FAR_MAP_SIZE*FAR_MAP_SIZE-tiles.reduce((n,t)=>n+t.w*t.h,0)};
   loadingLog('Regional preview',`${tiles.length} exposed 100×100 m squares queued · ${farTerrainTask.reusedCells} control cells reused · guaranteed radius ${FAR_REQUIRED_RADIUS*100} m`);
 }
-function processFarTerrainRefresh(budgetMs=1){
-  if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.tileIndex<farTerrainTask.tiles.length&&performance.now()-started<budgetMs){const tile=farTerrainTask.tiles[farTerrainTask.tileIndex],x=tile.x0+tile.cursor%tile.w,z=tile.z0+Math.floor(tile.cursor/tile.w);fillFarTerrainCell(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,x,z);tile.cursor++;if(tile.cursor>=tile.w*tile.h)farTerrainTask.tileIndex++;}
+function processFarTerrainRefresh(budgetMs=6){
+  if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.tileIndex<farTerrainTask.tiles.length){const tile=farTerrainTask.tiles[farTerrainTask.tileIndex];fillFarTerrainRegion(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,tile);farTerrainTask.tileIndex++;if(performance.now()-started>=budgetMs)break;}
   if(farTerrainTask.tileIndex<farTerrainTask.tiles.length)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
   const previewBytes=uploadFarTerrainControlField(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
   loadingLog('Regional preview',`${farTerrainTask.tiles.length} new 100×100 m squares committed atomically · mathematical control field ${(previewBytes/1024).toFixed(1)} KiB · ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
@@ -1786,6 +1808,7 @@ function waitForMinimumPreload(loadToken=initialLoadToken){
 }
 
 function beginInitialWorldLoad(useTestZone=false){
+  if(!globalThis.DREMPLAY_EXAMPLE_WORLD){loadingLog('World atlas','example-world-v1.js is missing; runtime generation is intentionally disabled');startBtn.disabled=true;startBtn.textContent='World atlas unavailable';testZoneBtn.disabled=true;return;}
   const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
   if(useTestZone){
     chunks.clear();generatedChunks.clear();dirtyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
@@ -1802,7 +1825,7 @@ function beginInitialWorldLoad(useTestZone=false){
   bootLoadStarted=performance.now();
   loadedGrid=new Uint8Array(activeUploadBytes());
   terrainWeatherGrid=new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
-  loadingLogLines=[];loadingLog('Seed intake',useTestZone?'Test zone selected; full boot cancelled and compact field initialized':'terrain seed accepted; initializing deterministic samplers');loadingLog('Plan cache',terrainPlanCache.size?`${terrainPlanCache.size} persistent height/mask samples restored`:'cold plan; shared height/mask lattice will be retained after synthesis');
+  loadingLogLines=[];loadingLog('World atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · immutable 3 km × 3 km level · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','900 immutable 100×100 m squares indexed; runtime terrain generation disabled');
   const jobs=[];
   const residentMinCX=Math.floor(windowMinX/CHUNK_SIZE),residentMinCZ=Math.floor(windowMinZ/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE);
   const span=useTestZone?TEST_ZONE_CHUNKS_XZ:LOADED_CHUNKS_XZ+BOOT_PREFETCH_MARGIN*2;
@@ -1816,16 +1839,16 @@ function beginInitialWorldLoad(useTestZone=false){
     const started=performance.now();
     while(done<jobs.length&&performance.now()-started<14){const job=jobs[done++];generateChunk(...job);copyChunkToLoadedGrid(...job);}
     const work=done/jobs.length;
-    showLoading(`Generating and indexing ${span}×${span} ${useTestZone?'Test zone':'chunk field'}`,initialLoadProgress(work),false);
+    showLoading(`Decoding ${span}×${span} ${useTestZone?'Test zone':'local voxel overlay'}`,initialLoadProgress(work),false);
     const logStep=Math.floor(work*20);
     if(logStep!==lastLoggedStep){
       lastLoggedStep=logStep;const job=jobs[Math.max(0,done-1)]||jobs[0];
-      const stations=['Height sampler','Domain warp','Strata solver','Biome classifier','Resource pass','Chunk encoder'];
+      const stations=['Atlas lookup','Height interpolation','Strata decoder','Biome lookup','Resource decoder','Chunk encoder'];
       loadingLog(stations[logStep%stations.length],`${done}/${jobs.length} chunks · coordinate ${job[0]},${job[1]},${job[2]}`);
     }
     if(done<jobs.length){requestAnimationFrame(batch);return;}
     assembleTerrainWeatherGrid();loadingLog('Weather relief',`${activeGridSizeX}×${activeGridSizeZ} exact height/moisture texels assembled for orographic clouds`);
-    const farCenterX=windowMinX+activeGridSizeX*.5,farCenterZ=windowMinZ+activeGridSizeZ*.5,farStarted=performance.now();buildFarTerrainMap(farCenterX,farCenterZ);loadingLog('Far horizon',`${FAR_MAP_SIZE}×${FAR_MAP_SIZE} exact terrain samples cover 2.56 km · ${(performance.now()-farStarted).toFixed(1)} ms`);
+    const farCenterX=windowMinX+activeGridSizeX*.5,farCenterZ=windowMinZ+activeGridSizeZ*.5,farStarted=performance.now();buildFarTerrainMap(farCenterX,farCenterZ);loadingLog('Far horizon',`${FAR_MAP_SIZE}×${FAR_MAP_SIZE} atlas lookups assembled by complete 100 m squares · ${(performance.now()-farStarted).toFixed(1)} ms`);
     persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident ring indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${span}×${span}×${LOADED_CHUNKS_Y} chunks indexed continuously during generation`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
   };
   requestAnimationFrame(batch);
@@ -2768,7 +2791,7 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n100×100 m streaming regions · 7×7 neighborhood · 300 m guaranteed every direction\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n900 pre-baked 100×100 m regions · finite 3 km × 3 km world · no runtime terrain generation\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
@@ -3201,7 +3224,7 @@ function describeActiveFrameWork(){
     return `frontier terrain chunk ${Math.min(streamTask.done+1,streamTask.jobs.length)}/${streamTask.jobs.length}`;
   }
   if(prefetchJobs.length&&performance.now()-lastPrefetchWorkAt<100)return `predictive frontier generation · ${prefetchJobs.length} chunks remain`;
-  if(farTerrainTask){const tile=farTerrainTask.tiles[farTerrainTask.tileIndex];return `100 m preview region ${Math.min(farTerrainTask.tileIndex+1,farTerrainTask.tiles.length)}/${farTerrainTask.tiles.length}${tile?` · cell ${tile.cursor}/${tile.w*tile.h}`:''}`;}
+  if(farTerrainTask)return `100×100 m atlas square ${Math.min(farTerrainTask.tileIndex+1,farTerrainTask.tiles.length)}/${farTerrainTask.tiles.length}`;
   if(waterQueue.length)return `water simulation queue · ${waterQueue.length} cells remain`;
   return 'raymarch render and simulation · no world load active';
 }
@@ -3227,9 +3250,12 @@ function loop(now){
   // Regional preview has priority over dense editable matter. The old gate
   // paused its refresh for the full lifetime of every sector task, exactly
   // when the preview was needed to conceal that sector's latency.
-  const playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS,desiredFarX=alignedFarOrigin(playerVX),desiredFarZ=alignedFarOrigin(playerVZ);
-  if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(playerVX,playerVZ);
-  if(farTerrainTask)processFarTerrainRefresh(moving?.75:3.0);
+  const playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS,previewLead=moving?1500:0,predictedPreviewX=playerVX+movementHeadingX*previewLead,predictedPreviewZ=playerVZ+movementHeadingZ*previewLead,desiredFarX=alignedFarOrigin(predictedPreviewX),desiredFarZ=alignedFarOrigin(predictedPreviewZ);
+  // Begin the next atlas handoff about 150 m before the player arrives. The
+  // atlas source is pre-baked, and each scheduled unit is a complete 100 m
+  // square, so this lookup/packing work normally finishes in a few frames.
+  if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(predictedPreviewX,predictedPreviewZ);
+  if(farTerrainTask)processFarTerrainRefresh(moving?8:16);
   if(streamTask)processStreamTask();
   else processBackgroundPrefetch(now,moving);
   performIdleMemoryMaintenance(now);
@@ -3324,6 +3350,9 @@ function updatePlayer(dt){
   // hard floor safety (in case falls out of world)
   const safetyFloor=(windowMinY+2)*VY;
   if (playerPos.y < safetyFloor){ playerPos.y=safetyFloor; velY=0; grounded=true; }
+  // The example level is finite. Keep the player inside its ocean boundary so
+  // the renderer never invents terrain beyond the baked 3 km atlas.
+  if(globalThis.DREMPLAY_EXAMPLE_WORLD){const edge=(DREMPLAY_EXAMPLE_WORLD.maxVoxel-20)*VS;playerPos.x=Math.max(-edge,Math.min(edge,playerPos.x));playerPos.z=Math.max(-edge,Math.min(edge,playerPos.z));}
 }
 
 // === DIRECTION-PREDICTED SECTOR STREAMING ===
@@ -3403,7 +3432,7 @@ function queueStreamShift(shiftX,shiftZ){
   // a partial commit; it only makes the unavoidable recovery work useful first.
   const surfaceChunkCache=new Map(),surfaceDistance=job=>{const hk=`${job[0]},${job[2]}`;let sy=surfaceChunkCache.get(hk);if(sy===undefined){sy=Math.floor(terrainSample((job[0]+.5)*CHUNK_SIZE,(job[2]+.5)*CHUNK_SIZE).height/CHUNK_SIZE);surfaceChunkCache.set(hk,sy);}return Math.abs(job[1]-sy);};
   jobs.sort((a,b)=>surfaceDistance(a)-surfaceDistance(b));
-  streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],stageDone:0,prepared:[]};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
+  streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],stageDone:0,prepared:[]};showLoading(jobs.length?'Decoding predicted detail overlay':'Preparing cached detail overlay',0,true);loadingLog('Detail request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m local editable advance · ${jobs.length} cache misses · macro region already resident`);
 }
 function buildStreamUploadBoxes(task){
   // Tiles are prepared incrementally but remain invisible until one atomic
@@ -3422,7 +3451,7 @@ function processStreamTask(){
   const task=streamTask,started=performance.now();if(task.phase==='generate'){
     if(!streamTaskStillSafe(task)){cancelObsoleteStream(task,'player left the requested handoff corridor');return;}
     while(task.done<task.jobs.length&&performance.now()-started<streamingBudgetMs)generateChunk(...task.jobs[task.done++]);
-    if(task.done<task.jobs.length){showLoading('Resolving predicted landscape sector',.35*task.done/task.jobs.length,true);return;}
+    if(task.done<task.jobs.length){showLoading('Decoding predicted detail overlay',.35*task.done/task.jobs.length,true);return;}
     task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='stage';loadingLog('Sector encoder',`${task.uploadBoxes.length} immutable 3.2 m × 3.2 m tiles queued for offscreen CPU staging`);
   }
   if(task.phase==='stage'){
@@ -3508,7 +3537,10 @@ function render(){
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
-if (gl) initGL();
+if(gl){
+  document.getElementById('loadingText').textContent='Decoding immutable world atlas';
+  Promise.resolve(globalThis.DREMPLAY_EXAMPLE_WORLD_READY).then(()=>initGL()).catch(error=>{console.error(error);document.getElementById('loadingText').textContent='World atlas unavailable';document.getElementById('startBtn').disabled=true;document.getElementById('startBtn').textContent='World atlas unavailable';loadingLog('World atlas',error.message);});
+}
 
 })();
 </script>
