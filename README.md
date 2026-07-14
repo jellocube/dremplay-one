@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.7**
+Current release: **v0.0.1.4.8**
+
+## v0.0.1.4.8 supplied heightmap island
+
+- Replaced the synthetic example island with the supplied 1254×1254 grayscale heightmap as the authoritative macro landscape.
+- Fits the image’s measured principal axis to a five-kilometer SW–NE island length and its cross-axis to three kilometers, preserving the intended diagonal orientation, coastline, outlying rocks, enclosed lakes, and visible drainage structure.
+- Bakes the map into a 751×751 immutable control lattice across a six-kilometer ocean atlas. Samples are eight meters apart and evaluate as a continuous quintic-bilinear height field at arbitrary voxel coordinates, so source pixels do not appear as terrain blocks.
+- Maps grayscale elevation into the engine’s full 2–350 voxel vertical range while retaining black water and coastline regions as pool/ocean coverage. Local strata, materials, vegetation, Resources, and editable voxels continue to derive from this fixed elevation field.
+- Expands the finite region directory to 3,600 complete 100×100 m squares while retaining the mandatory 300 m visible voxel radius and fixed one-kilometer horizon.
+- Ships only the compact compressed runtime heightmap atlas. The original source image remains in the local project’s `source-assets` directory for future rebakes and calibration.
 
 ## v0.0.1.4.7 guaranteed 300 m voxel ring
 

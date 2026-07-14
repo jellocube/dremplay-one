@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.7 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.8 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.7';
-  const CURRENT_REVISION = 36;
+  const CURRENT_VERSION = '0.0.1.4.8';
+  const CURRENT_REVISION = 37;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.7 · Infinite Detail Voxel Engine · guaranteed 300 m voxel ring</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.8 · Infinite Detail Voxel Engine · supplied SW–NE heightmap</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.7 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.8 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.7</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">finite 3 km world · 300 m voxel visibility invariant · one-kilometer horizon</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.8</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">supplied 3×5 km SW–NE island · continuous height field · 300 m voxel invariant</p></div>
 </div>
 
-<script src="example-world-v1.js?v=36"></script>
+<script src="heightmap-world-v2.js?v=37"></script>
 <script>
 (() => {
 "use strict";
@@ -523,8 +523,8 @@ function proceduralTerrainSample(wx,wz){
   return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,riverMask,riverDistance,continental,ridges};
 }
 
-// The shipped example level is an immutable 3 km × 3 km atlas baked at build
-// time. Runtime world sampling is only bounded array lookup/interpolation; the
+// The shipped level is an immutable six-kilometer atlas built from the supplied
+// 3×5 km SW–NE heightmap. Runtime sampling is bounded interpolation only; the
 // expensive octave stack above remains as an offline-authoring fallback.
 function bakedField(bytes,i00,i10,i01,i11,offset,tx,tz,scale=1){const a=bytes[i00+offset]+(bytes[i10+offset]-bytes[i00+offset])*tx,b=bytes[i01+offset]+(bytes[i11+offset]-bytes[i01+offset])*tx;return (a+(b-a)*tz)*scale;}
 function terrainSample(wx,wz){
@@ -1813,7 +1813,7 @@ function waitForMinimumPreload(loadToken=initialLoadToken){
 }
 
 function beginInitialWorldLoad(useTestZone=false){
-  if(!globalThis.DREMPLAY_EXAMPLE_WORLD){loadingLog('World atlas','example-world-v1.js is missing; runtime generation is intentionally disabled');startBtn.disabled=true;startBtn.textContent='World atlas unavailable';testZoneBtn.disabled=true;return;}
+  if(!globalThis.DREMPLAY_EXAMPLE_WORLD){loadingLog('World atlas','heightmap-world-v2.js is missing; runtime generation is intentionally disabled');startBtn.disabled=true;startBtn.textContent='World atlas unavailable';testZoneBtn.disabled=true;return;}
   const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
   if(useTestZone){
     chunks.clear();generatedChunks.clear();dirtyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
@@ -1830,7 +1830,7 @@ function beginInitialWorldLoad(useTestZone=false){
   bootLoadStarted=performance.now();
   loadedGrid=new Uint8Array(activeUploadBytes());
   terrainWeatherGrid=new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
-  loadingLogLines=[];loadingLog('World atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · immutable 3 km × 3 km level · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','900 immutable 100×100 m squares indexed; runtime terrain generation disabled');
+  loadingLogLines=[];loadingLog('Heightmap atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · ${DREMPLAY_EXAMPLE_WORLD.islandWidthMeters/1000}×${DREMPLAY_EXAMPLE_WORLD.islandLengthMeters/1000} km island · ${DREMPLAY_EXAMPLE_WORLD.interpolation} interpolation · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','3,600 immutable 100×100 m squares indexed across the 6 km atlas; runtime terrain generation disabled');
   const jobs=[];
   const residentMinCX=Math.floor(windowMinX/CHUNK_SIZE),residentMinCZ=Math.floor(windowMinZ/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE);
   const span=useTestZone?TEST_ZONE_CHUNKS_XZ:LOADED_CHUNKS_XZ+BOOT_PREFETCH_MARGIN*2;
@@ -2796,7 +2796,7 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n900 pre-baked 100×100 m regions · 300 m visible voxel radius guaranteed · fog begins afterward\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n3,600 pre-baked 100×100 m regions · supplied 3×5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
@@ -3051,7 +3051,8 @@ function raycastVoxels(ro, rd, maxDist){
   let sdz = (sz>0 ? (mapZ+1-ro.z) : (ro.z-mapZ)) * ddz;
   let dist=0, lastX=mapX,lastY=mapY,lastZ=mapZ;
   for (let i=0;i<512;i++){
-    // No hard bounds — world is chunked and effectively infinite for editing
+    // Editing uses the local decoded overlay; the surrounding heightmap world
+    // remains finite and is bounded independently in player movement.
     if (getVoxelA(mapX,mapY,mapZ)>0){
       return { x:mapX,y:mapY,z:mapZ, px:lastX,py:lastY,pz:lastZ, dist };
     }
@@ -3355,8 +3356,8 @@ function updatePlayer(dt){
   // hard floor safety (in case falls out of world)
   const safetyFloor=(windowMinY+2)*VY;
   if (playerPos.y < safetyFloor){ playerPos.y=safetyFloor; velY=0; grounded=true; }
-  // The example level is finite. Keep the player inside its ocean boundary so
-  // the renderer never invents terrain beyond the baked 3 km atlas.
+  // The heightmap level is finite. Keep the player inside its ocean boundary so
+  // the renderer never invents terrain beyond the baked six-kilometer atlas.
   if(globalThis.DREMPLAY_EXAMPLE_WORLD){const edge=(DREMPLAY_EXAMPLE_WORLD.maxVoxel-20)*VS;playerPos.x=Math.max(-edge,Math.min(edge,playerPos.x));playerPos.z=Math.max(-edge,Math.min(edge,playerPos.z));}
 }
 

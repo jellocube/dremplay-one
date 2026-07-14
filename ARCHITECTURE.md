@@ -1,8 +1,8 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
-## Pre-baked example world
+## Supplied heightmap world
 
-The default playable level is finite and immutable at the macro scale. `example-world-v1.js` contains a build-time-baked 3 km × 3 km atlas sampled every 8 m and indexed as 900 world-aligned 100×100 m regions. Elevation, valley membership, water coverage, pool depth, river coverage/distance, and ridge strength are direct bounded lookups with smooth interpolation at runtime. The offline terrain equations remain authoring tools; they are not a fallback world generator.
+The default playable level is finite and immutable at the macro scale. `heightmap-world-v2.js` is built directly from the supplied 1254×1254 grayscale map. Principal-axis fitting maps the island to 5 km SW–NE by 3 km cross-axis inside a 6 km ocean atlas. Its 751×751 control lattice is sampled every 8 m and indexed as 3,600 world-aligned 100×100 m regions. Elevation, valleys, water, drainage, and ridge strength are direct bounded lookups with smooth quintic-bilinear interpolation at runtime. The offline bake script is the only terrain-authoring stage; it is not a runtime fallback generator.
 
 The resident 10 cm voxel texture is deliberately not a second copy of the whole level. It is a local decoded/editable overlay for collision, carving, water, and Resources. Distance rendering reads the immutable atlas at configured voxel octaves. This separation keeps the complete map immediately available while bounding CPU and GPU memory on iPad and mobile browsers.
 
