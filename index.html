@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.6 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.7 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.6';
-  const CURRENT_REVISION = 35;
+  const CURRENT_VERSION = '0.0.1.4.7';
+  const CURRENT_REVISION = 36;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.6 · Infinite Detail Voxel Engine · pre-baked example world</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.7 · Infinite Detail Voxel Engine · guaranteed 300 m voxel ring</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.6 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.7 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -380,7 +380,7 @@
     </div></details>
     <details class="option-section"><summary>Fog and atmosphere</summary><div class="option-section-body">
       <div class="option-row"><label for="optionFogEnabled">Fog</label><select id="optionFogEnabled"><option value="1">On</option><option value="0">Off</option></select><span></span></div>
-      <div class="option-row"><label for="optionFogStart">Fog start</label><input id="optionFogStart" type="range" min="0" max="50" step="1"><span id="optionFogStartValue"></span></div>
+      <div class="option-row"><label for="optionFogStart">Fog start</label><input id="optionFogStart" type="range" min="300" max="1000" step="10"><span id="optionFogStartValue"></span></div>
       <div class="option-row"><label for="optionFogDensity">Fog density</label><input id="optionFogDensity" type="range" min="0.002" max="0.06" step="0.001"><span id="optionFogDensityValue"></span></div>
     </div></details>
     <details class="option-section"><summary>Simulation budgets</summary><div class="option-section-body">
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.6</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">finite 3 km example world · immutable 100 m regions · local voxel decoding</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.7</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">finite 3 km world · 300 m voxel visibility invariant · one-kilometer horizon</p></div>
 </div>
 
-<script src="example-world-v1.js?v=35"></script>
+<script src="example-world-v1.js?v=36"></script>
 <script>
 (() => {
 "use strict";
@@ -856,7 +856,7 @@ let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
 // without allocating distant editable microvoxels. Refresh work is partitioned
 // into world-aligned 100×100 m regions; the central 7×7 neighborhood guarantees
 // 300 m of preview coverage in every direction while exposed edge regions load.
-const FAR_MAP_SIZE=260,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3;
+const FAR_MAP_SIZE=260,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3,MINIMUM_PREVIEW_RADIUS_METERS=300;
 let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
 let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
 let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
@@ -877,6 +877,7 @@ function assembleTerrainWeatherGrid(){
   }
 }
 function alignedFarOrigin(center){return Math.floor((center-FAR_SPAN_VOXELS*.5)/FAR_REGION_VOXELS)*FAR_REGION_VOXELS;}
+function farPreviewCoverageMeters(centerX,centerZ,originX=farTerrainOriginX,originZ=farTerrainOriginZ){return Math.min(centerX-originX,centerZ-originZ,originX+FAR_SPAN_VOXELS-centerX,originZ+FAR_SPAN_VOXELS-centerZ)*VS;}
 function fillFarTerrainCell(grid,originX,originZ,x,row){
     const wx=originX+(x+.5)*FAR_CELL_VOXELS,wz=originZ+(row+.5)*FAR_CELL_VOXELS,t=terrainSample(wx,wz);
     // A stream can be narrower than one 10 m atlas cell. riverDistance is an
@@ -1060,6 +1061,7 @@ float farMaxHeightAt(vec2 worldXZ,float lod){
 float farVoxelCellSize(float dist){
   if(dist<uPreviewLod.x)return uPreviewLod.z;
   if(dist<uPreviewLod.y)return uPreviewLod.z*2.0;
+  if(dist<3000.0)return uPreviewLod.w;
   if(uBackgroundMode==1)return max(1.0,uPreviewLod.z*.5);
   return uPreviewLod.w;
 }
@@ -1070,7 +1072,7 @@ vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
   // continuous elevation/hydrography field on the virtual 1/2/4/8 m lattice;
   // the separate max hierarchy remains conservative traversal acceleration.
   vec4 voxel=farTerrainAt(center);if(voxel.x<0.0)return voxel;
-  if(dist>=uPreviewLod.y&&uBackgroundMode>0){vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;voxel=mix(voxel,matte,.62);}
+  if(dist>=max(uPreviewLod.y,3000.0)&&uBackgroundMode>0){vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;voxel=mix(voxel,matte,.62);}
   return voxel;
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
@@ -1330,7 +1332,7 @@ vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w,rock=smoothstep(.58,.88,ridges)*smoothstep(90.0,250.0,height),snowAmount=smoothstep(255.0,310.0,height);
   vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.24,.48,pool));
   float diffuse=max(dot(normal,sunDirection()),0.0),light=.28+.72*sqrt(diffuse)*daylightAmount();vec3 lit=floor(base*light*16.0+.5)/16.0;
-  float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-uFogStart)*adaptiveDensity);return mix(lit,skyColor(rd,false),clamp(fog,0.0,1.0));
+  float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-max(uFogStart,300.0))*adaptiveDensity);return mix(lit,skyColor(rd,false),clamp(fog,0.0,1.0));
 }
 vec3 waterPixelColor(ivec3 p,vec3 faceNormal,vec3 rd,float depthVoxels){
   vec3 base=materialColor(10u,p,1);if(uWaterQuality==0)return base;
@@ -1501,7 +1503,7 @@ void main(){
   }
 
   float distMeters=dist*0.1;
-  float fogDistance=max(0.0,distMeters-uFogStart);
+  float fogDistance=max(0.0,distMeters-max(uFogStart,300.0));
   float fogAmt=uFogEnabled==0?0.0:(uLightMode==0
     ? floor(clamp(fogDistance*uFogDensity,0.0,1.0)*16.0)/16.0
     : 1.0-exp(-fogDistance*uFogDensity));
@@ -1537,7 +1539,7 @@ let gravityAcceleration=-10.0, jumpSpeed=4.5, walkSpeed=4.2;
 let editReachMeters=6, carveRadius=7, placeRadius=4;
 let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
 const FIXED_VIEW_DISTANCE_METERS=1000;
-let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=12,fogDensity=.018,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
+let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=300,fogDensity=.008,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
 const FEET_TO_METERS=.3048;
 let detailDistanceMeters=clampOption(Number(bootOptions.get('detailFeet'))||20,0,40)*FEET_TO_METERS;
 let nearDistanceMeters=clampOption(Number(bootOptions.get('nearFeet'))||50,20,120)*FEET_TO_METERS;
@@ -1786,6 +1788,9 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
+  const previewCoverage=farPreviewCoverageMeters(playerPos.x/VS,playerPos.z/VS);
+  if(previewCoverage<MINIMUM_PREVIEW_RADIUS_METERS){engineReady=false;startBtn.disabled=true;startBtn.textContent='300 m voxel ring unavailable';loadingLog('Coverage gate',`${previewCoverage.toFixed(1)} m available; ${MINIMUM_PREVIEW_RADIUS_METERS} m required in every direction`);showLoading('Voxel coverage verification failed',1,false);return;}
+  loadingLog('Coverage gate',`${previewCoverage.toFixed(0)} m resident mathematical-voxel coverage in every direction · required ${MINIMUM_PREVIEW_RADIUS_METERS} m · accepted`);
   resize();window.addEventListener('resize',resize);engineReady=true;startBtn.disabled=false;startBtn.setAttribute('aria-disabled','false');startBtn.textContent='Enter world';testZoneBtn.hidden=true;document.getElementById('testZoneHint').hidden=true;nextCacheNoticeAt=testZoneMode?Infinity:performance.now()+20000;
   showLoading('Task complete. Ready to play.',1,false);loadingLog('Commit',testZoneMode?'12×12 Test zone verified; predictive expansion disabled':'24×24 resident ring verified; predictive frontier queued for background growth');hideLoading();refreshWindowState();lastT=performance.now();requestAnimationFrame(loop);
 }
@@ -2791,15 +2796,15 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n900 pre-baked 100×100 m regions · finite 3 km × 3 km world · no runtime terrain generation\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n900 pre-baked 100×100 m regions · 300 m visible voxel radius guaranteed · fog begins afterward\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
 function applyLiveOptions(){
-  detailDistanceMeters=Number(optionDetailDistance.value)*FEET_TO_METERS;nearDistanceMeters=Number(optionNearDistance.value)*FEET_TO_METERS;farDistanceMeters=Number(optionFarDistance.value)*FEET_TO_METERS;farPreviewVoxelMeters=Number(optionFarVoxel.value);backgroundDistanceMeters=Number(optionBackgroundDistance.value)*FEET_TO_METERS;backgroundVoxelMeters=Number(optionBackgroundVoxel.value);backgroundMode=Number(optionBackgroundMode.value)|0;bugtestingMode=optionBugtesting.value==='1';normalizeLodDistances();viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Number(optionFogStart.value);fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
+  detailDistanceMeters=Number(optionDetailDistance.value)*FEET_TO_METERS;nearDistanceMeters=Number(optionNearDistance.value)*FEET_TO_METERS;farDistanceMeters=Number(optionFarDistance.value)*FEET_TO_METERS;farPreviewVoxelMeters=Number(optionFarVoxel.value);backgroundDistanceMeters=Number(optionBackgroundDistance.value)*FEET_TO_METERS;backgroundVoxelMeters=Number(optionBackgroundVoxel.value);backgroundMode=Number(optionBackgroundMode.value)|0;bugtestingMode=optionBugtesting.value==='1';normalizeLodDistances();viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=Number(optionLightingQuality.value);lightMode=lightingQuality===0?0:1;materialQuality=Number(optionMaterialQuality.value);cloudQuality=Number(optionCloudQuality.value);waterRenderQuality=Number(optionWaterQuality.value);fogEnabled=optionFogEnabled.value==='1';fogStartMeters=Math.max(MINIMUM_PREVIEW_RADIUS_METERS,Number(optionFogStart.value));fogDensity=Number(optionFogDensity.value);streamingBudgetMs=Number(optionStreamBudget.value);syncOptionsWindow();
 }
 function applyOptionsPreset(name){
-  const presets={quality:{resolution:.65,detail:20,near:50,far:400,farVoxel:.5,background:500,backgroundVoxel:8,backgroundMode:1,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:24,fogDensity:.008,stream:3,vegetation:2},balanced:{resolution:.50,detail:20,near:50,far:400,farVoxel:1,background:500,backgroundVoxel:16,backgroundMode:2,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:12,fogDensity:.018,stream:2,vegetation:2},performance:{resolution:.35,detail:0,near:50,far:300,farVoxel:2,background:500,backgroundVoxel:32,backgroundMode:0,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:7,fogDensity:.032,stream:1,vegetation:1}};
+  const presets={quality:{resolution:.65,detail:20,near:50,far:400,farVoxel:.5,background:500,backgroundVoxel:8,backgroundMode:1,lighting:2,materials:2,clouds:2,waterShader:2,fogStart:400,fogDensity:.006,stream:3,vegetation:2},balanced:{resolution:.50,detail:20,near:50,far:400,farVoxel:1,background:500,backgroundVoxel:16,backgroundMode:2,lighting:1,materials:1,clouds:1,waterShader:2,fogStart:300,fogDensity:.008,stream:2,vegetation:2},performance:{resolution:.35,detail:0,near:50,far:300,farVoxel:2,background:500,backgroundVoxel:32,backgroundMode:0,lighting:0,materials:0,clouds:0,waterShader:0,fogStart:300,fogDensity:.012,stream:1,vegetation:1}};
   const p=presets[name];if(!p)return;pendingRenderScale=p.resolution;pendingVegetationDetail=p.vegetation;detailDistanceMeters=p.detail*FEET_TO_METERS;nearDistanceMeters=p.near*FEET_TO_METERS;farDistanceMeters=p.far*FEET_TO_METERS;farPreviewVoxelMeters=p.farVoxel;backgroundDistanceMeters=p.background*FEET_TO_METERS;backgroundVoxelMeters=p.backgroundVoxel;backgroundMode=p.backgroundMode;normalizeLodDistances();viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;lightingQuality=p.lighting;lightMode=p.lighting===0?0:1;materialQuality=p.materials;cloudQuality=p.clouds;waterRenderQuality=p.waterShader;fogEnabled=true;fogStartMeters=p.fogStart;fogDensity=p.fogDensity;streamingBudgetMs=p.stream;syncOptionsWindow();optionPreset.value=name;
 }
 optionPreset.addEventListener('change',()=>applyOptionsPreset(optionPreset.value));

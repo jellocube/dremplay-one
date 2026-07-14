@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.6**
+Current release: **v0.0.1.4.7**
+
+## v0.0.1.4.7 guaranteed 300 m voxel ring
+
+- Made 300 m of viewable landscape voxels in every direction a startup gate. Play remains disabled unless the pre-baked far atlas proves at least that much coverage on all four sides of the spawn point.
+- Protected the first 300 m from fog. The previous 12 m default fog start could make already-resident terrain appear absent; all presets now begin fog at 300 m or farther.
+- Protected the first 300 m from vector-matte substitution. Detail progresses through quantized 1 m, 2 m, and configurable background voxels, while the optional smooth matte may only take over beyond the guaranteed ring.
+- Added an explicit coverage audit to the loading monitor. It reports available resident mathematical-voxel coverage and accepts the world only when the 300 m invariant passes.
+- Retained the fixed one-kilometer horizon and the complete pre-baked 3 km world. The local 10 cm editable overlay may decode independently without gating or erasing the guaranteed distant voxel landscape.
 
 ## v0.0.1.4.6 pre-baked example world
 

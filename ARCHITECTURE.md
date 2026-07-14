@@ -6,6 +6,8 @@ The default playable level is finite and immutable at the macro scale. `example-
 
 The resident 10 cm voxel texture is deliberately not a second copy of the whole level. It is a local decoded/editable overlay for collision, carving, water, and Resources. Distance rendering reads the immutable atlas at configured voxel octaves. This separation keeps the complete map immediately available while bounding CPU and GPU memory on iPad and mobile browsers.
 
+The first 300 m around the player is a hard visibility invariant. Startup verifies atlas coverage on all four sides before enabling play. Within this radius, terrain remains a quantized voxel representation and cannot be replaced by fog or the optional vector background matte. Local editable-overlay decoding is independent and cannot remove this coarse resident landscape.
+
 ## Product focus
 
 Dremplay One is a browser-first voxel engine for mathematical worlds. It is designed to run on iPads, laptops, and modern smartphones through portable GPU facilities, bounded memory, deterministic procedural data, and resolution that follows visual need rather than a single global grid.
