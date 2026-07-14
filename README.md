@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.3.0.1**
+Current release: **v0.0.1.4.1**
+
+## v0.0.1.4.1 atomic resident-sector fix
+
+- Fixed sector streaming writing incremental upload tiles directly into physical slots still addressed by the current resident ring.
+- Incoming sectors are now prepared entirely in immutable CPU staging buffers. The live 3D texture and new ring origin are committed together before the next rendered frame, so no partially replaced sector can appear.
+- Every generation, staging, and final commit phase revalidates that the player remains inside the requested handoff corridor. Obsolete movement predictions are discarded without touching the live resident texture.
+- Diagonal travel resolves one broad axis per commit, bounding staging memory and preventing two overlapping exit bands from recycling visible slots.
+- This is numbered after the requested `v0.0.1.4` line without replacing the existing historical `v0.0.1.4` release.
 
 ## v0.0.3.0.1 visible distance-octave fix
 

@@ -38,6 +38,10 @@ Source: <https://www.atomontage.com/>
 6. Lighting consumes a common surface contract so octave changes do not change brightness or create black facets.
 7. Mathematical definitions and edits are authoritative. Render voxels are caches and may be discarded or rebuilt.
 
+### Atomic resident-ring handoff
+
+As of v0.0.1.4.1, sector conversion has an explicit prepare/commit boundary. Chunk and weather tiles are assembled in CPU-owned immutable buffers while the live ring remains untouched. After every buffer and the player's handoff corridor have been verified, all GPU subimage transfers execute in one render interval and the ring origin changes before drawing resumes. A cancelled prediction discards staging buffers; it never repairs or regenerates the current sector because that sector was never modified.
+
 ## Volume pipeline
 
 | Format | Allocation | Important tags | Typical conversions |

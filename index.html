@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.3.0.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.3.0.1';
+  const CURRENT_VERSION = '0.0.1.4.1';
   const CURRENT_REVISION = 27;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.3.0.1 · Infinite Detail Voxel Engine · visible horizon octaves</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.1 · Infinite Detail Voxel Engine · atomic sector streaming</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.3.0.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.3.0.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Visible 10/20/40/80 m horizon voxels · worker-planned terrain · budgeted streaming</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Atomic sector streaming · visible distance octaves · worker-planned terrain</p></div>
 </div>
 
 <script>
@@ -1920,6 +1920,34 @@ function uploadLocalBox(lx0,ly0,lz0,lx1,ly1,lz1,originX=windowMinX,originZ=windo
   }
 }
 
+// Streaming must not write into the live ring while the old origin still
+// addresses those physical slots. Build immutable CPU tiles first; only the
+// short final GPU transfer is allowed to touch the resident texture.
+function stageStreamBox(lx0,ly0,lz0,lx1,ly1,lz1,originX,originZ,targetRingX,targetRingZ){
+  const xs=ringSegments(lx0,lx1,targetRingX,activeGridSizeX),zs=ringSegments(lz0,lz1,targetRingZ,activeGridSizeZ),h=ly1-ly0+1,segments=[];
+  for(const zz of zs)for(const xx of xs){
+    const data=new Uint8Array(xx.count*h*zz.count);let o=0;
+    for(let dz=0;dz<zz.count;dz++){
+      const wz=originZ+zz.local+dz,cz=Math.floor(wz/CHUNK_SIZE),lz=mod(wz,CHUNK_SIZE);
+      for(let y=ly0;y<=ly1;y++){
+        const wy=windowMinY+y,cy=Math.floor(wy/CHUNK_SIZE),ly=mod(wy,CHUNK_SIZE);let wx=originX+xx.local,remaining=xx.count;
+        while(remaining>0){const cx=Math.floor(wx/CHUNK_SIZE),lx=mod(wx,CHUNK_SIZE),take=Math.min(remaining,CHUNK_SIZE-lx),source=getChunk(cx,cy,cz,false);if(source)data.set(source.subarray(lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE,lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE+take),o);o+=take;wx+=take;remaining-=take;}
+      }
+    }
+    let weather=null;
+    if(ly0===0&&ly1===LOADED_SIZE_Y-1){weather=new Uint16Array(xx.count*zz.count*2);o=0;let lastKey='',columns=null;for(let dz=0;dz<zz.count;dz++){const wz=originZ+zz.local+dz,cz=Math.floor(wz/CHUNK_SIZE),lz=mod(wz,CHUNK_SIZE);for(let dx=0;dx<xx.count;dx++){const wx=originX+xx.local+dx,cx=Math.floor(wx/CHUNK_SIZE),key=`${cx},${cz}`;if(key!==lastKey){lastKey=key;columns=prepareTerrainColumns(cx,cz);}const column=columns[mod(wx,CHUNK_SIZE)+lz*CHUNK_SIZE];weather[o++]=Math.max(0,Math.min(65535,column.h));weather[o++]=Math.round(Math.max(0,Math.min(1,column.moisture))*65535);}}}
+    segments.push({x:xx.physical,y:ly0,z:zz.physical,w:xx.count,h,d:zz.count,data,weather});
+  }
+  return segments;
+}
+function commitStagedStream(task){
+  const started=performance.now();gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
+  for(const segment of task.prepared){gl.texSubImage3D(gl.TEXTURE_3D,0,segment.x,segment.y,segment.z,segment.w,segment.h,segment.d,gl.RED_INTEGER,gl.UNSIGNED_BYTE,segment.data);uploadBytes+=segment.data.byteLength;}
+  gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);
+  for(const segment of task.prepared)if(segment.weather){gl.texSubImage2D(gl.TEXTURE_2D,0,segment.x,segment.z,segment.w,segment.d,gl.RG_INTEGER,gl.UNSIGNED_SHORT,segment.weather);uploadBytes+=segment.weather.byteLength;}
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);uploadMs+=performance.now()-started;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // INPUT
 //////////////////////////////////////////////////////////////////////////
@@ -3082,7 +3110,8 @@ function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.Ke
 
 function describeActiveFrameWork(){
   if(streamTask){
-    if(streamTask.phase==='upload')return `GPU resident-ring slice ${Math.min(streamTask.uploadDone+1,streamTask.uploadBoxes.length)}/${streamTask.uploadBoxes.length}`;
+    if(streamTask.phase==='stage')return `offscreen sector staging ${Math.min(streamTask.stageDone+1,streamTask.uploadBoxes.length)}/${streamTask.uploadBoxes.length}`;
+    if(streamTask.phase==='commit')return `atomic resident-ring commit`;
     return `frontier terrain chunk ${Math.min(streamTask.done+1,streamTask.jobs.length)}/${streamTask.jobs.length}`;
   }
   if(prefetchJobs.length&&performance.now()-lastPrefetchWorkAt<100)return `predictive frontier generation · ${prefetchJobs.length} chunks remain`;
@@ -3263,24 +3292,36 @@ function queueStreamShift(shiftX,shiftZ){
   const minCX=Math.floor(newMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(newMinZ/CHUNK_SIZE),widthX=Math.abs(shiftX)/CHUNK_SIZE,widthZ=Math.abs(shiftZ)/CHUNK_SIZE;
   if(shiftX)for(let sx=0;sx<widthX;sx++){const cx=minCX+(shiftX>0?LOADED_CHUNKS_XZ-widthX+sx:sx);for(let cz=0;cz<LOADED_CHUNKS_XZ;cz++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(cx,minCY+cy,minCZ+cz);}
   if(shiftZ)for(let sz=0;sz<widthZ;sz++){const cz=minCZ+(shiftZ>0?LOADED_CHUNKS_XZ-widthZ+sz:sz);for(let cx=0;cx<LOADED_CHUNKS_XZ;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)add(minCX+cx,minCY+cy,cz);}
-  streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],uploadDone:0};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
+  streamTask={shiftX,shiftZ,newMinX,newMinZ,newRingX,newRingZ,jobs,done:0,started:performance.now(),phase:'generate',uploadBoxes:[],stageDone:0,prepared:[]};showLoading(jobs.length?'Resolving predicted landscape sector':'Preparing cached landscape sectors',0,true);loadingLog('Sector request',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m directional advance · ${jobs.length} cache misses`);
 }
 function buildStreamUploadBoxes(task){
-  // Keep the directional shift broad and atomic, but upload it in 3.2 m
-  // squares. Each full-height tile is ~416 KiB instead of 1.6 MiB,
-  // removing the single-frame copy/upload spike without exposing strips.
+  // Tiles are prepared incrementally but remain invisible until one atomic
+  // commit. The live texture is never used as streaming scratch space.
   const boxes=[],seen=new Set(),add=(x,z)=>{const key=`${x},${z}`;if(seen.has(key))return;seen.add(key);boxes.push([x,0,z,Math.min(LOADED_SIZE_X-1,x+STREAM_UPLOAD_TILE_VOXELS-1),LOADED_SIZE_Y-1,Math.min(LOADED_SIZE_Z-1,z+STREAM_UPLOAD_TILE_VOXELS-1)]);};
   if(task.shiftX){const x0=task.shiftX>0?LOADED_SIZE_X-Math.abs(task.shiftX):0;for(let x=x0;x<x0+Math.abs(task.shiftX);x+=STREAM_UPLOAD_TILE_VOXELS)for(let z=0;z<LOADED_SIZE_Z;z+=STREAM_UPLOAD_TILE_VOXELS)add(x,z);}
   if(task.shiftZ){const z0=task.shiftZ>0?LOADED_SIZE_Z-Math.abs(task.shiftZ):0;for(let z=z0;z<z0+Math.abs(task.shiftZ);z+=STREAM_UPLOAD_TILE_VOXELS)for(let x=0;x<LOADED_SIZE_X;x+=STREAM_UPLOAD_TILE_VOXELS)add(x,z);}
   return boxes;
 }
+function streamTaskStillSafe(task){
+  const px=playerPos.x/VS,pz=playerPos.z/VS,guard=CHUNK_SIZE*2;
+  return px>=task.newMinX+guard&&px<task.newMinX+activeGridSizeX-guard&&pz>=task.newMinZ+guard&&pz<task.newMinZ+activeGridSizeZ-guard;
+}
+function cancelObsoleteStream(task,reason){task.prepared.length=0;prefetchSignature='';streamTask=null;lastStreamShiftAt=performance.now();loadingLog('Sector cancel',`${reason} · live resident ring was not modified`);hideLoading('Task complete. Current sector retained.');}
 function processStreamTask(){
   const task=streamTask,started=performance.now();if(task.phase==='generate'){
+    if(!streamTaskStillSafe(task)){cancelObsoleteStream(task,'player left the requested handoff corridor');return;}
     while(task.done<task.jobs.length&&performance.now()-started<streamingBudgetMs)generateChunk(...task.jobs[task.done++]);
     if(task.done<task.jobs.length){showLoading('Resolving predicted landscape sector',.35*task.done/task.jobs.length,true);return;}
-    task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='upload';loadingLog('Sector encoder',`${task.uploadBoxes.length} budgeted 3.2 m × 3.2 m GPU tiles queued behind the current view`);
+    task.uploadBoxes=buildStreamUploadBoxes(task);task.phase='stage';loadingLog('Sector encoder',`${task.uploadBoxes.length} immutable 3.2 m × 3.2 m tiles queued for offscreen CPU staging`);
   }
-  if(task.phase==='upload'&&task.uploadDone<task.uploadBoxes.length){const uploadStarted=performance.now(),box=task.uploadBoxes[task.uploadDone++];uploadLocalBox(...box,task.newMinX,task.newMinZ,task.newRingX,task.newRingZ);if(task.uploadDone===1||task.uploadDone===task.uploadBoxes.length||task.uploadDone%8===0)loadingLog('Sector upload',`${task.uploadDone}/${task.uploadBoxes.length} · ${(uploadBytes/1048576).toFixed(2)} MiB cumulative · ${(performance.now()-uploadStarted).toFixed(1)} ms`);showLoading('Installing predicted landscape sectors',.35+.64*task.uploadDone/task.uploadBoxes.length,true);if(task.uploadDone<task.uploadBoxes.length)return;}
+  if(task.phase==='stage'){
+    if(!streamTaskStillSafe(task)){cancelObsoleteStream(task,'movement changed before atomic commit');return;}
+    let worked=false;while(task.stageDone<task.uploadBoxes.length&&(!worked||performance.now()-started<Math.max(1.2,streamingBudgetMs))){const box=task.uploadBoxes[task.stageDone++];task.prepared.push(...stageStreamBox(...box,task.newMinX,task.newMinZ,task.newRingX,task.newRingZ));worked=true;}
+    showLoading('Staging predicted landscape sectors',.35+.58*task.stageDone/task.uploadBoxes.length,true);if(task.stageDone<task.uploadBoxes.length)return;
+    if(!streamTaskStillSafe(task)){cancelObsoleteStream(task,'movement changed at commit gate');return;}
+    task.phase='commit';loadingLog('Commit gate',`${task.prepared.length} prepared texture segments verified · live ring unchanged`);
+  }
+  if(task.phase==='commit'){commitStagedStream(task);loadingLog('Atomic transfer',`${(task.prepared.reduce((n,s)=>n+s.data.byteLength+(s.weather?.byteLength||0),0)/1048576).toFixed(1)} MiB committed before the next rendered frame`);task.prepared.length=0;}
   windowMinX=task.newMinX;windowMinZ=task.newMinZ;ringX=task.newRingX;ringZ=task.newRingZ;prefetchSignature='';evictDistantCleanChunks();streamMs+=performance.now()-task.started;loadingLog('Sector commit',`${task.uploadBoxes.length} broad sectors committed atomically in ${streamMs.toFixed(1)} ms`);streamTask=null;hideLoading();lastStreamShiftAt=performance.now();
 }
 function updateLoadedWindow(){
@@ -3291,6 +3332,9 @@ function updateLoadedWindow(){
   const centerX=windowMinX+LOADED_SIZE_X*.5,centerZ=windowMinZ+LOADED_SIZE_Z*.5,hysteresis=STREAM_SECTOR_VOXELS*.5;let shiftX=0,shiftZ=0;
   if(playerVoxelX>centerX+hysteresis)shiftX=STREAM_SECTOR_VOXELS;else if(playerVoxelX<centerX-hysteresis)shiftX=-STREAM_SECTOR_VOXELS;
   if(playerVoxelZ>centerZ+hysteresis)shiftZ=STREAM_SECTOR_VOXELS;else if(playerVoxelZ<centerZ-hysteresis)shiftZ=-STREAM_SECTOR_VOXELS;
+  // Resolve diagonals one broad axis at a time. This bounds staging memory to
+  // one 40 MiB sector and gives each atomic commit an unambiguous exit band.
+  if(shiftX&&shiftZ){if(Math.abs(playerVoxelX-centerX)>=Math.abs(playerVoxelZ-centerZ))shiftZ=0;else shiftX=0;}
   if(shiftX||shiftZ){lastStreamShiftAt=now;queueStreamShift(shiftX,shiftZ);}
 }
 
