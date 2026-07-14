@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.3**
+Current release: **v0.0.1.4.4**
+
+## v0.0.1.4.4 tenfold regional preview
+
+- Increased distant elevation/hydrography sampling resolution tenfold. The compact 10 m mathematical atlas is now a control field reconstructed by the GPU on a 1 m virtual lattice rather than displayed as block-sized texels.
+- Guaranteed three complete resident-region-width preview rings around the player at all times: 1 m mathematical voxels through the first ring, 2 m through the second, and 4 m through the third. An 8 m mathematical voxel octave continues to the fixed 1 km horizon.
+- Continuous elevation and stream interpolation removes the abrupt block terraces introduced by directly displaying control texels. The independent maximum-height hierarchy still conservatively skips empty ray intervals without changing the reconstructed surface.
+- Removed the secondary RGBA reduction pyramid and its refresh-time allocations. A 256 KiB control field now produces the denser virtual representation, avoiding the approximately 100× CPU generation cost and 25 MiB allocation of a literal 2,560² atlas.
+- Exact editable sectors still load surface-first behind the preview. Missing or unfinished sectors cannot create a sky gap inside the three guaranteed preview rings.
 
 ## v0.0.1.4.3 mathematical elevation preview
 

@@ -46,6 +46,8 @@ v0.0.1.4.2 makes the compact regional atlas the latency-hiding lead representati
 
 v0.0.1.4.3 restores the preview as a mathematical elevation and hydrography field rather than a flat sky-colored placeholder. Its reduction pyramid preserves relief, ridges, and stream coverage through the 10/20/40/80 m preview octaves. Directional Worker requests solve the same terrain equations on the upcoming 0.8 m lattice; no preview object instances are transferred. Ecology candidates and instance variation are threshold evaluations of continuous quasiperiodic fields, advancing the Resource system away from stored placements and toward definitions that can be reevaluated at arbitrary detail.
 
+v0.0.1.4.4 treats the 10 m RGBA atlas strictly as mathematical control data. The fragment tracer reconstructs its continuous field on explicit 1/2/4/8 m virtual voxel lattices, providing tenfold near-preview sampling without tenfold samples along both atlas axes. Three resident-region-width rings are a renderer invariant and remain available independently of exact-sector readiness. The maximum-height texture remains a separate conservative acceleration structure; it proves empty intervals but no longer replaces reconstructed elevation with block maxima.
+
 ## Volume pipeline
 
 | Format | Allocation | Important tags | Typical conversions |

@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.4.3 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.4.4 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.4.3';
-  const CURRENT_REVISION = 32;
+  const CURRENT_VERSION = '0.0.1.4.4';
+  const CURRENT_REVISION = 33;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.4.3 · Infinite Detail Voxel Engine · mathematical elevation preview</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.4.4 · Infinite Detail Voxel Engine · 10× regional preview</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.4.3 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.4.4 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.4.3</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Mathematical elevation preview · analytic ecology · directional octave solving</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.4.4</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">10× mathematical reconstruction · three guaranteed preview rings · analytic ecology</p></div>
 </div>
 
 <script>
@@ -870,25 +870,8 @@ function buildFarMaxHeightLevels(grid){
   while(size>1){const nextSize=Math.max(1,size>>1),next=new Uint8Array(nextSize*nextSize);for(let y=0;y<nextSize;y++)for(let x=0;x<nextSize;x++){const sx=x*2,sy=y*2,i=sx+sy*size;next[x+y*nextSize]=Math.max(source[i],source[Math.min(i+1,source.length-1)],source[Math.min(i+size,source.length-1)],source[Math.min(i+size+1,source.length-1)]);}levels.push(next);source=next;size=nextSize;}
   return levels;
 }
-function buildFarTerrainLevels(grid){
-  let size=FAR_MAP_SIZE,source=grid,levels=[source];
-  while(size>1){
-    const nextSize=Math.max(1,size>>1),next=new Uint8Array(nextSize*nextSize*4);
-    for(let y=0;y<nextSize;y++)for(let x=0;x<nextSize;x++){
-      const sx=x*2,sy=y*2,sx1=Math.min(sx+1,size-1),sy1=Math.min(sy+1,size-1),d=(x+y*nextSize)*4,a=(sx+sy*size)*4,b=(sx1+sy*size)*4,c=(sx+sy1*size)*4,e=(sx1+sy1*size)*4;
-      next[d]=Math.max(source[a],source[b],source[c],source[e]);
-      next[d+1]=Math.round((source[a+1]+source[b+1]+source[c+1]+source[e+1])*.25);
-      next[d+2]=Math.max(source[a+2],source[b+2],source[c+2],source[e+2]);
-      next[d+3]=Math.max(source[a+3],source[b+3],source[c+3],source[e+3]);
-    }
-    levels.push(next);source=next;size=nextSize;
-  }
-  return levels;
-}
-function uploadFarTerrainPyramid(grid){
-  const levels=buildFarTerrainLevels(grid);gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);
-  for(let level=0,size=FAR_MAP_SIZE;level<levels.length;level++,size=Math.max(1,size>>1))gl.texImage2D(gl.TEXTURE_2D,level,gl.RGBA8,size,size,0,gl.RGBA,gl.UNSIGNED_BYTE,levels[level]);
-  return levels.reduce((bytes,level)=>bytes+level.byteLength,0);
+function uploadFarTerrainControlField(grid){
+  gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,FAR_MAP_SIZE,FAR_MAP_SIZE,0,gl.RGBA,gl.UNSIGNED_BYTE,grid);return grid.byteLength;
 }
 function uploadFarHeightPyramid(grid){
   const levels=buildFarMaxHeightLevels(grid);gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
@@ -901,8 +884,8 @@ function queueFarTerrainRefresh(centerX,centerZ){
 function processFarTerrainRefresh(budgetMs=1){
   if(!farTerrainTask)return;const started=performance.now();while(farTerrainTask.row<FAR_MAP_SIZE&&performance.now()-started<budgetMs)fillFarTerrainRow(farTerrainTask.grid,farTerrainTask.originX,farTerrainTask.originZ,farTerrainTask.row++);
   if(farTerrainTask.row<FAR_MAP_SIZE)return;farTerrainGrid=farTerrainTask.grid;farTerrainOriginX=farTerrainTask.originX;farTerrainOriginZ=farTerrainTask.originZ;
-  const previewBytes=uploadFarTerrainPyramid(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
-  loadingLog('Far horizon',`atomic elevation/hydrography preview ${(previewBytes/1024).toFixed(1)} KiB + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
+  const previewBytes=uploadFarTerrainControlField(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);
+  loadingLog('Far horizon',`atomic mathematical control field ${(previewBytes/1024).toFixed(1)} KiB + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy committed in ${(performance.now()-farTerrainTask.started).toFixed(1)} ms`);farTerrainTask=null;
 }
 
 function copyChunkToLoadedGrid(worldCX,worldCY,worldCZ){
@@ -1025,30 +1008,29 @@ vec4 farTerrainAt(vec2 worldXZ){
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return vec4(-1.0);
   vec4 packed=textureLod(uFarTerrain,uv,0.0);return vec4(packed.r*400.0,packed.gba);
 }
-vec4 farTerrainAtLod(vec2 worldXZ,float lod){
-  vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
-  if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return vec4(-1.0);
-  vec4 packed=textureLod(uFarTerrain,uv,lod);return vec4(packed.r*400.0,packed.gba);
-}
 float farMaxHeightAt(vec2 worldXZ,float lod){
   vec2 texel=(worldXZ-uFarTerrainInfo.xy)/uFarTerrainInfo.z,uv=(texel+.5)/uFarTerrainInfo.w;
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return -1.0;
   return textureLod(uFarMaxHeight,uv,lod).r*400.0;
 }
 float farVoxelLevel(float dist){
-  // Past 250 ft, double world-space voxel size whenever distance doubles.
-  // Its projected footprint therefore remains legible instead of dissolving
-  // into a conventionally filtered height field.
-  return clamp(floor(log2(max(dist/uLodDistances.z,1.0))),0.0,3.0);
+  // Three complete resident-region widths are guaranteed outside the player:
+  // 1 m reconstructed voxels through ring 1, 2 m through ring 2, and 4 m
+  // through ring 3. An 8 m octave carries the remaining kilometer horizon.
+  float region=max(float(uGrid.x),1.0);
+  if(dist<region*2.0)return 0.0;
+  if(dist<region*3.0)return 1.0;
+  if(dist<region*4.0)return 2.0;
+  return 3.0;
 }
-float farVoxelCellSize(float dist){return uFarTerrainInfo.z*exp2(farVoxelLevel(dist));}
+float farVoxelCellSize(float dist){return (uFarTerrainInfo.z*.1)*exp2(farVoxelLevel(dist));}
 vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
-  float level=farVoxelLevel(dist),cell=uFarTerrainInfo.z*exp2(level);
+  float level=farVoxelLevel(dist),cell=(uFarTerrainInfo.z*.1)*exp2(level);
   vec2 center=uFarTerrainInfo.xy+(floor((worldXZ-uFarTerrainInfo.xy)/cell)+.5)*cell;
-  vec4 data=farTerrainAtLod(center,level);if(data.x<0.0)return data;
-  // The height hierarchy stores maxima, so enlarging a voxel preserves peaks
-  // and ridge silhouettes rather than averaging mountains down.
-  data.x=farMaxHeightAt(center,level);return data;
+  // The compact atlas is control data. Linear reconstruction evaluates its
+  // continuous elevation/hydrography field on the virtual 1/2/4/8 m lattice;
+  // the separate max hierarchy remains conservative traversal acceleration.
+  return farTerrainAt(center);
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
   // Inside the resident ring this is the exact height/moisture pair produced
@@ -1523,10 +1505,10 @@ const VOXEL_OCTAVES=Object.freeze([
   Object.freeze({level:0,pitch:.05,from:0,to:6.096,format:'microvoxel_overlay',purpose:'close Resource and surface detail'}),
   Object.freeze({level:1,pitch:.10,from:6.096,to:15.24,format:'resident_grid',purpose:'authoritative editable matter'}),
   Object.freeze({level:2,pitch:.20,from:15.24,to:76.2,format:'merged_grid',purpose:'stable middle-distance traversal'}),
-  Object.freeze({level:3,pitch:10,from:76.2,to:152.4,format:'horizon_atlas',purpose:'near horizon voxel columns'}),
-  Object.freeze({level:4,pitch:20,from:152.4,to:304.8,format:'horizon_atlas',purpose:'middle horizon voxel columns'}),
-  Object.freeze({level:5,pitch:40,from:304.8,to:609.6,format:'horizon_atlas',purpose:'far horizon voxel columns'}),
-  Object.freeze({level:6,pitch:80,from:609.6,to:1000,format:'horizon_atlas',purpose:'kilometer silhouette voxel columns'})
+  Object.freeze({level:3,pitch:1,from:76.2,to:153.6,format:'mathematical_preview',purpose:'first guaranteed regional preview ring'}),
+  Object.freeze({level:4,pitch:2,from:153.6,to:230.4,format:'mathematical_preview',purpose:'second guaranteed regional preview ring'}),
+  Object.freeze({level:5,pitch:4,from:230.4,to:307.2,format:'mathematical_preview',purpose:'third guaranteed regional preview ring'}),
+  Object.freeze({level:6,pitch:8,from:307.2,to:1000,format:'mathematical_preview',purpose:'kilometer mathematical voxel horizon'})
 ]);
 const VOLUME_FORMATS=Object.freeze([
   Object.freeze({name:'resource_field',allocation:'definition',tags:'equation, seed, material, provenance',convertsTo:'microvoxel_overlay, resident_grid'}),
@@ -1534,7 +1516,7 @@ const VOLUME_FORMATS=Object.freeze([
   Object.freeze({name:'resident_grid',allocation:'CPU + GPU ring',tags:'material, water, Resource ID, edits',convertsTo:'merged_grid, collision, network'}),
   Object.freeze({name:'microvoxel_overlay',allocation:'procedural GPU',tags:'parent cell, surface field, palette shade',convertsTo:'fragments'}),
   Object.freeze({name:'merged_grid',allocation:'procedural GPU',tags:'source coordinate, material, occupancy',convertsTo:'fragments'}),
-  Object.freeze({name:'horizon_atlas',allocation:'compact GPU hierarchy',tags:'height, moisture, water, ridge, max-height',convertsTo:'distant fragments'}),
+  Object.freeze({name:'mathematical_preview',allocation:'compact GPU control field + virtual lattice',tags:'continuous height, hydrography, ridge, 1/2/4/8 m reconstruction, max-height',convertsTo:'distant voxels'}),
   Object.freeze({name:'water_state',allocation:'sparse CPU queue',tags:'level, source, wake state',convertsTo:'resident_grid'}),
   Object.freeze({name:'edit_csg',allocation:'sparse CPU log',tags:'operation, center, radius, material',convertsTo:'resident_grid, network'})
 ]);
@@ -1743,7 +1725,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);
   gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);
-  const previewBytes=uploadFarTerrainPyramid(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);loadingLog('GPU transfer',`${(previewBytes/1024).toFixed(1)} KiB elevation/hydrography preview + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy cover 1 km`);
+  const previewBytes=uploadFarTerrainControlField(farTerrainGrid),hierarchyBytes=uploadFarHeightPyramid(farTerrainGrid);loadingLog('GPU transfer',`${(previewBytes/1024).toFixed(1)} KiB mathematical control field reconstructs three regional rings at 1–4 m + ${(hierarchyBytes/1024).toFixed(1)} KiB skip hierarchy`);
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
@@ -1868,10 +1850,10 @@ function initGL(){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   farTerrainTex=gl.createTexture();gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);
-  // This texture is voxel data, not a photograph. Linear filtering was
-  // erasing the far-octave cell boundaries and making mountains look like a
-  // smooth height field even while traversal used coarse samples.
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
+  // This is mathematical control data, not the displayed voxel lattice.
+  // Linear reconstruction lets the shader evaluate it at ten subdivisions
+  // per source cell; explicit 1/2/4/8 m quantization supplies visible voxels.
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,0);
   farMaxHeightTex=gl.createTexture();gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
   paletteTex=gl.createTexture();
