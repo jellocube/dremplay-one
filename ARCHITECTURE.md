@@ -62,7 +62,12 @@ An octave is a factor-of-two sampling band over the same underlying matter.
 | 0 | 5 cm | 0–20 ft | fine procedural overlay |
 | 1 | 10 cm | 20–50 ft | authoritative editable grid |
 | 2 | 20 cm | 50–250 ft | merged traversal grid |
-| 3 | 10 m | 250 ft–1 km | hierarchical horizon atlas |
+| 3 | 10 m | 250–500 ft | hierarchical horizon atlas |
+| 4 | 20 m | 500–1,000 ft | hierarchical horizon atlas |
+| 5 | 40 m | 1,000–2,000 ft | hierarchical horizon atlas |
+| 6 | 80 m | 2,000 ft–1 km | hierarchical horizon atlas |
+
+The horizon atlas exposes four visible sub-octaves rather than filtering one atlas continuously: 10 m from 250–500 ft, 20 m from 500–1,000 ft, 40 m from 1,000–2,000 ft, and 80 m beyond 2,000 ft. Enlarged cells take their height from the matching maximum-reduction level, preserving mountain silhouettes. Small isolated underwater geological Resources are folded into the streambed representation after 50 ft so pebble detail follows the same distance contract.
 
 Future octaves may refine below 5 cm around the gaze, editing brush, and inspected Resource. They must be requested through screen-space error and device budgets, not by globally doubling world resolution.
 

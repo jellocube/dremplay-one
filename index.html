@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.3.0 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.3.0.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.3.0';
+  const CURRENT_VERSION = '0.0.3.0.1';
   const CURRENT_REVISION = 27;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.3.0 · Infinite Detail Voxel Engine · octave streaming</span></div>
+<div id="topleft">Dremplay One<span>v0.0.3.0.1 · Infinite Detail Voxel Engine · visible horizon octaves</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -285,7 +285,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.3.0 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.3.0.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -417,7 +417,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.3.0</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Worker-planned terrain · time-horizon prefetch · budgeted GPU and water queues · mathematical Resources</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.3.0.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">Visible 10/20/40/80 m horizon voxels · worker-planned terrain · budgeted streaming</p></div>
 </div>
 
 <script>
@@ -989,6 +989,21 @@ float farMaxHeightAt(vec2 worldXZ,float lod){
   if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0))))return -1.0;
   return textureLod(uFarMaxHeight,uv,lod).r*400.0;
 }
+float farVoxelLevel(float dist){
+  // Past 250 ft, double world-space voxel size whenever distance doubles.
+  // Its projected footprint therefore remains legible instead of dissolving
+  // into a conventionally filtered height field.
+  return clamp(floor(log2(max(dist/uLodDistances.z,1.0))),0.0,3.0);
+}
+float farVoxelCellSize(float dist){return uFarTerrainInfo.z*exp2(farVoxelLevel(dist));}
+vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
+  float level=farVoxelLevel(dist),cell=uFarTerrainInfo.z*exp2(level);
+  vec2 center=uFarTerrainInfo.xy+(floor((worldXZ-uFarTerrainInfo.xy)/cell)+.5)*cell;
+  vec4 data=farTerrainAt(center);if(data.x<0.0)return data;
+  // The height hierarchy stores maxima, so enlarging a voxel preserves peaks
+  // and ridge silhouettes rather than averaging mountains down.
+  data.x=farMaxHeightAt(center,level);return data;
+}
 vec2 terrainWeatherAt(vec2 worldXZ){
   // Inside the resident ring this is the exact height/moisture pair produced
   // by terrain generation. A compatible large-scale proxy continues the
@@ -1080,6 +1095,14 @@ uint getMergedMaterial(ivec3 p,out ivec3 source){
   if(b>0u&&b!=10u){source=p1;return b;}
   if(a==10u){source=p0;return a;}
   source=p1;return b;
+}
+bool isGeologyMaterial(uint m){return m==3u||(m>=21u&&m<=27u);}
+bool isIsolatedUnderwaterPebble(ivec3 p,uint m){
+  if(!isGeologyMaterial(m))return false;
+  uint xm=getSafeMaterial(p-ivec3(1,0,0)),xp=getSafeMaterial(p+ivec3(1,0,0)),ym=getSafeMaterial(p-ivec3(0,1,0)),yp=getSafeMaterial(p+ivec3(0,1,0)),zm=getSafeMaterial(p-ivec3(0,0,1)),zp=getSafeMaterial(p+ivec3(0,0,1));
+  int water=(xm==10u?1:0)+(xp==10u?1:0)+(ym==10u?1:0)+(yp==10u?1:0)+(zm==10u?1:0)+(zp==10u?1:0);
+  int support=(xm==m?1:0)+(xp==m?1:0)+(ym==m?1:0)+(yp==m?1:0)+(zm==m?1:0)+(zp==m?1:0);
+  return water>=2&&support<=1;
 }
 
 float materialHash(ivec3 p){
@@ -1203,7 +1226,7 @@ bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface
   // The compact height/material atlas is the 250 ft+ LOD. It cannot replace
   // nearer Resource silhouettes, so it is deliberately gated behind tier 3.
   float t=max(startT,uLodDistances.z),stepLen=300.0;
-  vec3 startP=ro+rd*t;vec4 startData=farTerrainAt(startP.xz);if(startData.x<0.0)return false;
+  vec3 startP=ro+rd*t;vec4 startData=farVoxelTerrainAt(startP.xz,t);if(startData.x<0.0)return false;
   float startDelta=startP.y-startData.x;
   if(startDelta<=0.0){hitT=t;hitP=startP;surface=startData;return true;}
   for(int i=0;i<40;i++){
@@ -1219,18 +1242,18 @@ bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface
     // intervals close to possible relief descend to the exact 10 m atlas.
     if(lowestRayY>maxHeight+40.0){t=nextT;stepLen=min(1200.0,stepLen*1.6);continue;}
     if(lod>0.0){stepLen=max(uFarTerrainInfo.z,stepLen*.5);continue;}
-    vec4 midData=farTerrainAt(b.xz),endData=farTerrainAt(c.xz);if(midData.x<0.0||endData.x<0.0)break;
+    vec4 midData=farVoxelTerrainAt(b.xz,midT),endData=farVoxelTerrainAt(c.xz,nextT);if(midData.x<0.0||endData.x<0.0)break;
     float midDelta=b.y-midData.x,endDelta=c.y-endData.x,lo=t,hi=nextT;
     if(midDelta<=0.0){hi=midT;}
     else if(endDelta<=0.0){lo=midT;}
     else{t=nextT;stepLen=min(1200.0,max(uFarTerrainInfo.z,stepLen*1.6));continue;}
-    for(int refine=0;refine<4;refine++){float probe=(lo+hi)*.5;vec3 q=ro+rd*probe;float d=q.y-farTerrainAt(q.xz).x;if(d>0.0)lo=probe;else hi=probe;}
-    hitT=(lo+hi)*.5;hitP=ro+rd*hitT;surface=farTerrainAt(hitP.xz);return true;
+    for(int refine=0;refine<4;refine++){float probe=(lo+hi)*.5;vec3 q=ro+rd*probe;float d=q.y-farVoxelTerrainAt(q.xz,probe).x;if(d>0.0)lo=probe;else hi=probe;}
+    hitT=(lo+hi)*.5;hitP=ro+rd*hitT;surface=farVoxelTerrainAt(hitP.xz,hitT);return true;
   }
   return false;
 }
 vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
-  float tap=uFarTerrainInfo.z,hx0=farTerrainAt(p.xz-vec2(tap,0)).x,hx1=farTerrainAt(p.xz+vec2(tap,0)).x,hz0=farTerrainAt(p.xz-vec2(0,tap)).x,hz1=farTerrainAt(p.xz+vec2(0,tap)).x;
+  float tap=farVoxelCellSize(dist),hx0=farVoxelTerrainAt(p.xz-vec2(tap,0),dist).x,hx1=farVoxelTerrainAt(p.xz+vec2(tap,0),dist).x,hz0=farVoxelTerrainAt(p.xz-vec2(0,tap),dist).x,hz1=farVoxelTerrainAt(p.xz+vec2(0,tap),dist).x;
   vec3 normal=normalize(vec3(hx0-hx1,tap*2.0,hz0-hz1)),grass=vec3(56,116,52)/255.0,dry=vec3(96,152,76)/255.0,earth=vec3(132,80,44)/255.0,stone=vec3(124,124,152)/255.0,snow=vec3(224,224,224)/255.0,water=vec3(80,164,252)/255.0;
   float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w,rock=smoothstep(.58,.88,ridges)*smoothstep(90.0,250.0,height),snowAmount=smoothstep(255.0,310.0,height);
   vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.28,.44,pool)*step(height,44.0));
@@ -1312,6 +1335,10 @@ void main(){
     for(int i=0;i<MAX_MERGED_STEPS;i++){
       dist=mergedStart+localDist*2.0;if(dist>min(uLodDistances.z,uViewDistance)||!inMergedBounds(mergedPos))break;
       ivec3 source=mergedPos*2;uint m=getMergedMaterial(mergedPos,source);
+      // A small isolated geological cell surrounded by water is a pebble
+      // Resource, not distant terrain structure. Beyond 50 ft it joins the
+      // streambed/water impostor instead of remaining a high-frequency speck.
+      if(isIsolatedUnderwaterPebble(source,m))m=10u;
       if(m==10u){if(!waterHit){waterHit=true;waterDist=dist;waterMapPos=source;waterNormal=length(normal)>.1?normal:vec3(0.0,1.0,0.0);}}
       else if(m>0u){hit=true;material=m;mapPos=source;materialPos=source;break;}
       if(mergedSide.x<mergedSide.y){if(mergedSide.x<mergedSide.z){localDist=mergedSide.x;mergedSide.x+=mergedDelta.x;mergedPos.x+=int(mergedStep.x);normal=vec3(-mergedStep.x,0.0,0.0);}else{localDist=mergedSide.z;mergedSide.z+=mergedDelta.z;mergedPos.z+=int(mergedStep.z);normal=vec3(0.0,0.0,-mergedStep.z);}}
@@ -1447,7 +1474,10 @@ const VOXEL_OCTAVES=Object.freeze([
   Object.freeze({level:0,pitch:.05,from:0,to:6.096,format:'microvoxel_overlay',purpose:'close Resource and surface detail'}),
   Object.freeze({level:1,pitch:.10,from:6.096,to:15.24,format:'resident_grid',purpose:'authoritative editable matter'}),
   Object.freeze({level:2,pitch:.20,from:15.24,to:76.2,format:'merged_grid',purpose:'stable middle-distance traversal'}),
-  Object.freeze({level:3,pitch:10,from:76.2,to:1000,format:'horizon_atlas',purpose:'kilometer landscape and occlusion'})
+  Object.freeze({level:3,pitch:10,from:76.2,to:152.4,format:'horizon_atlas',purpose:'near horizon voxel columns'}),
+  Object.freeze({level:4,pitch:20,from:152.4,to:304.8,format:'horizon_atlas',purpose:'middle horizon voxel columns'}),
+  Object.freeze({level:5,pitch:40,from:304.8,to:609.6,format:'horizon_atlas',purpose:'far horizon voxel columns'}),
+  Object.freeze({level:6,pitch:80,from:609.6,to:1000,format:'horizon_atlas',purpose:'kilometer silhouette voxel columns'})
 ]);
 const VOLUME_FORMATS=Object.freeze([
   Object.freeze({name:'resource_field',allocation:'definition',tags:'equation, seed, material, provenance',convertsTo:'microvoxel_overlay, resident_grid'}),
@@ -1788,7 +1818,10 @@ function initGL(){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   farTerrainTex=gl.createTexture();gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  // This texture is voxel data, not a photograph. Linear filtering was
+  // erasing the far-octave cell boundaries and making mountains look like a
+  // smooth height field even while traversal used coarse samples.
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   farMaxHeightTex=gl.createTexture();gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
   paletteTex=gl.createTexture();
@@ -2621,7 +2654,7 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionNearDetailValue').textContent=nearDetailMeters?'20 / 50 / 250 ft':'coarse';document.getElementById('optionViewDistanceValue').textContent=viewDistanceMeters>=1000?'1.00 km':`${viewDistanceMeters.toFixed(0)} m`;document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft · atlas 250 ft+':'10 cm 0–50 ft · 20 cm 50–250 ft · atlas 250 ft+'}\nHorizon 1.00 km fixed · 85.3 KiB max-height skip hierarchy\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nLOD ${nearDetailMeters?'5 cm 0–20 ft · 10 cm 20–50 ft · 20 cm 50–250 ft':'10 cm 0–50 ft · 20 cm 50–250 ft'}\nHorizon voxels 10 / 20 / 40 / 80 m with distance · 1.00 km fixed\nMax-height preservation hierarchy 85.3 KiB\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}

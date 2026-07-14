@@ -2,7 +2,14 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.3.0**
+Current release: **v0.0.3.0.1**
+
+## v0.0.3.0.1 visible distance-octave fix
+
+- Fixed the far landscape atlas being linearly filtered like an ordinary height map. Horizon data now uses nearest voxel sampling, so its actual cell boundaries remain visible.
+- Added explicit horizon octaves: 10 m cells from 250–500 ft, 20 m from 500–1,000 ft, 40 m from 1,000–2,000 ft, and 80 m beyond 2,000 ft to the one-kilometre limit.
+- Uses the existing maximum-height hierarchy when cells enlarge. Peaks and ridges remain represented instead of being averaged out by coarse sampling.
+- Added pebble-specific LOD behavior. Rounded stream pebbles remain distinct nearby, use normal authoritative cells through 50 ft, and merge into the lower-frequency streambed/water representation in the 20 cm distance tier.
 
 ## v0.0.3.0 octave planner and smooth budgets
 
