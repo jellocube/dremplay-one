@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.4.9**
+Current release: **v0.0.1.5.0**
+
+## v0.0.1.5.0 whole-world moving clipmap
+
+- Replaced the blocking sector streamer with a moving toroidal voxel clipmap. The cache origin follows the player immediately instead of waiting for 1,248 chunks to generate and stage.
+- Added a 24×13×24 chunk-validity texture. A cache shift transfers only 7.5 KiB of residency state; stale physical voxel slots are ignored without clearing or rebuilding the 40 MiB incoming volume.
+- Kept the immutable mathematical landscape visible beneath every invalid or pending fine chunk, so decoder latency can reduce detail but cannot expose an edge, wall, or air cliff.
+- Fine terrain chunks upload independently under a frame budget. Natural Resources decorate later during idle frames rather than delaying terrain continuity.
+- Made the complete 6×6 km atlas a sparse editable world. The 24×24-chunk volume is only a GPU view cache; dirty authored chunks remain globally owned and are never discarded when the cache moves.
+- Added a one-kilometre multi-direction walking regression test covering clipmap recentering, the 300 m parent-terrain invariant, and sparse edit retention.
 
 ## v0.0.1.4.9 continuous terrain handoff
 
