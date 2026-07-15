@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.6**
+Current release: **v0.0.1.5.6.1**
+
+## v0.0.1.5.6.1 continuous terrain lighting repair
+
+- Reconstructs dirt, rock, snow, moss, sediment, and geological Resource normals from two parent-scale occupancy radii, so fine step faces shade as one continuous surface instead of independent cubes.
+- Uses wrapped diffuse lighting and a stronger daylight floor for continuous ground, removing black contour stripes without flattening large-scale form.
+- Disables cavity darkening on reconstructed terrain surfaces while retaining it for foliage and discrete props.
+- Samples blurred terrain color noise in stable parent coordinates, eliminating alternating 5 cm palette bands.
+- Removes random fine-cell erosion holes from dirt and rock. Roughness now belongs to the material and normal fields rather than exposing dark internal voxel faces.
 
 ## v0.0.1.5.6 physical island biomes and natural trails
 

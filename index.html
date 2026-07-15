@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.6 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.6.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.6';
-  const CURRENT_REVISION = 52;
+  const CURRENT_VERSION = '0.0.1.5.6.1';
+  const CURRENT_REVISION = 53;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -295,7 +295,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.6 · Infinite Detail Voxel Engine · physical biomes and natural trails</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.6.1 · Infinite Detail Voxel Engine · continuous terrain lighting repair</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -304,7 +304,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.6 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.6.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -450,10 +450,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.6</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">7.5 km island · physical biome equations · natural trail fields · circular compass</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.6.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">continuous dirt, rock, and snow normals · soft step lighting · no half-cell erosion holes</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=52"></script>
+<script src="heightmap-world-v2.js?v=53"></script>
 <script>
 (() => {
 "use strict";
@@ -1302,6 +1302,7 @@ uint getMergedMaterial(ivec3 p,out ivec3 source){
   source=p1;return b;
 }
 bool isGeologyMaterial(uint m){return m==3u||(m>=21u&&m<=27u);}
+bool isSmoothGroundMaterial(uint m){return m==1u||m==2u||m==3u||m==11u||m==12u||(m>=13u&&m<=17u)||m==19u||m==20u||(m>=21u&&m<=27u);}
 bool isIsolatedUnderwaterPebble(ivec3 p,uint m){
   if(!isGeologyMaterial(m))return false;
   uint xm=getSafeMaterial(p-ivec3(1,0,0)),xp=getSafeMaterial(p+ivec3(1,0,0)),ym=getSafeMaterial(p-ivec3(0,1,0)),yp=getSafeMaterial(p+ivec3(0,1,0)),zm=getSafeMaterial(p-ivec3(0,0,1)),zp=getSafeMaterial(p+ivec3(0,0,1));
@@ -1366,27 +1367,30 @@ uint getFineMaterial(ivec3 fineP){
   bool stoneLike=m==3u||(m>=21u&&m<=27u);
   if(stoneLike){uint xm=getSafeMaterial(parent-ivec3(1,0,0)),xp=getSafeMaterial(parent+ivec3(1,0,0)),ym=getSafeMaterial(parent-ivec3(0,1,0)),yp=getSafeMaterial(parent+ivec3(0,1,0)),zm=getSafeMaterial(parent-ivec3(0,0,1)),zp=getSafeMaterial(parent+ivec3(0,0,1));bool waterNeighbor=xm==10u||xp==10u||ym==10u||yp==10u||zm==10u||zp==10u;float sameSupport=(xm==m?1.0:0.0)+(xp==m?1.0:0.0)+(ym==m?1.0:0.0)+(yp==m?1.0:0.0)+(zm==m?1.0:0.0)+(zp==m?1.0:0.0);if((waterNeighbor||sameSupport<1.5)&&grain<.24)return 0u;}
 
-  // Exposed bare mineral/soil faces receive one shallow 5 cm erosion layer.
-  // parent cell remains solid, so collision, edits, water, and caves retain
-  // their exact sparse 10 cm authority and cannot acquire procedural holes.
-  bool erosionMaterial=stoneLike||m==2u||m==13u||m==14u||m==15u||m==16u;
-  if(erosionMaterial){
-    // A shared four-sample field gives neighboring 5 cm cells correlated
-    // microrelief rather than even dither. Snow, moss, grass and living
-    // surfaces never participate: removing their half-cells exposed the dark
-    // parent below as false black lighting seams. Bare erosion remains mild.
-    float micro=(grain+materialHash(worldFine+ivec3(1,0,0))+materialHash(worldFine+ivec3(0,0,1))+materialHash(worldFine+ivec3(1,0,1)))*.25;
-    bool chip=(sub.y==1&&getDensity(parent+ivec3(0,1,0))<.5&&micro<.22)
-      ||(sub.x==0&&getDensity(parent-ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(17,3,5))<.04)
-      ||(sub.x==1&&getDensity(parent+ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(7,19,3))<.04)
-      ||(sub.z==0&&getDensity(parent-ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(3,5,23))<.04)
-      ||(sub.z==1&&getDensity(parent+ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(11,7,29))<.04);
-    if(chip)return 0u;
-  }
+  // Terrain roughness belongs to the continuous material/normal field. Never
+  // punch random 5 cm holes into dirt, stone, or snow-adjacent cells: those
+  // holes expose unrelated internal faces and turn into black striped shelves.
   return m;
 }
 
 float getFineDensity(ivec3 p){return inFineBounds(p)&&getFineMaterial(p)!=0u?1.0:0.0;}
+
+vec3 smoothGroundGradient(ivec3 p){
+  // Two parent-scale radii reconstruct one continuous normal across stair-step
+  // faces. Fine voxels remain the ray/interactivity representation, but they
+  // no longer make each exposed half-cell behave like a separate cube.
+  vec3 nearGrad=vec3(
+    getDensity(p-ivec3(1,0,0))-getDensity(p+ivec3(1,0,0)),
+    getDensity(p-ivec3(0,1,0))-getDensity(p+ivec3(0,1,0)),
+    getDensity(p-ivec3(0,0,1))-getDensity(p+ivec3(0,0,1))
+  );
+  vec3 broadGrad=vec3(
+    getDensity(p-ivec3(3,0,0))-getDensity(p+ivec3(3,0,0)),
+    getDensity(p-ivec3(0,3,0))-getDensity(p+ivec3(0,3,0)),
+    getDensity(p-ivec3(0,0,3))-getDensity(p+ivec3(0,0,3))
+  );
+  return nearGrad+broadGrad*.72;
+}
 
 float smoothMaterialNoise(vec3 x){
   ivec3 i=ivec3(floor(x));
@@ -1583,6 +1587,7 @@ void main(){
   float faceLight;
   float cavity=1.0;
   vec3 shadeNormal=normal;
+  bool smoothGround=isSmoothGroundMaterial(material);
   if(uLightMode==0){
     // Voxlap/Voxed lightmode 0: fixed directional cube-face shading.
     if(normal.y>0.5) faceLight=1.00;
@@ -1595,7 +1600,13 @@ void main(){
   }else{
     vec3 grad=vec3(0.0);
     float fineOcc=0.0;
-    if(fineHit){
+    if(smoothGround){
+      // Dirt, rock, snow, moss and sediment share the parent-scale implicit
+      // surface normal at every LOD. This removes black contour stripes and
+      // makes rounded boulders shade as one object instead of stacked cubes.
+      grad=smoothGroundGradient(mapPos);
+      fineOcc=0.0;
+    }else if(fineHit){
       // The previous half-cell path shaded a 5 cm hit with its 10 cm parent
       // density kernel. At chipped edges and thin blades that unrelated normal
       // could point away from the sun and collapse to black. Sample the actual
@@ -1635,10 +1646,10 @@ void main(){
       grad+=0.38*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,2,2))-getDensity(mapPos+ivec3(0,2,2)));
       grad+=0.38*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,2,-2))-getDensity(mapPos+ivec3(0,2,-2)));
     }
-    shadeNormal=length(grad)>0.05?normalize(grad+normal*(fineHit?.72:.08)):normal;
+    shadeNormal=length(grad)>0.05?normalize(grad+normal*(smoothGround?.06:(fineHit?.72:.08))):normal;
     vec3 lightDir=sunDirection();
-    float diffuse=max(dot(shadeNormal,lightDir),0.0);
-    if(uPerformanceMode==0){
+    float diffuse=smoothGround?clamp((dot(shadeNormal,lightDir)+.28)/1.28,0.0,1.0):max(dot(shadeNormal,lightDir),0.0);
+    if(uPerformanceMode==0&&!smoothGround){
       float localOcc=fineHit?fineOcc:(
         getDensity(mapPos+ivec3(1,0,0))+getDensity(mapPos-ivec3(1,0,0))+
         getDensity(mapPos+ivec3(0,1,0))+getDensity(mapPos-ivec3(0,1,0))+
@@ -1647,14 +1658,16 @@ void main(){
       cavity=1.0-localOcc*0.12;
     }
     float day=daylightAmount();
-    faceLight=(mix(0.10,0.26,day)+mix(0.14,0.74,day)*sqrt(diffuse))*cavity;
+    faceLight=smoothGround?(mix(.18,.44,day)+mix(.10,.56,day)*sqrt(diffuse)):(mix(0.10,0.26,day)+mix(0.14,0.74,day)*sqrt(diffuse))*cavity;
   }
   // Thin reed blades transmit and scatter daylight instead of behaving like
   // opaque cave stone. Keeping a modest material-specific floor prevents the
   // smoothed normal kernel from turning alternating blade voxels near-black.
   if(material==18u)faceLight=max(faceLight,mix(0.28,0.62,daylightAmount()));
   if(fineHit&&(material==1u||material==12u||material==17u||material==19u||material==30u||material==31u))faceLight=max(faceLight,mix(.20,.46,daylightAmount()));
-  vec3 base = materialColor(material, materialPos, fineHit?WORLD_DETAIL:1);
+  // Smooth terrain samples its blurred palette field in parent coordinates;
+  // distinct 5 cm hashes were a second source of alternating step bands.
+  vec3 base = materialColor(material, smoothGround?mapPos:materialPos, fineHit&&!smoothGround?WORLD_DETAIL:1);
   vec3 lit=base*faceLight;
   if(uLightMode==1 && uPerformanceMode==0){
     vec3 lightDir=sunDirection();

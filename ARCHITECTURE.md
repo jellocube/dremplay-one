@@ -34,6 +34,8 @@ View-dependent voxels are filtered observations of this scene. A distant riverbe
 
 Lighting consumes continuous surface position, normal, material response, and mathematical visibility. Voxel-neighbor occupancy may accelerate a local query but is not authoritative geometry or occlusion. Sparse user edits are constructive-solid-geometry operations layered over the mathematical scene and must survive every cache eviction and resolution change.
 
+Smooth terrain materials reconstruct lighting normals from multiple parent-scale occupancy radii. The fine 5 cm traversal still determines visibility and editing precision, but a stair-step side is not treated as an unrelated dark cube face. Ground cavity shading is disabled, wrapped diffuse response preserves readable shadowed slopes, and blurred palette noise is evaluated in stable parent coordinates. Random erosion may perturb the continuous field, but it may never punch isolated renderer-only holes into solid terrain.
+
 ## Influences
 
 ### John Lin / Voxely
