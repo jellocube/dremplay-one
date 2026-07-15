@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.4.4 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.4.4.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.4.4';
-  const CURRENT_REVISION = 62;
+  const CURRENT_VERSION = '0.0.1.6.4.4.1';
+  const CURRENT_REVISION = 63;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -55,6 +55,8 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:100%; height:100%; background:#50A4FC; overflow:hidden; font-family: 'JetBrains Mono','Consolas',monospace; }
   #glcanvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:none; background:#50A4FC; image-rendering:pixelated; }
+  body.in-world #glcanvas,body.in-world #crosshair,body.in-world #resourceLookLabel,body.in-world #hud,body.in-world #topleft,body.in-world #topright,body.in-world #menubar,body.in-world #touchControls { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  body.in-world #glcanvas,body.in-world #touchControls { touch-action:none; }
 
   #crosshair {
     position:absolute; left:50%; top:50%; width:16px; height:16px;
@@ -218,7 +220,7 @@
   #mapStatus { color:#bcdcff; margin-top:7px; font-size:10px; line-height:1.55; }
   .muted { color:#a8a8a8; }
   #loadingOverlay { position:absolute; right:16px; bottom:16px; z-index:2000; display:block; width:min(470px,calc(100vw - 32px)); color:#54fc54; pointer-events:auto; background:#141024; border:1px solid #54fc54; box-shadow:5px 6px 0 #04081888; font-size:12px; }
-  #loadingOverlay.closed { display:none; }
+  #loadingOverlay.closed { visibility:hidden; opacity:0; pointer-events:none; }
   #loadingOverlay.streaming { background:var(--ink); }
   #loadingPanel { max-height:calc(100vh - 72px); overflow-y:auto; scrollbar-gutter:stable; background:#141024; padding:12px; }
   #loadingOverlay.minimized { width:260px; }
@@ -234,15 +236,16 @@
   #loadingTrack { height:12px; border:1px solid #444460; background:#040818; padding:2px; }
   #loadingFill { width:0%; height:100%; background:#54fc54; transition:width .08s linear; }
   #cartonConveyor { position:relative; width:100%; height:25px; margin-top:9px; overflow:hidden; border:1px solid #704024; background:repeating-linear-gradient(90deg,#141814 0 13px,#24243c 13px 16px); }
-  #cartonBelt { position:absolute; inset:0 auto 0 0; display:flex; align-items:stretch; width:max-content; color:#ececec; will-change:transform; transform:translateZ(0); backface-visibility:hidden; contain:layout paint; animation:packetLoop 148s linear infinite; }
+  #cartonBelt { position:absolute; inset:0 auto 0 0; display:flex; align-items:stretch; width:max-content; color:#ececec; transform:translate3d(0,0,0); }
   .packet-set { width:max-content; flex:none; display:flex; align-items:center; gap:12px; padding:0 12px 0 0; }
   .packet-group { display:flex; align-items:center; flex:none; gap:var(--group-gap,8px); }
   #cartonBelt span { display:inline-block; color:#ececec; background:#5088fc; border:1px solid #ccb010; padding:1px 4px; font-size:9px; box-shadow:2px 2px #040818; white-space:nowrap; }
   #cartonBelt .packet-category { color:#141024; background:#ccb010; border-color:#ececec; letter-spacing:.7px; text-transform:none; }
   #cartonBelt [data-phase].active-phase { background:#54fc54; border-color:#ececec; color:#141024; outline:1px solid #54fc54; outline-offset:1px; }
-  @keyframes packetLoop { from{transform:translate3d(0,0,0)} to{transform:translate3d(-50%,0,0)} }
+  #cartonBelt.css-conveyor-motion { animation:packetLoop var(--belt-duration,120s) linear infinite; }
+  @keyframes packetLoop { from{transform:translate3d(0,0,0)} to{transform:translate3d(var(--belt-translate,-4096px),0,0)} }
   #loadingIntelligence { height:15px; overflow:hidden; margin-top:4px; color:#bcdcff; font-size:9px; line-height:15px; white-space:nowrap; text-overflow:ellipsis; }
-  @media (prefers-reduced-motion:reduce){#cartonBelt{animation-duration:296s;}}
+  @media (prefers-reduced-motion:reduce){#cartonBelt.css-conveyor-motion{animation:none;}}
   #loadingConsole { height:112px; margin-top:9px; overflow-y:scroll; scrollbar-gutter:stable; border:1px solid #243c24; background:#040818; padding:6px; color:#54fc54; white-space:pre-wrap; user-select:text; font-size:9px; line-height:1.45; }
   /* Medieval terminal: chalk-white type, manuscript gold, pale-blue links. */
   :root { --ink:#0c100c; --iron:#141814; --moss:#243c24; --phosphor:#ececec; --gold:#ccb010; --rune:#bcdcff; }
@@ -312,6 +315,7 @@
   #touchMenuPanel button:active { background:#243c24; }
   body:not(.touch-platform) #touchControls, body:not(.in-world) #touchControls { display:none; }
   body.navigator-platform #hud { display:none; }
+  body.navigator-platform #cartonConveyor { display:none; }
   body.tablet-platform.in-world #resourceLookLabel { bottom:226px; }
   @media (max-width:900px){
     #menubar{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}#menubar::-webkit-scrollbar{display:none}
@@ -381,7 +385,7 @@
 </nav>
 
 <div id="loadingOverlay" role="status" aria-live="polite">
-  <div class="titlebar"><span id="loadingWindowTitle">AI Loading Monitor</span><span class="loading-window-actions"><button id="loadingMinimize" type="button" aria-label="Minimize loading monitor" aria-expanded="true">−</button><button id="loadingClose" class="window-close" type="button" aria-label="Close loading status" disabled>×</button></span></div>
+  <div class="titlebar"><span id="loadingWindowTitle">AI Loading Monitor</span><span class="loading-window-actions"><button id="loadingMinimize" type="button" aria-label="Minimize loading monitor" aria-expanded="true">−</button><button id="loadingClose" class="window-close" type="button" aria-label="Close loading status">×</button></span></div>
   <div id="loadingPanel">
     <div id="loadingLabel"><span id="loadingText">Initializing terrain pipeline</span><span id="loadingPercent">0.0%</span></div>
     <div id="loadingTrack"><div id="loadingFill"></div></div>
@@ -391,7 +395,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.4.4 · Infinite Detail Voxel Engine · Dremplay Navigator</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.4.4.1 · Infinite Detail Voxel Engine · mobile loading repair</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -400,7 +404,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.4.4 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.4.4.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -555,15 +559,15 @@
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Device modes</h2><p>Dremplay Navigator is the dedicated phone interface with the upper two-thirds drag viewport and lower thumb controls. Tablet Touch keeps touch movement and actions with the robust window layout. PC Desktop retains mouse, keyboard, pointer lock, and the complete editor layout.</p><h2>Touch controls</h2><p>Navigator keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · L Loading Monitor · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor. Close it after loading and it stays closed while background work continues. Open it manually with L, the top menu, or Select → Loading Monitor. Drag its title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, Navigator Select launcher, or displayed key to open tools. Navigator windows fill the usable phone screen and provide large close controls; Tablet and Desktop retain robust movable layouts.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Device modes</h2><p>Dremplay Navigator is the dedicated phone interface with the upper two-thirds drag viewport and lower thumb controls. Tablet Touch keeps touch movement and actions with the robust window layout. PC Desktop retains mouse, keyboard, pointer lock, and the complete editor layout.</p><h2>Touch controls</h2><p>Navigator keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · L Loading Monitor · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The monitor classifies active work, estimates progress rate, and exposes statistical, predictive, simulation, Resource, weather, and GPU operations. Its close button always works and it stays closed while background work continues. Open it manually with L, the top menu, or Select → Loading Monitor. Navigator omits the conveyor for a quiet, efficient phone display; Tablet and Desktop use the continuous compact belt. Drag the title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, Navigator Select launcher, or displayed key to open tools. Navigator windows fill the usable phone screen and provide large close controls; Tablet and Desktop retain robust movable layouts.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.4</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Dremplay Navigator phone mode · robust tablet and PC modes · manually launched loading monitor</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.4.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">closable loading monitor · compact Tablet conveyor · quiet Dremplay Navigator telemetry</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=62"></script>
+<script src="heightmap-world-v2.js?v=63"></script>
 <script>
 (() => {
 "use strict";
@@ -1984,7 +1988,9 @@ function buildConveyorTrack(){
   for(const [phase,config] of Object.entries(CONVEYOR_PACKETS)){
     const group=document.createElement('div');group.className='packet-group';group.style.setProperty('--group-gap',`${config.gap}px`);
     const category=document.createElement('span');category.className='packet-category';category.dataset.phase=phase;category.textContent=config.label;group.appendChild(category);
-    for(const label of config.items){const item=document.createElement('span');item.dataset.phase=phase;item.textContent=label;group.appendChild(item);}
+    // Two representative operations per category keep the whole immutable
+    // task sequence visible without creating a 30,000 px mobile GPU layer.
+    for(const label of config.items.slice(0,2)){const item=document.createElement('span');item.dataset.phase=phase;item.textContent=label;group.appendChild(item);}
     track.appendChild(group);
   }
   return track;
@@ -1993,6 +1999,31 @@ function buildConveyorTrack(){
 // frame. Their geometry is never replaced afterward, so the -50% loop remains
 // continuous even when the active loader category changes.
 cartonBelt.replaceChildren(buildConveyorTrack(),buildConveyorTrack());
+let conveyorMotion=null,conveyorMotionDistance=0,conveyorMeasureQueued=false;
+const reducedConveyorMotion=matchMedia('(prefers-reduced-motion: reduce)');
+function measureAndStartConveyor(){
+  conveyorMeasureQueued=false;
+  if(document.body.classList.contains('navigator-platform')){conveyorMotion?.pause();return;}
+  const half=cartonBelt.firstElementChild,halfWidth=Math.ceil(half?.scrollWidth||half?.getBoundingClientRect().width||0);
+  if(!halfWidth)return;
+  if(reducedConveyorMotion.matches&&conveyorMotion){conveyorMotion.pause();return;}
+  if(conveyorMotion&&Math.abs(halfWidth-conveyorMotionDistance)<2){conveyorMotion.play();return;}
+  conveyorMotion?.cancel();conveyorMotion=null;cartonBelt.classList.remove('css-conveyor-motion');cartonBelt.style.transform='translate3d(0,0,0)';conveyorMotionDistance=halfWidth;
+  if(reducedConveyorMotion.matches)return;
+  const duration=Math.max(24000,Math.round(halfWidth/32*1000));
+  if(typeof cartonBelt.animate==='function'){
+    conveyorMotion=cartonBelt.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(-${halfWidth}px,0,0)`}],{duration,iterations:Infinity,easing:'linear'});
+  }else{
+    cartonBelt.style.setProperty('--belt-translate',`-${halfWidth}px`);cartonBelt.style.setProperty('--belt-duration',`${duration}ms`);cartonBelt.classList.add('css-conveyor-motion');
+  }
+}
+function scheduleConveyorMeasure(){if(conveyorMeasureQueued)return;conveyorMeasureQueued=true;requestAnimationFrame(()=>requestAnimationFrame(measureAndStartConveyor));}
+function syncConveyorForPlatform(mode){
+  if(mode==='navigator'){conveyorMotion?.pause();cartonBelt.style.animationPlayState='paused';}
+  else{cartonBelt.style.animationPlayState='running';if(conveyorMotion&&!reducedConveyorMotion.matches)conveyorMotion.play();else scheduleConveyorMeasure();}
+}
+reducedConveyorMotion.addEventListener?.('change',scheduleConveyorMeasure);
+scheduleConveyorMeasure();
 function phaseForLoadingTask(label){
   const s=label.toLowerCase();
   if(s.includes('ready')||s.includes('task complete'))return 'ready';
@@ -2038,7 +2069,7 @@ function loadingLog(station,detail){
 }
 function showLoading(text,progress=0,streaming=false){
   const phase=phaseForLoadingTask(text);setConveyorPhase(phase);loadingActive=phase!=='ready';
-  loadingClose.disabled=loadingActive;loadingClose.setAttribute('aria-disabled',String(loadingActive));
+  loadingClose.disabled=false;loadingClose.setAttribute('aria-disabled','false');
   loadingOverlay.classList.toggle('streaming',streaming);loadingText.textContent=text;
   const pct=Math.max(0,Math.min(1,progress))*100;loadingPercent.textContent=`${pct.toFixed(1)}%`;loadingFill.style.width=`${pct.toFixed(3)}%`;updateLoadingIntelligence(phase,pct);
   loadingWindowTitle.textContent=loadingOverlay.classList.contains('minimized')?`AI ${loadingActive?'Loading':'Ready'} · ${pct.toFixed(0)}%`:'AI Loading Monitor';
@@ -2054,9 +2085,9 @@ function setLoadingWindow(open){
   if(open)bringToFront(loadingOverlay);
   refreshWindowState();
 }
-// Closing is an explicit user preference. Background tasks continue updating
-// the monitor's state, but only the menu may make the window visible again.
-loadingClose.addEventListener('click',()=>{if(!loadingActive)setLoadingWindow(false);});
+// Closing is unconditional and authoritative. Background tasks continue
+// updating telemetry, but only a menu command may show the window again.
+loadingClose.addEventListener('click',()=>setLoadingWindow(false));
 let lastStableStatus='';
 function hideLoading(message='Task complete. Ready to play.'){
   // Accessibility invariant: this panel is persistent. Never toggle display,
@@ -2387,7 +2418,7 @@ function applyPlatformMode(mode=platformMode,persist=true){
   platformMode=['auto','navigator','tablet','desktop'].includes(mode)?mode:'auto';const resolved=resolvedPlatformMode(),touch=resolved!=='desktop';document.body.classList.toggle('touch-platform',touch);document.body.classList.toggle('navigator-platform',resolved==='navigator');document.body.classList.toggle('tablet-platform',resolved==='tablet');document.body.classList.toggle('desktop-platform',resolved==='desktop');document.body.classList.toggle('cursor-mode',!touch&&!locked);
   platformToggle.textContent=platformMode==='auto'?`Platform: Auto → ${platformModeLabel(resolved)}`:`Platform: ${platformModeLabel(resolved)}`;
   const selector=document.getElementById('optionPlatformMode'),readout=document.getElementById('optionPlatformValue');if(selector)selector.value=platformMode;if(readout)readout.textContent=platformModeLabel(resolved);
-  if(touch&&document.pointerLockElement)document.exitPointerLock();if(!touch)clearTouchState();
+  if(touch&&document.pointerLockElement)document.exitPointerLock();if(!touch)clearTouchState();syncConveyorForPlatform(resolved);
   if(persist)try{localStorage.setItem('dremplay:platform-mode',platformMode);}catch{}
   requestAnimationFrame(resize);
 }
@@ -3513,6 +3544,15 @@ window.addEventListener('mousedown', e => { if (locked && !consoleOpen && (e.but
 window.addEventListener('mouseup', () => { mouseDown=-1; });
 window.addEventListener('blur', () => { mouseDown=-1; for (const k in keys) keys[k]=false; });
 window.addEventListener('contextmenu', e => e.preventDefault());
+
+function worldGestureTarget(target){return hasEnteredWorld&&!(target instanceof Element&&target.closest('.tool-window,#loadingOverlay,#touchMenuPanel,input,textarea,select,[contenteditable="true"]'));}
+// Keep browser zoom/selection gestures out of live play without disabling
+// accessibility or editing inside the application's real windows.
+document.addEventListener('touchmove',event=>{if(event.touches.length>1&&worldGestureTarget(event.target))event.preventDefault();},{passive:false});
+for(const type of ['gesturestart','gesturechange','gestureend'])document.addEventListener(type,event=>{if(worldGestureTarget(event.target))event.preventDefault();},{passive:false});
+document.addEventListener('selectstart',event=>{if(worldGestureTarget(event.target))event.preventDefault();});
+document.addEventListener('dragstart',event=>{if(worldGestureTarget(event.target))event.preventDefault();});
+document.addEventListener('wheel',event=>{if((event.ctrlKey||event.metaKey)&&worldGestureTarget(event.target))event.preventDefault();},{passive:false});
 
 // Pointer Events allow independent move/look/action fingers on iPad while the
 // same page remains a normal pointer-lock game on desktop.

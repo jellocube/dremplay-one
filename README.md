@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.4.4**
+Current release: **v0.0.1.6.4.4.1**
+
+## v0.0.1.6.4.4.1 Mobile loading and gesture repair
+
+- Makes the AI Loading Monitor close button unconditional, including during active startup, streaming, water, Resource, and cache tasks. Background telemetry never clears the closed state.
+- Preserves the belt clock across close/open by hiding the monitor with visibility and pointer state instead of `display:none`, which cancels CSS animations.
+- Removes the conveyor from Dremplay Navigator, leaving its progress, current task, AI estimate, and log available in a quieter phone-sized monitor.
+- Rebuilds the Tablet Touch and Desktop conveyor as a compact immutable task track rather than a roughly 30,000-pixel composited layer.
+- Measures exactly one duplicated half and advances it at a fixed 32 pixels per second with Web Animations, using an explicit-distance CSS fallback and motion-reduction guard.
+- Keeps category highlights informational without rebuilding the belt or resetting its timeline as tasks change.
+- Suppresses pinch zoom, trackpad page zoom, text selection, element dragging, touch callouts, and tap highlighting on the live world surface while keeping editor windows, fields, logs, and menus accessible.
 
 ## v0.0.1.6.4.4 Dremplay Navigator and manual loading monitor
 

@@ -8,6 +8,10 @@ Device presentation is explicit rather than inferred from touch alone. Dremplay 
 
 The AI Loading Monitor is an observer, not a modal state. Closing it sets a persistent in-page visibility flag; loading, streaming, and frame telemetry continue updating its model without mutating that flag. Only the Loading menu command clears the closed state. The Resource identity HUD is a separate bottom-right layer and therefore remains available when the monitor is absent.
 
+Navigator renders loader telemetry without the conveyor. Tablet Touch and PC Desktop share a compact duplicated conveyor whose half-width is measured explicitly and animated at a constant pixel velocity. The track is constructed once; phase transitions only change colors. Closing uses visibility and pointer exclusion rather than display removal, preserving the animation timeline and preventing mobile WebKit from rebuilding an oversized compositor layer.
+
+Live-world input owns its gesture surface. Multi-touch browser zoom, WebKit gesture events, control-wheel zoom, selection, drag, callout, and tap-highlight behaviors are cancelled only when their target belongs to the world HUD or renderer. Tool windows, form fields, the loading log, and the Navigator launcher remain ordinary accessible document controls.
+
 The document declares `width=device-width`, an initial scale of one, and `viewport-fit=cover`. This declaration is part of the renderer contract: without it, mobile Safari creates a desktop-width layout viewport and scales every CSS control down after layout, preventing portrait breakpoints and safe-area rules from matching the physical device. Zoom is not disabled.
 
 Select opens a complete touch launcher rather than depending on keyboard shortcuts or an overflowing desktop menu. Every tool window becomes safe-area-aware, full-screen, independently scrollable, and uses iOS-sized controls. Start opens the mathematical heightmap directly. Landscape touch play retains the same controls without shrinking the renderer, and desktop pointer-lock behavior is unchanged.
