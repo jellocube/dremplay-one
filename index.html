@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.1';
-  const CURRENT_REVISION = 40;
+  const CURRENT_VERSION = '0.0.1.5.2';
+  const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.1 · Infinite Detail Voxel Engine · mathematical world / disposable voxel cache</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.2 · Infinite Detail Voxel Engine · continuous surface-span cache</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · disposable view-dependent voxels · implicit bedrock</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · exact proxy heights · complete surface spans</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=40"></script>
+<script src="heightmap-world-v2.js?v=41"></script>
 <script>
 (() => {
 "use strict";
@@ -1162,7 +1162,7 @@ bool chunkResident(ivec3 p){
 }
 
 uint mathematicalProxyMaterial(ivec3 p){
-  ivec3 worldP=p+uWorldOrigin;vec4 field=farTerrainAt(vec2(worldP.xz));if(field.x<0.0)return 0u;
+  ivec3 worldP=p+uWorldOrigin;vec4 field=farTerrainAt(vec2(worldP.xz));if(field.x<0.0)return 0u;vec2 exactSurface=terrainWeatherAt(vec2(worldP.xz));field.x=exactSurface.x;field.y=exactSurface.y;
   float depth=field.x-float(worldP.y);if(depth<0.0)return 0u;
   // The parent height field is complete before any fine cache work begins.
   // It supplies a visually stable surface and one implicit stone volume;
@@ -1895,8 +1895,10 @@ function beginInitialWorldLoad(useTestZone=false){
   if(!useTestZone)queueTerrainPlanReserve(minCX,minCZ,span);
   const bootCenterCX=residentMinCX+activeGridSizeX/CHUNK_SIZE*.5,bootCenterCZ=residentMinCZ+activeGridSizeZ/CHUNK_SIZE*.5;
   for(let cx=0;cx<span;cx++)for(let cz=0;cz<span;cz++){
-    const worldCX=minCX+cx,worldCZ=minCZ+cz,surfaceCY=Math.max(minCY,Math.min(minCY+LOADED_CHUNKS_Y-1,Math.floor(terrainSample((worldCX+.5)*CHUNK_SIZE,(worldCZ+.5)*CHUNK_SIZE).height/CHUNK_SIZE))),distance=Math.hypot(worldCX-bootCenterCX,worldCZ-bootCenterCZ);
-    for(const [cy,tier] of [[surfaceCY,0],[surfaceCY-1,10],[surfaceCY-2,20],[surfaceCY+1,100],[surfaceCY+2,110],[surfaceCY+3,120]])if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y)jobs.push([worldCX,cy,worldCZ,tier*100000+distance]);
+    const worldCX=minCX+cx,worldCZ=minCZ+cz,surface=mathematicalSurfaceSpan(worldCX,worldCZ,minCY,minCY+LOADED_CHUNKS_Y-1),distance=Math.hypot(worldCX-bootCenterCX,worldCZ-bootCenterCZ),desired=[];
+    for(let cy=surface.minCY;cy<=surface.maxCY;cy++)desired.push([cy,0]);
+    desired.push([surface.minCY-1,10],[surface.minCY-2,20],[surface.maxCY+1,100],[surface.maxCY+2,110],[surface.maxCY+3,120]);
+    for(const [cy,tier] of desired)if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y)jobs.push([worldCX,cy,worldCZ,tier*100000+distance]);
   }
   jobs.sort((a,b)=>a[3]-b[3]);
   let done=0,lastLoggedStep=-1;
@@ -2034,15 +2036,15 @@ function ringSegments(a0,a1,ring,size){
 let uploadStageU8=new Uint8Array(0),uploadStageU16=new Uint16Array(0);
 function acquireUploadU8(length){if(uploadStageU8.length<length)uploadStageU8=new Uint8Array(length);const view=uploadStageU8.subarray(0,length);view.fill(0);return view;}
 function acquireUploadU16(length){if(uploadStageU16.length<length)uploadStageU16=new Uint16Array(length);const view=uploadStageU16.subarray(0,length);view.fill(0);return view;}
-function uploadTerrainWeatherSegment(xx,zz,originX,originZ){
+function uploadTerrainWeatherSegment(xx,zz,originX,originZ,mathematicalOnly=false){
   const staging=acquireUploadU16(xx.count*zz.count*2);let o=0,lastKey='',columns=null;
   for(let dz=0;dz<zz.count;dz++){
     const wz=originZ+zz.local+dz,cz=Math.floor(wz/CHUNK_SIZE),lz=mod(wz,CHUNK_SIZE),rowStart=o;
     for(let dx=0;dx<xx.count;dx++){
       const wx=originX+xx.local+dx,cx=Math.floor(wx/CHUNK_SIZE),key=`${cx},${cz}`;
-      if(key!==lastKey){lastKey=key;columns=prepareTerrainColumns(cx,cz);}
-      const column=columns[mod(wx,CHUNK_SIZE)+lz*CHUNK_SIZE];
-      staging[o++]=Math.max(0,Math.min(65535,column.h));staging[o++]=Math.round(Math.max(0,Math.min(1,column.moisture))*65535);
+      if(!mathematicalOnly&&key!==lastKey){lastKey=key;columns=prepareTerrainColumns(cx,cz);}
+      if(mathematicalOnly){const terrain=terrainSample(wx,wz),moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38));staging[o++]=Math.max(0,Math.min(65535,terrain.height));staging[o++]=Math.round(moisture*65535);}
+      else{const column=columns[mod(wx,CHUNK_SIZE)+lz*CHUNK_SIZE];staging[o++]=Math.max(0,Math.min(65535,column.h));staging[o++]=Math.round(Math.max(0,Math.min(1,column.moisture))*65535);}
     }
     terrainWeatherGrid.set(staging.subarray(rowStart,rowStart+xx.count*2),(xx.physical+(zz.physical+dz)*activeGridSizeX)*2);
   }
@@ -3466,6 +3468,14 @@ function predictedSectorDirection(){
   const vertical=dz<0?'north':dz>0?'south':'',horizontal=dx<0?'west':dx>0?'east':'',label=vertical&&horizontal?`${vertical}-${horizontal}`:vertical||horizontal;return {dx,dz,label};
 }
 function predictiveDepthChunks(){const horizon=DEVICE_PROFILE.tier==='mobile'?8:DEVICE_PROFILE.tier==='high'?14:10;return Math.max(8,Math.min(PREFETCH_MARGIN,Math.ceil(walkSpeed*horizon/(CHUNK_SIZE*VS))));}
+function mathematicalSurfaceSpan(cx,cz,minCY,maxCY){
+  const baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE;let minHeight=Infinity,maxHeight=-Infinity;
+  for(let lx=0;lx<CHUNK_SIZE;lx+=4)for(let lz=0;lz<CHUNK_SIZE;lz+=4){const height=terrainSample(baseX+lx,baseZ+lz).height;minHeight=Math.min(minHeight,height);maxHeight=Math.max(maxHeight,height);}
+  for(const lx of [CHUNK_SIZE-1])for(let lz=0;lz<CHUNK_SIZE;lz+=4){const height=terrainSample(baseX+lx,baseZ+lz).height;minHeight=Math.min(minHeight,height);maxHeight=Math.max(maxHeight,height);}
+  for(const lz of [CHUNK_SIZE-1])for(let lx=0;lx<CHUNK_SIZE;lx+=4){const height=terrainSample(baseX+lx,baseZ+lz).height;minHeight=Math.min(minHeight,height);maxHeight=Math.max(maxHeight,height);}
+  const corner=terrainSample(baseX+CHUNK_SIZE-1,baseZ+CHUNK_SIZE-1).height;minHeight=Math.min(minHeight,corner);maxHeight=Math.max(maxHeight,corner);
+  return {minCY:Math.max(minCY,Math.floor((minHeight-2)/CHUNK_SIZE)),maxCY:Math.min(maxCY,Math.floor((maxHeight+2)/CHUNK_SIZE)),centerCY:Math.max(minCY,Math.min(maxCY,Math.floor(terrainSample(baseX+CHUNK_SIZE*.5,baseZ+CHUNK_SIZE*.5).height/CHUNK_SIZE)))};
+}
 function rebuildPrefetchQueue(){
   const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE),maxCX=minCX+LOADED_CHUNKS_XZ-1,maxCZ=minCZ+LOADED_CHUNKS_XZ-1,minCY=Math.floor(windowMinY/CHUNK_SIZE),prediction=predictedSectorDirection(),depth=predictiveDepthChunks(),signature=`${minCX},${minCZ},${prediction.dx},${prediction.dz},${depth}`;
   if(signature===prefetchSignature)return;prefetchSignature=signature;prefetchJobs=[];prefetchSectorLabel=prediction.label;
@@ -3478,9 +3488,9 @@ function rebuildPrefetchQueue(){
   // canopy layers. Deep bedrock remains one implicit SDF until requested.
   const candidates=[];
   for(const cell of cells.values()){
-    const sample=terrainSample((cell.cx+.5)*CHUNK_SIZE,(cell.cz+.5)*CHUNK_SIZE);
-    const surfaceCY=Math.max(minCY,Math.min(minCY+LOADED_CHUNKS_Y-1,Math.floor(sample.height/CHUNK_SIZE)));
-    const desired=[[surfaceCY,0],[surfaceCY-1,10],[surfaceCY-2,20],[surfaceCY+1,100],[surfaceCY+2,110],[surfaceCY+3,120]];
+    const span=mathematicalSurfaceSpan(cell.cx,cell.cz,minCY,minCY+LOADED_CHUNKS_Y-1),surfaceCY=span.centerCY,desired=[];
+    for(let cy=span.minCY;cy<=span.maxCY;cy++)desired.push([cy,0]);
+    desired.push([span.minCY-1,10],[span.minCY-2,20],[span.maxCY+1,100],[span.maxCY+2,110],[span.maxCY+3,120]);
     for(const [cy,tier] of desired)if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y){const job=[cell.cx,cy,cell.cz];if(!generatedChunks.has(chunkKey(...job)))candidates.push({job,priority:tier*1000+cell.distance});}
   }
   // pop() consumes the smallest priority: every visible surface across the
@@ -3511,7 +3521,7 @@ function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=
 function validityIndexForWorldChunk(cx,cy,cz){const b=residentChunkBounds(),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE,lx=cx-b.minCX,ly=cy-b.minCY,lz=cz-b.minCZ;if(lx<0||ly<0||lz<0||lx>=gx||ly>=LOADED_CHUNKS_Y||lz>=gz)return -1;const px=mod(lx+ringX/CHUNK_SIZE,gx),pz=mod(lz+ringZ/CHUNK_SIZE,gz);return px+ly*gx+pz*gx*LOADED_CHUNKS_Y;}
 function setResidentChunkValidity(cx,cy,cz,value){const index=validityIndexForWorldChunk(cx,cy,cz);if(index>=0)chunkValidityGrid[index]=value?1:0;}
 function uploadChunkValidity(){gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);gl.texSubImage3D(gl.TEXTURE_3D,0,0,0,0,activeGridSizeX/CHUNK_SIZE,LOADED_CHUNKS_Y,activeGridSizeZ/CHUNK_SIZE,gl.RED_INTEGER,gl.UNSIGNED_BYTE,chunkValidityGrid);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);}
-function uploadResidentWeatherColumn(cx,cz){const b=residentChunkBounds(),lx=(cx-b.minCX)*CHUNK_SIZE,lz=(cz-b.minCZ)*CHUNK_SIZE;if(lx<0||lz<0||lx>=activeGridSizeX||lz>=activeGridSizeZ)return;const xs=ringSegments(lx,lx+CHUNK_SIZE-1,ringX,activeGridSizeX),zs=ringSegments(lz,lz+CHUNK_SIZE-1,ringZ,activeGridSizeZ);for(const zz of zs)for(const xx of xs)uploadTerrainWeatherSegment(xx,zz,windowMinX,windowMinZ);}
+function uploadResidentWeatherColumn(cx,cz,mathematicalOnly=false){const b=residentChunkBounds(),lx=(cx-b.minCX)*CHUNK_SIZE,lz=(cz-b.minCZ)*CHUNK_SIZE;if(lx<0||lz<0||lx>=activeGridSizeX||lz>=activeGridSizeZ)return;const xs=ringSegments(lx,lx+CHUNK_SIZE-1,ringX,activeGridSizeX),zs=ringSegments(lz,lz+CHUNK_SIZE-1,ringZ,activeGridSizeZ);for(const zz of zs)for(const xx of xs)uploadTerrainWeatherSegment(xx,zz,windowMinX,windowMinZ,mathematicalOnly);}
 function collectIncomingClipmapJobs(shiftX,shiftZ){
   const b=residentChunkBounds(),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE,widthX=Math.abs(shiftX)/CHUNK_SIZE,widthZ=Math.abs(shiftZ)/CHUNK_SIZE,cells=new Map(),addCell=(cx,cz)=>cells.set(`${cx},${cz}`,[cx,cz]);
   if(shiftX)for(let x=0;x<widthX;x++){const cx=shiftX>0?b.maxCX-widthX+1+x:b.minCX+x;for(let cz=b.minCZ;cz<=b.maxCZ;cz++)addCell(cx,cz);}
@@ -3519,14 +3529,18 @@ function collectIncomingClipmapJobs(shiftX,shiftZ){
   const jobs=[],seen=new Set(),targetX=playerPos.x/VS+movementHeadingX*1000,targetZ=playerPos.z/VS+movementHeadingZ*1000;
   const addJob=(cx,cy,cz,surfaceCY,tier)=>{if(cy<b.minCY||cy>b.maxCY)return;const key=chunkKey(cx,cy,cz);if(seen.has(key))return;seen.add(key);const distance=Math.hypot((cx+.5)*CHUNK_SIZE-targetX,(cz+.5)*CHUNK_SIZE-targetZ);jobs.push([cx,cy,cz,surfaceCY,tier*100000+distance]);};
   for(const [cx,cz] of cells.values()){
-    const surfaceCY=Math.max(b.minCY,Math.min(b.maxCY,Math.floor(terrainSample((cx+.5)*CHUNK_SIZE,(cz+.5)*CHUNK_SIZE).height/CHUNK_SIZE)));
+    const surface=mathematicalSurfaceSpan(cx,cz,b.minCY,b.maxCY),surfaceCY=surface.centerCY;
     // Every physical slot is invalidated, but only view-relevant mathematical
     // samples are materialized. Invalid deep/sky cells render from the parent
     // field and therefore never expose stale voxels or a rectangular hole.
     for(let cy=b.minCY;cy<=b.maxCY;cy++)setResidentChunkValidity(cx,cy,cz,0);
-    addJob(cx,surfaceCY,cz,surfaceCY,0);
-    addJob(cx,surfaceCY-1,cz,surfaceCY,10);addJob(cx,surfaceCY-2,cz,surfaceCY,20);
-    addJob(cx,surfaceCY+1,cz,surfaceCY,100);addJob(cx,surfaceCY+2,cz,surfaceCY,110);addJob(cx,surfaceCY+3,cz,surfaceCY,120);
+    // Update the parent's exact height before invalidating children becomes
+    // visible. This prevents the 10 m far atlas and 10 cm child cache from
+    // disagreeing along a 3.2 m chunk boundary.
+    uploadResidentWeatherColumn(cx,cz,true);
+    for(let cy=surface.minCY;cy<=surface.maxCY;cy++)addJob(cx,cy,cz,surfaceCY,0);
+    addJob(cx,surface.minCY-1,cz,surfaceCY,10);addJob(cx,surface.minCY-2,cz,surfaceCY,20);
+    addJob(cx,surface.maxCY+1,cz,surfaceCY,100);addJob(cx,surface.maxCY+2,cz,surfaceCY,110);addJob(cx,surface.maxCY+3,cz,surfaceCY,120);
   }
   jobs.sort((a,b)=>a[4]-b[4]);return jobs;
 }

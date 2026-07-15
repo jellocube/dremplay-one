@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.1**
+Current release: **v0.0.1.5.2**
+
+## v0.0.1.5.2 continuous surface-span fix
+
+- Fixed the rectangular trenches, floating terrain shelves, black openings, and abrupt chunk faces visible while the moving cache refined.
+- Replaced one-centre-height scheduling with a conservative mathematical height-range query across every 3.2 m horizontal chunk. Every vertical child intersected by a slope is now classified as surface work.
+- Preserved global surface-first priority: all intersected surface children across the incoming region resolve before shallow soil, canopy, or Resource refinement.
+- Uploads exact local mathematical height/moisture proxy data for newly exposed columns before their fine children become visible. Pending cells no longer splice the coarse 10 m far atlas directly against 10 cm terrain.
+- Retains implicit bedrock and disposable view caches from v0.0.1.5.1; this is a stitching correction, not an architectural rollback.
+- Added a regression case for a sloped horizontal column crossing two vertical chunk levels.
 
 ## v0.0.1.5.1 mathematical surface first
 
