@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.1';
-  const CURRENT_REVISION = 55;
+  const CURRENT_VERSION = '0.0.1.6.2';
+  const CURRENT_REVISION = 56;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -316,7 +316,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.1 · Infinite Detail Voxel Engine · Resource Builder startup repair</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.2 · Infinite Detail Voxel Engine · startup crash fix</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -325,7 +325,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -460,7 +460,7 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">boot-safe Resource Builder · cached part taxonomy · vegetation, fungi, and mineral formation graphs</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">verified startup · normal world and Test Zone · vegetation, fungi, and mineral formation graphs</p></div>
 </div>
 
 <script src="heightmap-world-v2.js?v=55"></script>
@@ -3108,7 +3108,7 @@ document.getElementById('resourcePreviewCurves').addEventListener('click',()=>{r
 function toggleResourcePane(id,button){const pane=document.getElementById(id),detached=pane.classList.toggle('detached');button.textContent=detached?'Attach':'Detach';bringToFront(resourceWindow);}
 document.getElementById('resourceDetachGraph').addEventListener('click',event=>toggleResourcePane('resourceGraphPane',event.currentTarget));document.getElementById('resourceDetachPreview').addEventListener('click',event=>toggleResourcePane('resourcePreviewPane',event.currentTarget));
 for(const pane of document.querySelectorAll('#resourceDesigner .resource-pane')){
-  const title=pane.querySelector('.resource-pane-title');let drag=null;
+  const title=pane.querySelector('.resource-pane-title');if(!title)continue;let drag=null;
   title.addEventListener('pointerdown',event=>{if(!pane.classList.contains('detached')||event.target.closest('button'))return;const rect=pane.getBoundingClientRect();drag={pointer:event.pointerId,dx:event.clientX-rect.left,dy:event.clientY-rect.top};pane.style.left=`${rect.left}px`;pane.style.top=`${rect.top}px`;pane.style.right='auto';title.setPointerCapture(event.pointerId);event.preventDefault();});
   title.addEventListener('pointermove',event=>{if(!drag||drag.pointer!==event.pointerId)return;const maxX=Math.max(0,innerWidth-pane.offsetWidth),maxY=Math.max(28,innerHeight-pane.offsetHeight);pane.style.left=`${Math.max(0,Math.min(maxX,event.clientX-drag.dx))}px`;pane.style.top=`${Math.max(28,Math.min(maxY,event.clientY-drag.dy))}px`;});
   const end=event=>{if(drag?.pointer===event.pointerId)drag=null;};title.addEventListener('pointerup',end);title.addEventListener('pointercancel',end);

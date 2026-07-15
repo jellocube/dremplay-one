@@ -2,7 +2,13 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.1**
+Current release: **v0.0.1.6.2**
+
+## v0.0.1.6.2 Startup crash fix
+
+- Fixed the Resource Builder pane-drag initializer so non-detachable parameter panes are skipped safely instead of throwing before WebGL starts.
+- Verified that both the full-world startup and Test Zone enter their respective voxel-cache decoding pipelines in a real browser.
+- Kept the Builder preview lazy and retained cached per-part Resource identity from v0.0.1.6.1.
 
 ## v0.0.1.6.1 Resource Builder startup repair
 
