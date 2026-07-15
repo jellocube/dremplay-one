@@ -1,5 +1,15 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Graph-compiled Resource Builder
+
+Resources are authored as compact formation graphs rather than meshes or stored voxel arrays. A graph contains a typed seed and named biological or geological stages connected by parent references. Each stage carries taxonomy, normalized graph position, length, child count, and angle. Vegetation graphs express roots, trunks or stems, branches, and terminals; fungi express spores, mycelium, stipes, caps, gills, or pores; mineral graphs express catalysts, eroded matrices, shards, terminals, and aggregate fields.
+
+The Builder has three coordinated views: a draggable 2D formation graph, an interactive 3D curve or voxel preview, and a parameter pane. The graph and preview may detach into movable panes. Both previews compile from the same definition that the runtime queries; they do not create a second authoring representation.
+
+The graph is serialized inside the portable Resource transfer ID along with type, preset, deterministic seed, materials, and mathematical controls. At runtime the graph and high-level controls compile into bounded equations and seeded architecture. Render voxels remain disposable samples of those equations.
+
+Every emitted Resource voxel receives provenance at part granularity. The identifier is a stable combination of Resource name and taxonomy label, such as `silver birch tree trunk`, `woodland mushroom gill`, or `pentagonal quartz cluster crystal terminal`. Inspection resolves this identity directly from the sparse provenance sidecar, allowing later harvesting, damage, crafting, and editor tools to address meaningful parts without changing the underlying material number.
+
 ## Immutable world query
 
 The authoritative level is a pure coordinate field. `terrainSample(x,z)`, `worldBiomeField(x,z)`, `worldTrailField(x,z)`, and the Resource equations return the same terrain, blended biome weights, ecological seed, natural trail occupancy, wind, and Resource roots independently of query order. Fine voxels are a disposable observation cache, not world data.

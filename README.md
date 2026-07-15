@@ -2,7 +2,18 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.6.1**
+Current release: **v0.0.1.6**
+
+## v0.0.1.6 Resource Builder
+
+- Replaces the Resource Editor with a graph-compiled Resource Builder for vegetation, fungi, and minerals. Type-specific presets include branching trees, multi-stem bushes, ferns, gilled and bracket fungi, eroded rocks, crystal-bearing rocks, and pebble fields.
+- Adds a 2D formation graph where named spline and terminal stages can be created, selected, dragged, reparented through preset structure, and edited by taxonomy, length, child count, and angle.
+- Adds a live 3D preview with curve/node and voxel modes. The view supports mouse or touch rotation, Shift-drag panning, wheel or pinch zoom, and reset.
+- Makes the graph and 3D preview detachable, movable work panes while retaining a compact parameter pane for materials, fractal controls, seeds, subsurface variation, and portable IDs.
+- Compiles graph stages into the existing compact mathematical Resource schema instead of storing a mesh. Builder graphs, taxonomy, materials, seeds, and generator parameters are included in copied Resource transfer IDs.
+- Adds named voxel anatomy and provenance. Roots, trunks, branches, leaves, fronds, berries, fruit, mycelium, stipes, caps, gills, rock matrix, catalysts, crystal shards, and crystal terminals retain part identities in both generated and manually placed Resources.
+- Shows that identity beneath the crosshair when the player looks at a Resource part, making the same labels available to later inspection, harvesting, and editing interfaces.
+- Adds deterministic woodland-mushroom and bracket-fungus library exemplars and a bounded fungi equation with mycelium, stipe, cap, and gill regions.
 
 ## v0.0.1.5.6.1 continuous terrain lighting repair
 

@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.6.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.6.1';
-  const CURRENT_REVISION = 53;
+  const CURRENT_VERSION = '0.0.1.6';
+  const CURRENT_REVISION = 54;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -64,6 +64,8 @@
   }
   #crosshair::before { left:7px; top:0; width:2px; height:16px; }
   #crosshair::after  { top:7px; left:0; width:16px; height:2px; }
+  #resourceLookLabel { position:absolute; left:50%; top:calc(50% + 18px); transform:translateX(-50%); z-index:8; max-width:min(440px,80vw); padding:3px 7px; color:#ececec; background:#141024bb; border:1px solid #444460; font-size:10px; text-align:center; pointer-events:none; opacity:0; transition:opacity .12s linear; }
+  #resourceLookLabel.visible { opacity:1; }
 
   #hud {
     position:absolute; left:18px; bottom:16px; color:#54FC54; font-size:11px;
@@ -122,17 +124,35 @@
   .range-row { display:grid; grid-template-columns:1fr 52px; gap:8px; align-items:center; }
   .range-value { text-align:right; color:#50a4fc; }
   #materialPreview { width:100%; height:126px; image-rendering:pixelated; border:1px solid #444460; background:#24243c; grid-column:1/-1; }
-  #materialAtlas,#paletteAtlas,#resourcePreview { width:100%; image-rendering:pixelated; border:1px solid #704024; background:#101810; cursor:crosshair; }
+  #materialAtlas,#paletteAtlas,#resourcePreview,#resourceGraph { width:100%; image-rendering:pixelated; border:1px solid #704024; background:#101810; cursor:crosshair; }
   #materialAtlas { height:150px; } #paletteAtlas { height:118px; }
   .shade-tabs { display:flex; gap:4px; margin-bottom:5px; }
   .shade-tabs .tool-button { padding:3px 8px; font-size:9px; }
   .shade-tabs .active { background:#387434; color:#ececec; }
-  #resourceDesigner { width:min(790px,calc(100vw - 24px)); }
-  .resource-grid { display:grid; grid-template-columns:minmax(280px,340px) minmax(300px,1fr); gap:9px 15px; align-items:start; }
-  .resource-grid > :not(#resourcePreview) { grid-column:2; }
-  #resourcePreview { grid-column:1; grid-row:1 / span 24; position:sticky; top:0; width:100%; height:auto; align-self:start; }
-  .resource-grid label { display:grid; grid-template-columns:120px 1fr; gap:9px; align-items:center; }
-  .resource-grid input,.resource-grid select { background:#101810; color:#54fc54; border:1px solid #704024; font:inherit; padding:5px; }
+  #resourceDesigner { width:min(1180px,calc(100vw - 24px)); left:50%; top:48px; transform:translateX(-50%); }
+  #resourceDesigner.dragged { transform:none; }
+  #resourceDesigner .window-body { max-height:calc(100vh - 94px); overflow:auto; }
+  .resource-builder-toolbar { display:grid; grid-template-columns:auto minmax(120px,1fr) auto minmax(160px,1fr) auto auto; gap:7px; align-items:center; margin-bottom:8px; }
+  .resource-builder-toolbar label { color:#bcdcff; }
+  .resource-workspace { display:grid; grid-template-columns:minmax(260px,.9fr) minmax(320px,1.15fr) minmax(300px,1fr); gap:9px; align-items:start; }
+  .resource-pane { min-width:0; border:1px solid #444460; background:#101810; }
+  .resource-pane-title { height:27px; display:flex; align-items:center; justify-content:space-between; gap:5px; padding:0 6px; color:#ccb010; background:#18182c; border-bottom:1px solid #444460; font-size:10px; }
+  .resource-pane-actions { display:flex; gap:4px; }
+  .resource-pane-actions button { padding:2px 6px; font-size:9px; }
+  #resourceGraph,#resourcePreview { display:block; height:auto; touch-action:none; }
+  #resourceGraph { cursor:grab; }
+  #resourceGraph.dragging { cursor:grabbing; }
+  #resourcePreview { cursor:move; }
+  .resource-preview-readout { min-height:22px; padding:4px 6px; color:#bcdcff; font-size:9px; border-top:1px solid #444460; }
+  .resource-parameters { padding:7px; max-height:600px; overflow:auto; }
+  .resource-parameters details { margin-bottom:6px; border:1px solid #444460; }
+  .resource-parameters summary { padding:6px; color:#bcdcff; cursor:pointer; }
+  .resource-parameter-body { padding:6px; border-top:1px solid #444460; }
+  .resource-parameters label { display:grid; grid-template-columns:125px 1fr; gap:7px; align-items:center; margin:5px 0; }
+  .resource-builder-toolbar input,.resource-builder-toolbar select,.resource-parameters input,.resource-parameters select { width:100%; min-width:0; background:#101810; color:#54fc54; border:1px solid #704024; font:inherit; padding:5px; }
+  #resourceGraphNodes { width:100%; min-height:92px; background:#040818; color:#54fc54; border:1px solid #704024; font:inherit; }
+  .resource-pane.detached { position:fixed; z-index:2400; width:min(430px,calc(100vw - 20px)); left:14px; top:48px; box-shadow:5px 6px 0 #040818aa; }
+  #resourcePreviewPane.detached { left:auto; right:14px; }
   .resource-seed-row { display:grid; grid-template-columns:1fr auto; gap:5px; }
   .resource-transfer { align-items:start !important; }
   .resource-transfer > span { min-width:0; }
@@ -242,10 +262,10 @@
   #paletteAtlas { height:104px; }
   #loadingFill { background:#ececec; }
   @media (max-width:720px){
-    #resourceDesigner{width:min(480px,calc(100vw - 16px));}
-    .resource-grid{grid-template-columns:1fr;}
-    .resource-grid > :not(#resourcePreview),#resourcePreview{grid-column:1;}
-    #resourcePreview{grid-row:auto;position:static;max-height:280px;}
+    #resourceDesigner{width:min(520px,calc(100vw - 16px));left:8px;transform:none;}
+    .resource-builder-toolbar,.resource-workspace{grid-template-columns:1fr;}
+    .resource-builder-toolbar label{display:none;}
+    #resourcePreview,#resourceGraph{max-height:300px;}
   }
   #touchControls { display:none; position:absolute; inset:30px 0 0; z-index:9; pointer-events:none; touch-action:none; user-select:none; }
   body.touch-platform.in-world #touchControls { display:block; }
@@ -270,12 +290,13 @@
 <body class="cursor-mode">
 <canvas id="glcanvas"></canvas>
 <div id="crosshair"></div>
+<div id="resourceLookLabel" aria-live="polite"></div>
 
 <nav id="menubar" aria-label="Application menu">
   <div class="brand">Dremplay One</div>
   <button class="menu-button" data-window="console">[/] Console</button>
   <button class="menu-button" data-hotkey="m" data-window="materialDesigner">[M] Materials</button>
-  <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resources</button>
+  <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resource Builder</button>
   <button class="menu-button" data-hotkey="g" data-window="mapWindow">[G] Map</button>
   <button class="menu-button" data-hotkey="f10" data-window="serverWindow">[F10] Server</button>
   <button class="menu-button" data-hotkey="f12" data-window="optionsWindow">[F12] Options</button>
@@ -295,7 +316,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.6.1 · Infinite Detail Voxel Engine · continuous terrain lighting repair</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6 · Infinite Detail Voxel Engine · graph-compiled Resource Builder</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -304,7 +325,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.6.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -342,31 +363,20 @@
   </div>
 </div>
 
-<div id="resourceDesigner" class="tool-window simple-window" role="dialog" aria-label="Resource Generator">
-  <div class="titlebar"><span>Resource editor</span><button class="window-close" aria-label="Close resource generator">×</button></div>
-  <div class="window-body resource-grid">
-    <canvas id="resourcePreview" width="360" height="360" aria-label="Live Resource preview"></canvas>
-    <label>Resource library <select id="resourceLibrary"></select></label>
-    <label>Name <input id="resourceName" value="new_resource"></label>
-    <label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option><option>pyramid</option><option>temple</option></select></label>
-    <label>Material <select id="resourceMaterial"></select></label>
-    <label>Secondary material <select id="resourceSecondary"></select></label>
-    <label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option></select></label>
-    <label>Growth stage <select id="resourceGrowthStage"><option value="adult">Adult</option><option value="sapling">Sapling</option></select></label>
-    <label>Growth seed <span class="resource-seed-row"><input id="resourceSeed" type="number" value="417293" min="0" max="99999999"><button id="resourceRandomSeed" type="button" class="tool-button">New seed</button></span></label>
-    <label>Components <select id="resourceComponents" multiple size="3"></select></label>
-    <label>Scale <input id="resourceScale" type="range" min="2" max="64" value="8"></label>
-    <label>Natural size variation <input id="resourceSizeVariance" type="range" min="0" max=".6" step=".01" value=".3"></label>
-    <label>Subsurface <input id="resourceSubsurface" type="range" min="0" max="1" step=".05" value=".2"></label>
-    <label>Radial mirrors <input id="resourceRadial" type="range" min="1" max="12" value="1"></label>
-    <label>Branch angle <input id="resourceAngle" type="range" min="5" max="85" value="32"></label>
-    <label>Iterations <input id="resourceIterations" type="range" min="1" max="8" value="4"></label>
-    <label>Tropism <input id="resourceTropism" type="range" min="-1" max="1" step=".05" value=".2"></label>
-    <label>Influence radius <input id="resourceInfluence" type="range" min="2" max="32" value="12"></label>
-    <label>Kill radius <input id="resourceKill" type="range" min="1" max="12" value="3"></label>
-    <label class="resource-transfer">Identity &amp; transfer <span><input id="resourceTransferId" aria-label="Resource identity and transfer ID" spellcheck="false"><span class="property-row"><button id="resourceLoadId" class="tool-button">Load</button><button id="resourceCopyId" class="tool-button">Copy</button></span></span></label>
-    <div><button id="resourceSave" class="tool-button">Save resource</button> <button id="resourcePlace" class="tool-button">Place at crosshair</button></div>
-    <div id="resourceStatus" class="muted">Resources are named procedural objects used by plants, stones, and future crafting.</div>
+<div id="resourceDesigner" class="tool-window" role="dialog" aria-label="Resource Builder">
+  <div class="titlebar"><span>Resource Builder</span><button class="window-close" aria-label="Close Resource Builder">×</button></div>
+  <div class="window-body">
+    <div class="resource-builder-toolbar"><label for="resourceType">Kingdom</label><select id="resourceType"><option value="vegetation">Vegetation</option><option value="fungi">Fungi</option><option value="mineral">Mineral</option></select><label for="resourcePreset">Formation preset</label><select id="resourcePreset"></select><button id="resourceApplyPreset" class="tool-button">Apply preset</button><button id="resourceSave" class="tool-button">Save Resource</button></div>
+    <div class="resource-workspace">
+      <section id="resourceGraphPane" class="resource-pane"><div class="resource-pane-title"><span>2D formation graph</span><span class="resource-pane-actions"><button id="resourceAddSpline" class="tool-button">+ spline</button><button id="resourceAddTerminal" class="tool-button">+ terminal</button><button id="resourceDetachGraph" class="tool-button">Detach</button></span></div><canvas id="resourceGraph" width="340" height="390" aria-label="Resource formation flow graph"></canvas><div id="resourceGraphReadout" class="resource-preview-readout">Select or drag a named formation stage.</div></section>
+      <section id="resourcePreviewPane" class="resource-pane"><div class="resource-pane-title"><span>Interactive 3D preview</span><span class="resource-pane-actions"><button id="resourcePreviewCurves" class="tool-button">Curves</button><button id="resourcePreviewVoxels" class="tool-button">Voxels</button><button id="resourcePreviewReset" class="tool-button">Reset view</button><button id="resourceDetachPreview" class="tool-button">Detach</button></span></div><canvas id="resourcePreview" width="420" height="420" aria-label="Rotatable Resource preview"></canvas><div class="resource-preview-readout">Drag: rotate · Shift-drag: pan · Wheel/pinch: zoom · preview recompiles live</div></section>
+      <section class="resource-pane resource-parameters"><details open><summary>Resource identity</summary><div class="resource-parameter-body"><label>Resource library <select id="resourceLibrary"></select></label><label>Name <input id="resourceName" value="new_resource"></label><label>Primitive <select id="resourceShape"><option>sphere</option><option>cube</option><option>donut</option><option>capsule</option><option>cone</option><option>cylinder</option><option>ellipsoid</option><option>branch graph</option><option>pyramid</option><option>temple</option></select></label><label>Growth stage <select id="resourceGrowthStage"><option value="adult">Adult</option><option value="sapling">Sapling</option></select></label><label>Growth seed <span class="resource-seed-row"><input id="resourceSeed" type="number" value="417293" min="0" max="99999999"><button id="resourceRandomSeed" type="button" class="tool-button">New seed</button></span></label></div></details>
+        <details open><summary>Selected graph stage</summary><div class="resource-parameter-body"><select id="resourceGraphNodes" size="4" aria-label="Formation stages"></select><label>Part label <input id="resourceNodeLabel" value="seed"></label><label>Taxonomy <select id="resourceNodeTaxonomy"><option>seed</option><option>root</option><option>trunk</option><option>branch</option><option>frond</option><option>leaf</option><option>fruit</option><option>berry</option><option>spore</option><option>mycelium</option><option>stipe</option><option>cap</option><option>gill</option><option>catalyst</option><option>rock matrix</option><option>crystal shard</option><option>crystal terminal</option><option>gem</option></select></label><label>Length <input id="resourceNodeLength" type="range" min=".1" max="2" step=".05" value="1"></label><label>Children / density <input id="resourceNodeChildren" type="range" min="1" max="16" value="4"></label><label>Formation angle <input id="resourceNodeAngle" type="range" min="0" max="180" value="35"></label><button id="resourceDeleteNode" class="tool-button">Delete selected stage</button></div></details>
+        <details><summary>Materials and mathematical form</summary><div class="resource-parameter-body"><label>Material <select id="resourceMaterial"></select></label><label>Secondary material <select id="resourceSecondary"></select></label><label>Growth model <select id="resourceFractal"><option>none</option><option>fBm</option><option>ridged</option><option>cellular</option><option>domain warp</option><option>L-system</option><option>space colonization</option><option>phyllotaxis</option><option>branching</option><option>root network</option><option>vein network</option><option>coral growth</option><option>cluster aggregation</option></select></label><label>Components <select id="resourceComponents" multiple size="3"></select></label><label>Scale <input id="resourceScale" type="range" min="2" max="64" value="8"></label><label>Natural variation <input id="resourceSizeVariance" type="range" min="0" max=".6" step=".01" value=".3"></label><label>Erosion / subsurface <input id="resourceSubsurface" type="range" min="0" max="1" step=".05" value=".2"></label><label>Radial mirrors <input id="resourceRadial" type="range" min="1" max="12" value="1"></label><label>Branch angle <input id="resourceAngle" type="range" min="5" max="85" value="32"></label><label>Iterations <input id="resourceIterations" type="range" min="1" max="8" value="4"></label><label>Tropism <input id="resourceTropism" type="range" min="-1" max="1" step=".05" value=".2"></label><label>Influence radius <input id="resourceInfluence" type="range" min="2" max="32" value="12"></label><label>Kill radius <input id="resourceKill" type="range" min="1" max="12" value="3"></label></div></details>
+        <details><summary>Identity and transfer</summary><div class="resource-parameter-body"><label class="resource-transfer">Portable ID <span><input id="resourceTransferId" aria-label="Resource identity and transfer ID" spellcheck="false"><span class="property-row"><button id="resourceLoadId" class="tool-button">Load</button><button id="resourceCopyId" class="tool-button">Copy</button></span></span></label></div></details>
+        <div><button id="resourcePlace" class="tool-button">Place at crosshair</button></div><div id="resourceStatus" class="muted">Graph stages compile into one deterministic mathematical Resource.</div>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -450,10 +460,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.6.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">continuous dirt, rock, and snow normals · soft step lighting · no half-cell erosion holes</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">graph-compiled Resource Builder · vegetation, fungi, and mineral formation graphs · named voxel anatomy</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=53"></script>
+<script src="heightmap-world-v2.js?v=54"></script>
 <script>
 (() => {
 "use strict";
@@ -2465,6 +2475,8 @@ const resourceDefinitions=new Map([
   ['gravel_chip',{name:'gravel_chip',role:'grain',shape:'ellipsoid',material:MAT_GRAVEL,secondary:MAT_STONE,fractal:'ridged',seed:1459,scale:2,sizeVariance:.48,subsurface:.15,radial:4,angle:18,iterations:2,tropism:0,influence:2,kill:1,components:[]}],
   ['stone_shard',{name:'stone_shard',role:'grain',shape:'ellipsoid',material:MAT_STONE,secondary:MAT_LICHEN,fractal:'vein network',seed:1693,scale:3,sizeVariance:.44,subsurface:.12,radial:5,angle:24,iterations:3,tropism:0,influence:2,kill:1,components:[]}],
   ['moss_cushion',{name:'moss_cushion',role:'moss',shape:'ellipsoid',material:MAT_MOSS,secondary:MAT_LICHEN,fractal:'cellular',seed:941,scale:4,sizeVariance:.37,subsurface:.12,radial:7,angle:8,iterations:4,tropism:0,influence:5,kill:1,components:[]}],
+  ['woodland_mushroom',{name:'woodland_mushroom',role:'fungi',builderType:'fungi',builderPreset:'mushroom',growthStage:'adult',shape:'cylinder',material:MAT_MARBLE,secondary:MAT_DIRT,fractal:'branching',seed:3631,scale:7,sizeVariance:.36,subsurface:.08,radial:9,angle:28,iterations:5,tropism:.10,influence:6,kill:1,components:[]}],
+  ['bracket_fungus',{name:'bracket_fungus',role:'fungi',builderType:'fungi',builderPreset:'bracket',growthStage:'adult',shape:'ellipsoid',material:MAT_LIMESTONE,secondary:MAT_BARK,fractal:'cellular',seed:3671,scale:8,sizeVariance:.31,subsurface:.10,radial:7,angle:18,iterations:5,tropism:.05,influence:7,kill:1,components:[]}],
   ['ironbark_tree',{name:'ironbark_tree',role:'tree',growthStage:'adult',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BARK,fractal:'space colonization',seed:18341,scale:48,sizeVariance:.25,subsurface:.12,radial:8,angle:34,iterations:6,tropism:.32,influence:14,kill:3,components:['moss_cushion']}],
   ['ironbark_sapling',{name:'ironbark_sapling',role:'tree',growthStage:'sapling',shape:'branch graph',material:MAT_LEAVES,secondary:MAT_BARK,fractal:'space colonization',seed:7331,scale:15,sizeVariance:.34,subsurface:.08,radial:5,angle:29,iterations:4,tropism:.48,influence:8,kill:2,components:[]}],
   // Append new definitions after the established library so every pre-v15
@@ -2550,13 +2562,14 @@ function resourceBounds(def){
   if(def.role==='moss')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:0,y1:Math.ceil(s*.5)};
   if(def.role==='stone'||def.role==='grain')return {x:Math.ceil(s*.68),z:Math.ceil(s*.68),y0:-Math.ceil(s*.4),y1:Math.ceil(s*.58)};
   if(def.role==='crystal')return {x:Math.ceil(s*.62),z:Math.ceil(s*.62),y0:-1,y1:Math.ceil(s*1.45)};
+  if(def.role==='fungi')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-Math.ceil(s*.18),y1:Math.ceil(s*1.34)};
   if(def.role==='fern')return {x:Math.ceil(s*.92),z:Math.ceil(s*.92),y0:0,y1:Math.ceil(s*1.05)};
   if(def.role==='palm')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-2,y1:Math.ceil(s*1.35)};
   if(def.role==='palm_bark')return {x:Math.ceil(s*.55),z:Math.ceil(s*.55),y0:-1,y1:Math.ceil(s)};
   if(def.role==='architecture')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-2,y1:Math.ceil(s*.86)};
   return {x:s,z:s,y0:-s,y1:s*2};
 }
-function resourceVoxelCacheKey(def){return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface].join(':');}
+function resourceVoxelCacheKey(def){const graph=(def.builderGraph||[]).map(node=>`${node.id},${node.parent||''},${node.taxonomy},${node.length},${node.children},${node.angle}`).join(';');return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface,graph].join(':');}
 function leafSprayStrokes(seed,center,rx,ry,rz,count){
   // A crown cluster is a compound Resource: a slim terminal twig surrounded
   // by alternating, golden-angle leaf blades. Blades stay roughly one voxel
@@ -2749,7 +2762,7 @@ function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUN
     }
   }return result;
 }
-function resourceIsPlant(def){return def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';}
+function resourceIsPlant(def){return def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm'||def.role==='fungi';}
 function resourceIsRock(def){return def.role==='stone'||def.role==='grain'||def.role==='crystal';}
 function resourceRootRadius(def){
   const bounds=resourceBounds(def);
@@ -2803,6 +2816,16 @@ function rockResourceVoxel(def,x,y,z){
   // Lichen/mineral accents occur on exposed upper facets, never as internal salt-and-pepper noise.
   const patina=def.secondary&&y>ay*.18&&fbm2(rx*.27+13,rz*.27-17,2,2,.5,5501+seed)>.38&&hash3(x,y,z,5503+seed)>.42;
   return patina?def.secondary:def.material;
+}
+function fungusResourceVoxel(def,x,y,z){
+  const s=Math.max(3,def.scale),seed=def.seed|0,stage=def.growthStage==='sapling'?.56:1,stipeHeight=s*(.62+.22*hash3(seed,1,3,5519))*stage,stipeRadius=Math.max(.7,s*(.075+.025*hash3(seed,2,5,5521))),capRadius=s*(.34+.12*hash3(seed,3,7,5527))*stage,capThickness=Math.max(1.1,s*.13*stage),bendAngle=hash3(seed,5,11,5531)*Math.PI*2,bend=s*.08*(1-(def.tropism||0));
+  const t=Math.max(0,Math.min(1,y/stipeHeight)),cx=Math.cos(bendAngle)*bend*t*t,cz=Math.sin(bendAngle)*bend*t*t;
+  // Mycelium is a sparse deterministic root network below the fruiting body.
+  if(y<0&&y>-s*.16){for(let i=0;i<Math.max(4,Math.min(12,def.radial||7));i++){const a=i*GOLDEN_ANGLE+seed*.0003,len=s*(.34+.24*hash3(seed,i,13,5539)),tip={x:Math.cos(a)*len,y:-s*.10,z:Math.sin(a)*len};if(pointSegmentDistance(x,y,z,{x:0,y:-.2,z:0},tip)<.42)return def.secondary;}}
+  if(y>=0&&y<=stipeHeight&&Math.hypot(x-cx,z-cz)<=stipeRadius*(1-.16*t))return def.secondary;
+  const capY=stipeHeight,dx=x-cx,dz=z-cz,rad=Math.hypot(dx,dz),dome=(y-capY+capThickness*.18)/capThickness,cap=Math.pow(rad/capRadius,2)+Math.pow(dome,2);
+  if(y>=capY-capThickness*.42&&y<=capY+capThickness&&cap<1){const gills=y<capY&&Math.cos(Math.atan2(dz,dx)*Math.max(7,def.radial||10))>.54;return gills?def.secondary:def.material;}
+  return 0;
 }
 function flowerResourceVoxel(def,x,y,z){
   const s=Math.max(3,def.scale),seed=def.seed|0,height=s*1.42,bend=s*(1-(def.tropism||0))*.16,wa=hash3(seed,1,1,5603)*Math.PI*2,t=Math.max(0,Math.min(1,y/height)),cx=Math.cos(wa)*bend*t*t,cz=Math.sin(wa)*bend*t*t;
@@ -2874,6 +2897,7 @@ function resourceVoxel(def,x,y,z){
   if(def.role==='grass')return grassResourceVoxel(def,x,y,z);
   if(def.role==='foliage')return foliageResourceVoxel(def,x,y,z);
   if(def.role==='moss')return mossResourceVoxel(def,x,y,z);
+  if(def.role==='fungi')return fungusResourceVoxel(def,x,y,z);
   if(def.role==='stone'||def.role==='grain')return rockResourceVoxel(def,x,y,z);
   if(def.role==='crystal')return crystalResourceVoxel(def,x,y,z);
   if(def.role==='fern')return fernResourceVoxel(def,x,y,z);
@@ -2883,11 +2907,18 @@ function resourceVoxel(def,x,y,z){
   const noise=fbm2((x+(def.seed%97))*.19,(z-y+(def.seed%53))*.19,3,2,.5,3301+(def.seed|0));
   return resourceContains(def,x,y,z)?(noise>.58&&def.secondary?def.secondary:def.material):0;
 }
+function resourcePartTaxonomy(def,x,y,z,material){
+  const type=def.builderType||inferBuilderType(def),radial=Math.hypot(x,z),scale=Math.max(2,def.scale);
+  if(type==='fungi'){if(y<0)return 'mycelium';if(material===def.secondary)return y>scale*.62?'gill':'stipe';return 'cap';}
+  if(type==='mineral'){if(material===MAT_LICHEN)return 'leaf';if(def.role==='crystal')return y>scale*.72?'crystal terminal':'crystal shard';return radial>scale*.48?'rock matrix':material===def.secondary?'catalyst':'rock matrix';}
+  if(y<0)return 'root';if(material===MAT_RED)return 'fruit';if(material===MAT_BLUE||material===MAT_PURPLE)return 'berry';if(material===MAT_LEAVES||material===MAT_GRASS||material===MAT_TEAL||material===MAT_BLUE_SPRUCE_FROND)return def.role==='fern'?'frond':'leaf';if(material===def.secondary)return radial<scale*.12?'trunk':'branch';return 'branch';
+}
+function labelResourcePart(def,x,y,z,material){const taxonomy=resourcePartTaxonomy(def,x,y,z,material),stage=(def.builderGraph||[]).find(node=>node.taxonomy===taxonomy),resourceName=def.name.replaceAll('_',' '),part=(stage?.label||taxonomy).trim();return `${resourceName} ${part}`;}
 function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const key=chunkKey(cx,cy,cz);let metadata=resourceChunks.get(key);
   const tag=(i,rid)=>{if(!rid)return;if(!metadata){metadata=new Map();resourceChunks.set(key,metadata);}metadata.set(i,rid);};
   const put=(x,y,z,m,rid,airOnly=false)=>{const lx=x-baseX,ly=y-baseY,lz=z-baseZ;if(lx>=0&&ly>=0&&lz>=0&&lx<32&&ly<32&&lz<32){const i=lx+ly*32+lz*1024;if(airOnly&&chunk[i]!==MAT_AIR)return;chunk[i]=m;tag(i,rid);}};
-  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const rid=registerResourceName(def.name),foliageRid=def.role==='tree'?registerResourceName(foliageResourceName(def)):rid,plant=def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material] of voxelizedResource(def))put(wx+x,wy+y,wz+z,material,def.role==='tree'&&material!==def.secondary?foliageRid:rid,plant);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
+  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const plant=def.role==='tree'||def.role==='fungi'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material] of voxelizedResource(def)){const partRid=registerResourceName(labelResourcePart(def,x,y,z,material));put(wx+x,wy+y,wz+z,material,partRid,plant);}for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
   // Main props are emitted from every neighboring origin chunk whose true
   // occupied bounds overlap this chunk. Resolve the candidate set before
   // rasterization: stone wins its footprint first, then trees, shrubs and
@@ -2949,17 +2980,47 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
     }
   }
 }
-const resourceWindow=document.getElementById('resourceDesigner'),resourceMaterial=document.getElementById('resourceMaterial'),resourceSecondary=document.getElementById('resourceSecondary'),resourceLibrary=document.getElementById('resourceLibrary'),resourceComponents=document.getElementById('resourceComponents'),resourceTransferIdInput=document.getElementById('resourceTransferId');
+const resourceWindow=document.getElementById('resourceDesigner'),resourceMaterial=document.getElementById('resourceMaterial'),resourceSecondary=document.getElementById('resourceSecondary'),resourceLibrary=document.getElementById('resourceLibrary'),resourceComponents=document.getElementById('resourceComponents'),resourceTransferIdInput=document.getElementById('resourceTransferId'),resourceType=document.getElementById('resourceType'),resourcePreset=document.getElementById('resourcePreset'),resourceGraphCanvas=document.getElementById('resourceGraph'),resourceGraphNodes=document.getElementById('resourceGraphNodes');
 for(let id=1;id<MATERIAL_NAMES.length;id++){resourceMaterial.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));resourceSecondary.add(new Option(`${id} · ${MATERIAL_NAMES[id]}`,id));}
 resourceMaterial.value=String(MAT_GRANITE);
 resourceSecondary.value=String(MAT_LICHEN);
 const RESOURCE_MODEL_DETAIL=2; // 5 cm model lattice over 10 cm physical parents
 function refreshResourceLibrary(){const selected=resourceLibrary.value;resourceLibrary.replaceChildren();resourceComponents.replaceChildren();for(const name of resourceDefinitions.keys()){resourceLibrary.add(new Option(name.replaceAll('_',' '),name));resourceComponents.add(new Option(name.replaceAll('_',' '),name));}if(resourceDefinitions.has(selected))resourceLibrary.value=selected;}
-function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),role=known?.role||(shape==='branch graph'&&['space colonization','L-system','branching'].includes(fractal)?'tree':fractal==='phyllotaxis'?'flower':shape==='cone'&&fractal==='cluster aggregation'?'grass':'custom');return {name,role,detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
+const RESOURCE_BUILDER_PRESETS=Object.freeze({
+  vegetation:Object.freeze({
+    tree:{label:'Branching tree',shape:'branch graph',fractal:'space colonization',material:MAT_LEAVES,secondary:MAT_BARK,nodes:[['seed','seed','seed',null,.50,.08,.4,2,90],['roots','root system','root','seed',.28,.23,.75,5,235],['trunk','trunk','trunk','seed',.52,.30,1.7,1,90],['branches','primary branches','branch','trunk',.48,.51,1.1,7,38],['twigs','secondary branches','branch','branches',.62,.69,.72,9,44],['leaves','terminal leaves','leaf','twigs',.54,.89,.35,14,32]]},
+    bush:{label:'Multi-stem bush',shape:'branch graph',fractal:'branching',material:MAT_LEAVES,secondary:MAT_BARK,nodes:[['seed','seed','seed',null,.50,.08,.4,4,90],['roots','fibrous roots','root','seed',.30,.27,.58,7,225],['stems','branching stems','branch','seed',.51,.36,.9,8,58],['branches','branches on branches','branch','stems',.46,.62,.62,11,46],['leaves','leaves and berries','berry','branches',.57,.88,.28,16,35]]},
+    fern:{label:'Fern frond',shape:'branch graph',fractal:'L-system',material:MAT_GRASS,secondary:MAT_MOSS,nodes:[['seed','rhizome','root',null,.50,.10,.45,3,90],['stipe','stipe','stipe','seed',.50,.32,.85,5,82],['frond','frond rachis','frond','stipe',.50,.55,1.2,7,34],['leaflets','pinnae leaflets','leaf','frond',.50,.84,.32,14,62]]}
+  }),
+  fungi:Object.freeze({
+    mushroom:{label:'Gilled mushroom',shape:'cylinder',fractal:'branching',material:MAT_MARBLE,secondary:MAT_DIRT,nodes:[['spore','spore','spore',null,.50,.08,.25,5,90],['mycelium','mycelium network','mycelium','spore',.28,.28,.9,12,210],['stipe','mushroom stipe','stipe','mycelium',.51,.48,1.1,1,90],['cap','mushroom cap','cap','stipe',.52,.72,.78,1,20],['gills','mushroom gills','gill','cap',.52,.90,.25,14,55]]},
+    bracket:{label:'Bracket fungus',shape:'ellipsoid',fractal:'cellular',material:MAT_MARBLE,secondary:MAT_BARK,nodes:[['spore','spore','spore',null,.45,.10,.2,5,90],['mycelium','wood mycelium','mycelium','spore',.28,.35,.8,9,185],['brackets','layered brackets','cap','mycelium',.56,.62,.72,6,18],['pores','spore pores','gill','brackets',.59,.88,.24,16,65]]}
+  }),
+  mineral:Object.freeze({
+    eroded_rock:{label:'Eroded rock',shape:'ellipsoid',fractal:'ridged',material:MAT_GRANITE,secondary:MAT_LICHEN,nodes:[['catalyst','stone catalyst','catalyst',null,.50,.10,.45,1,90],['matrix','rock matrix','rock matrix','catalyst',.50,.42,1.5,3,55],['weathering','eroded shell','rock matrix','matrix',.50,.72,.62,7,32],['patina','lichen patina','leaf','weathering',.54,.91,.18,10,18]]},
+    crystal_rock:{label:'Crystals on rock',shape:'ellipsoid',fractal:'cluster aggregation',material:MAT_QUARTZ,secondary:MAT_GRANITE,nodes:[['catalyst','seed rock','catalyst',null,.50,.10,.5,1,90],['matrix','eroded rock matrix','rock matrix','catalyst',.42,.38,1.25,4,58],['shards','pentagonal crystal shards','crystal shard','matrix',.55,.63,.85,7,16],['terminals','crystal terminals','crystal terminal','shards',.58,.89,.32,7,8]]},
+    pebble_field:{label:'Pebble field sample',shape:'ellipsoid',fractal:'cellular',material:MAT_GRAVEL,secondary:MAT_QUARTZ,nodes:[['catalyst','stream catalyst','catalyst',null,.50,.10,.3,1,90],['bed','gravel bed','rock matrix','catalyst',.50,.40,1.2,9,25],['pebbles','rounded pebbles','gem','bed',.50,.70,.5,14,20],['sorting','water-sorted terminals','crystal terminal','pebbles',.55,.91,.22,8,10]]}
+  })
+});
+let resourceGraphState=[],resourceSelectedNodeId='',resourcePreviewMode='voxels',resourcePreviewView={yaw:-.72,pitch:.48,zoom:1,panX:0,panY:0};
+const cloneBuilderNodes=nodes=>nodes.map(row=>Array.isArray(row)?{id:row[0],label:row[1],taxonomy:row[2],parent:row[3],x:row[4],y:row[5],length:row[6],children:row[7],angle:row[8],kind:['leaf','fruit','berry','gill','crystal terminal','gem'].includes(row[2])?'terminal':row[3]?'spline':'seed'}:{...row});
+function inferBuilderType(def){return def?.builderType||(def?.role==='fungi'?'fungi':def?.role==='stone'||def?.role==='grain'||def?.role==='crystal'?'mineral':'vegetation');}
+function refreshResourcePresets(type=resourceType.value){resourcePreset.replaceChildren();for(const [id,preset] of Object.entries(RESOURCE_BUILDER_PRESETS[type]))resourcePreset.add(new Option(preset.label,id));}
+function setResourceGraph(nodes){resourceGraphState=cloneBuilderNodes(nodes);resourceSelectedNodeId=resourceGraphState[0]?.id||'';refreshGraphNodeList();renderResourceGraph();syncGraphNodeInspector();}
+function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),builderType=resourceType.value;let role=known?.role;if(!role||known?.builderType!==builderType)role=builderType==='fungi'?'fungi':builderType==='mineral'?(resourcePreset.value==='crystal_rock'?'crystal':'stone'):'tree';return {name,role,builderType,builderPreset:resourcePreset.value,builderGraph:resourceGraphState.map(node=>({...node})),detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
+function refreshGraphNodeList(){resourceGraphNodes.replaceChildren();for(const node of resourceGraphState)resourceGraphNodes.add(new Option(`${node.label} · ${node.taxonomy}`,node.id));resourceGraphNodes.value=resourceSelectedNodeId;}
+function selectedGraphNode(){return resourceGraphState.find(node=>node.id===resourceSelectedNodeId)||resourceGraphState[0];}
+function syncGraphNodeInspector(){const node=selectedGraphNode();if(!node)return;resourceSelectedNodeId=node.id;resourceGraphNodes.value=node.id;document.getElementById('resourceNodeLabel').value=node.label;document.getElementById('resourceNodeTaxonomy').value=node.taxonomy;document.getElementById('resourceNodeLength').value=String(node.length);document.getElementById('resourceNodeChildren').value=String(node.children);document.getElementById('resourceNodeAngle').value=String(node.angle);document.getElementById('resourceGraphReadout').textContent=`${node.label} · ${node.taxonomy} · ${node.kind} · length ${Number(node.length).toFixed(2)} · ${node.children} child samples`;}
+function renderResourceGraph(){const c=resourceGraphCanvas,ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.fillStyle='#040818';ctx.fillRect(0,0,w,h);ctx.lineWidth=1;ctx.strokeStyle='#18182c';for(let x=20;x<w;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}for(let y=20;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}const pos=node=>({x:22+node.x*(w-44),y:22+node.y*(h-44)});for(const node of resourceGraphState){if(!node.parent)continue;const parent=resourceGraphState.find(candidate=>candidate.id===node.parent);if(!parent)continue;const a=pos(parent),b=pos(node),bend=(b.y-a.y)*.5;ctx.strokeStyle=node.kind==='terminal'?'#bcdcff':'#54fc54';ctx.lineWidth=Math.max(1,Math.min(4,node.length*1.7));ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.bezierCurveTo(a.x,a.y+bend,b.x,b.y-bend,b.x,b.y);ctx.stroke();const count=Math.min(8,node.children);for(let i=1;i<count;i++){const t=i/count,x=(1-t)*(1-t)*(1-t)*a.x+3*(1-t)*(1-t)*t*a.x+3*(1-t)*t*t*b.x+t*t*t*b.x,y=(1-t)*(1-t)*(1-t)*a.y+3*(1-t)*(1-t)*t*(a.y+bend)+3*(1-t)*t*t*(b.y-bend)+t*t*t*b.y;ctx.fillStyle='#387434';ctx.fillRect(x-1,y-1,3,3);}}
+  for(const node of resourceGraphState){const p=pos(node),selected=node.id===resourceSelectedNodeId;ctx.fillStyle=node.kind==='seed'?'#ccb010':node.kind==='terminal'?'#50a4fc':'#243c24';ctx.strokeStyle=selected?'#ececec':'#54fc54';ctx.lineWidth=selected?3:1;ctx.beginPath();ctx.arc(p.x,p.y,selected?10:8,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='10px mono';ctx.fillStyle='#ececec';ctx.textAlign=p.x>w*.67?'right':'left';ctx.fillText(node.label,p.x+(p.x>w*.67?-12:12),p.y+3);}ctx.textAlign='left';ctx.fillStyle='#bcdcff';ctx.font='9px mono';ctx.fillText(`${resourceType.value} formation · deterministic compiled graph`,7,h-7);}
+function applyBuilderPreset(){const preset=RESOURCE_BUILDER_PRESETS[resourceType.value][resourcePreset.value];if(!preset)return;document.getElementById('resourceShape').value=preset.shape;document.getElementById('resourceFractal').value=preset.fractal;resourceMaterial.value=String(preset.material);resourceSecondary.value=String(preset.secondary);setResourceGraph(preset.nodes);document.getElementById('resourceIterations').value=String(Math.min(8,Math.max(2,preset.nodes.length)));document.getElementById('resourceRadial').value=String(Math.min(12,Math.max(...preset.nodes.map(node=>node[7]))));document.getElementById('resourceStatus').textContent=`Applied ${preset.label}; named stages now compile live into the mathematical Resource.`;scheduleResourcePreview();}
+function editSelectedGraphNode(){const node=selectedGraphNode();if(!node)return;node.label=document.getElementById('resourceNodeLabel').value.trim()||node.taxonomy;node.taxonomy=document.getElementById('resourceNodeTaxonomy').value;node.length=Number(document.getElementById('resourceNodeLength').value);node.children=Number(document.getElementById('resourceNodeChildren').value);node.angle=Number(document.getElementById('resourceNodeAngle').value);document.getElementById('resourceAngle').value=String(Math.max(5,Math.min(85,node.angle)));document.getElementById('resourceRadial').value=String(Math.max(1,Math.min(12,node.children)));refreshGraphNodeList();renderResourceGraph();syncGraphNodeInspector();scheduleResourcePreview();}
+function addGraphNode(kind){const parent=selectedGraphNode(),serial=resourceGraphState.length+1,taxonomy=kind==='terminal'?(resourceType.value==='mineral'?'crystal terminal':resourceType.value==='fungi'?'cap':'leaf'):(resourceType.value==='mineral'?'crystal shard':resourceType.value==='fungi'?'stipe':'branch'),id=`${taxonomy.replaceAll(' ','_')}_${serial}`;resourceGraphState.push({id,label:taxonomy,taxonomy,parent:parent?.id||null,x:Math.max(.08,Math.min(.92,(parent?.x??.5)+(serial%2?.16:-.14))),y:Math.max(.08,Math.min(.94,(parent?.y??.1)+.18)),length:kind==='terminal'?.3:.8,children:kind==='terminal'?8:4,angle:kind==='terminal'?22:38,kind});resourceSelectedNodeId=id;refreshGraphNodeList();renderResourceGraph();syncGraphNodeInspector();scheduleResourcePreview();}
 const RESOURCE_TRANSFER_MAGIC=0xd4,RESOURCE_TRANSFER_VERSION=1;
-const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','custom','crystal','fern','palm','palm_bark','architecture'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph','pyramid','temple'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation'];
+const RESOURCE_ROLES=['stone','flower','grass','grain','moss','foliage','tree','fungi','custom','crystal','fern','palm','palm_bark','architecture'],RESOURCE_SHAPES=['sphere','cube','donut','capsule','cone','cylinder','ellipsoid','branch graph','pyramid','temple'],RESOURCE_FRACTALS=['none','fBm','ridged','cellular','domain warp','L-system','space colonization','phyllotaxis','branching','root network','vein network','coral growth','cluster aggregation'];
+const RESOURCE_TAXONOMY=['seed','root','trunk','branch','frond','leaf','fruit','berry','spore','mycelium','stipe','cap','gill','catalyst','rock matrix','crystal shard','crystal terminal','gem'];
 function resourceChecksum(bytes){let h=2166136261;for(const byte of bytes)h=Math.imul(h^byte,16777619);return h>>>0;}
-function resourcePayload(def){const rounded=value=>Math.round(Number(value)*10000)/10000,snapshot=id=>[...materialSlots[id],...materialParams[id].map(rounded),materialModes[id]];return {n:def.name,r:def.role,o:def.detail||RESOURCE_MODEL_DETAIL,g:def.growthStage||'adult',h:def.shape,m:def.material,s:def.secondary,f:def.fractal,e:def.seed>>>0,z:def.scale,v:rounded(def.sizeVariance),u:rounded(def.subsurface),d:def.radial,a:rounded(def.angle),i:def.iterations,t:rounded(def.tropism),q:rounded(def.influence),k:rounded(def.kill),c:[...(def.components||[])],x:snapshot(def.material),y:snapshot(def.secondary)};}
+function resourcePayload(def){const rounded=value=>Math.round(Number(value)*10000)/10000,snapshot=id=>[...materialSlots[id],...materialParams[id].map(rounded),materialModes[id]],graph=(def.builderGraph||[]).slice(0,24).map(node=>({id:node.id,l:node.label,t:node.taxonomy,p:node.parent,k:node.kind,x:rounded(node.x),y:rounded(node.y),n:rounded(node.length),c:node.children,a:rounded(node.angle)}));return {n:def.name,r:def.role,o:def.detail||RESOURCE_MODEL_DETAIL,g:def.growthStage||'adult',h:def.shape,m:def.material,s:def.secondary,f:def.fractal,e:def.seed>>>0,z:def.scale,v:rounded(def.sizeVariance),u:rounded(def.subsurface),d:def.radial,a:rounded(def.angle),i:def.iterations,t:rounded(def.tropism),q:rounded(def.influence),k:rounded(def.kill),c:[...(def.components||[])],bt:def.builderType||inferBuilderType(def),bp:def.builderPreset||'',bg:graph,x:snapshot(def.material),y:snapshot(def.secondary)};}
 function resourceTransferId(def){
   const payload=new TextEncoder().encode(JSON.stringify(resourcePayload(def)));if(payload.length>65535)throw new Error('Resource definition is too large to transfer.');
   const bytes=[RESOURCE_TRANSFER_MAGIC,RESOURCE_TRANSFER_VERSION,payload.length>>8,payload.length&255,...payload],sum=resourceChecksum(bytes);bytes.push(sum>>>24,(sum>>>16)&255,(sum>>>8)&255,sum&255);
@@ -2976,7 +3037,8 @@ function parseResourceTransferId(text){
   if(!RESOURCE_ROLES.includes(p.r)||!RESOURCE_SHAPES.includes(p.h)||!RESOURCE_FRACTALS.includes(p.f)||!['adult','sapling'].includes(p.g))throw new Error('Unsupported Resource generator in ID.');
   const components=Array.isArray(p.c)?p.c.map(String).filter(v=>/^[a-zA-Z0-9_-]{1,64}$/.test(v)).slice(0,12):[],material=number(p.m,1,MATERIAL_NAMES.length-1,'material',true),secondary=number(p.s,1,MATERIAL_NAMES.length-1,'secondary material',true);
   const aesthetic=(value,label)=>{if(!Array.isArray(value)||value.length!==7)throw new Error(`Missing ${label} aesthetic in Resource ID.`);return [number(value[0],0,PALETTE.length-1,`${label} base`,true),number(value[1],0,PALETTE.length-1,`${label} light`,true),number(value[2],0,PALETTE.length-1,`${label} dark`,true),number(value[3],0,1,`${label} noise`),number(value[4],1,12,`${label} scale`),number(value[5],0,1,`${label} blur`),number(value[6],0,6,`${label} pattern`,true)];};
-  return {name,role:p.r,detail:number(p.o??RESOURCE_MODEL_DETAIL,1,RESOURCE_MODEL_DETAIL,'model detail',true),growthStage:p.g,shape:p.h,material,secondary,fractal:p.f,seed:number(p.e,0,99999999,'seed',true),scale:number(p.z,2,64,'scale',true),sizeVariance:number(p.v,0,.6,'size variation'),subsurface:number(p.u,0,1,'subsurface'),radial:number(p.d,1,12,'radial mirrors',true),angle:number(p.a,5,85,'branch angle'),iterations:number(p.i,1,8,'iterations',true),tropism:number(p.t,-1,1,'tropism'),influence:number(p.q,2,32,'influence radius'),kill:number(p.k,1,12,'kill radius'),components,transferAesthetic:{primary:aesthetic(p.x,'primary'),secondary:aesthetic(p.y,'secondary')}};
+  const builderType=['vegetation','fungi','mineral'].includes(p.bt)?p.bt:(p.r==='fungi'?'fungi':p.r==='stone'||p.r==='grain'||p.r==='crystal'?'mineral':'vegetation'),builderPreset=String(p.bp||''),builderGraph=Array.isArray(p.bg)?p.bg.slice(0,24).map((node,index)=>{const taxonomy=RESOURCE_TAXONOMY.includes(node.t)?node.t:'branch',id=String(node.id||`stage_${index}`).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,40),label=String(node.l||taxonomy).replace(/[<>]/g,'').slice(0,48),parent=node.p===null?null:String(node.p||'').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,40);return {id,label,taxonomy,parent,kind:['seed','spline','terminal'].includes(node.k)?node.k:'spline',x:number(node.x,0,1,'graph x'),y:number(node.y,0,1,'graph y'),length:number(node.n,.1,2,'stage length'),children:number(node.c,1,16,'stage children',true),angle:number(node.a,0,180,'stage angle')};}):[];
+  return {name,role:p.r,builderType,builderPreset,builderGraph,detail:number(p.o??RESOURCE_MODEL_DETAIL,1,RESOURCE_MODEL_DETAIL,'model detail',true),growthStage:p.g,shape:p.h,material,secondary,fractal:p.f,seed:number(p.e,0,99999999,'seed',true),scale:number(p.z,2,64,'scale',true),sizeVariance:number(p.v,0,.6,'size variation'),subsurface:number(p.u,0,1,'subsurface'),radial:number(p.d,1,12,'radial mirrors',true),angle:number(p.a,5,85,'branch angle'),iterations:number(p.i,1,8,'iterations',true),tropism:number(p.t,-1,1,'tropism'),influence:number(p.q,2,32,'influence radius'),kill:number(p.k,1,12,'kill radius'),components,transferAesthetic:{primary:aesthetic(p.x,'primary'),secondary:aesthetic(p.y,'secondary')}};
 }
 function applyResourceAesthetic(def){const apply=(id,snapshot)=>{if(!snapshot)return;materialSlots[id]=snapshot.slice(0,3);materialParams[id]=snapshot.slice(3,6);materialModes[id]=snapshot[6];};apply(def.material,def.transferAesthetic?.primary);apply(def.secondary,def.transferAesthetic?.secondary);syncMaterialSlots();if(designerOpen)loadDesignerMaterial();}
 function refreshResourceTransferId(){try{resourceTransferIdInput.value=resourceTransferId(currentResource());}catch(error){document.getElementById('resourceStatus').textContent=error.message;}}
@@ -2997,6 +3059,10 @@ function resourceContains(def,x,y,z){
 }
 function renderResourcePreview(){
   const c=document.getElementById('resourcePreview'),ctx=c.getContext('2d'),def=currentResource(),points=[];ctx.fillStyle='#040818';ctx.fillRect(0,0,c.width,c.height);
+  const rotate=p=>{const cy=Math.cos(resourcePreviewView.yaw),sy=Math.sin(resourcePreviewView.yaw),cp=Math.cos(resourcePreviewView.pitch),sp=Math.sin(resourcePreviewView.pitch),x=p.x*cy-p.z*sy,z=p.x*sy+p.z*cy,y=p.y*cp-z*sp,depth=p.y*sp+z*cp;return {...p,x,y,depth,u:x,v:-y};};
+  if(resourcePreviewMode==='curves'){
+    const scale=Math.max(8,def.scale),nodes=(def.builderGraph||resourceGraphState).map((node,index)=>rotate({node,x:(node.x-.5)*scale*1.25,y:(1-node.y)*scale*1.6,z:(hash3(def.seed|0,index,7,7411)-.5)*scale*.32})),byId=new Map(nodes.map(p=>[p.node.id,p]));let minU=-1,maxU=1,minV=-1,maxV=1;for(const p of nodes){minU=Math.min(minU,p.u);maxU=Math.max(maxU,p.u);minV=Math.min(minV,p.v);maxV=Math.max(maxV,p.v);}const px=Math.min((c.width-60)/(maxU-minU+1),(c.height-70)/(maxV-minV+1))*resourcePreviewView.zoom,ox=(c.width-(minU+maxU)*px)*.5+resourcePreviewView.panX,oy=(c.height-(minV+maxV)*px)*.5+resourcePreviewView.panY;ctx.lineWidth=2;for(const p of nodes){const parent=byId.get(p.node.parent);if(!parent)continue;ctx.strokeStyle=p.node.kind==='terminal'?'#bcdcff':'#54fc54';ctx.beginPath();ctx.moveTo(ox+parent.u*px,oy+parent.v*px);ctx.quadraticCurveTo(ox+(parent.u+p.u)*.5*px+Math.sin((def.seed+p.node.children)*.1)*10,oy+(parent.v+p.v)*.5*px,ox+p.u*px,oy+p.v*px);ctx.stroke();}for(const p of nodes.sort((a,b)=>a.depth-b.depth)){ctx.fillStyle=p.node.kind==='seed'?'#ccb010':p.node.kind==='terminal'?'#50a4fc':'#387434';ctx.beginPath();ctx.arc(ox+p.u*px,oy+p.v*px,4+Math.min(5,p.node.children*.25),0,Math.PI*2);ctx.fill();ctx.fillStyle='#ececec';ctx.font='10px mono';ctx.fillText(p.node.label,ox+p.u*px+8,oy+p.v*px+3);}ctx.fillStyle='#040818cc';ctx.fillRect(0,0,c.width,20);ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · curve/node compiler view · ${def.builderType}`,8,14);return;
+  }
   const coarse=voxelizedResource(def),occupied=new Set(coarse.map(([x,y,z])=>`${x},${y},${z}`)),has=(x,y,z)=>occupied.has(`${x},${y},${z}`);
   // Preview only outward-facing parent cells, then resolve their visible
   // octants. This displays the true 5 cm model lattice without sorting eight
@@ -3016,15 +3082,38 @@ function renderResourcePreview(){
   // Back-to-front isometric projection exposes the complete generated volume;
   // auto-fitting uses the actual occupied bounds, so petals and broad crowns
   // never disappear against an assumed primitive-sized preview box.
-  points.sort((a,b)=>(a.x+a.z+a.y*.12)-(b.x+b.z+b.y*.12));
-  const projected=points.map(p=>({...p,u:(p.x-p.z)*.64,v:-p.y+(p.x+p.z)*.25}));let minU=0,maxU=1,minV=0,maxV=1;for(const p of projected){minU=Math.min(minU,p.u);maxU=Math.max(maxU,p.u);minV=Math.min(minV,p.v);maxV=Math.max(maxV,p.v);}const px=Math.max(.28,Math.min(10,Math.min((c.width-38)/(maxU-minU+1),(c.height-48)/(maxV-minV+1)))),ox=(c.width-(minU+maxU)*px)*.5,oy=28-minV*px;
+  const projected=points.map(rotate).sort((a,b)=>a.depth-b.depth);let minU=0,maxU=1,minV=0,maxV=1;for(const p of projected){minU=Math.min(minU,p.u);maxU=Math.max(maxU,p.u);minV=Math.min(minV,p.v);maxV=Math.max(maxV,p.v);}const px=Math.max(.28,Math.min(10,Math.min((c.width-38)/(maxU-minU+1),(c.height-48)/(maxV-minV+1))))*resourcePreviewView.zoom,ox=(c.width-(minU+maxU)*px)*.5+resourcePreviewView.panX,oy=(c.height-(minV+maxV)*px)*.5+resourcePreviewView.panY;
   for(const p of projected){ctx.fillStyle=PALETTE[materialSlots[p.material][p.shade]][1];ctx.fillRect(ox+p.u*px,oy+p.v*px,Math.max(.34,px*.82),Math.max(.34,px*.82));}
-  ctx.fillStyle='#040818cc';ctx.fillRect(0,0,c.width,20);ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · 5 cm model · ${def.fractal} · seed ${def.seed}`,8,14);
+  ctx.fillStyle='#040818cc';ctx.fillRect(0,0,c.width,20);ctx.fillStyle='#ececec';ctx.fillText(`${def.name} · voxel render · 5 cm · ${def.fractal} · seed ${def.seed}`,8,14);
 }
 let resourcePreviewFrame=0;function scheduleResourcePreview(){if(resourcePreviewFrame)return;resourcePreviewFrame=requestAnimationFrame(()=>{resourcePreviewFrame=0;renderResourcePreview();refreshResourceTransferId();});}
+resourceType.addEventListener('change',()=>{refreshResourcePresets();resourcePreset.selectedIndex=0;applyBuilderPreset();});
+document.getElementById('resourceApplyPreset').addEventListener('click',applyBuilderPreset);
+resourceGraphNodes.addEventListener('change',()=>{resourceSelectedNodeId=resourceGraphNodes.value;renderResourceGraph();syncGraphNodeInspector();scheduleResourcePreview();});
+for(const id of ['resourceNodeLabel','resourceNodeTaxonomy','resourceNodeLength','resourceNodeChildren','resourceNodeAngle'])document.getElementById(id).addEventListener('input',editSelectedGraphNode);
+document.getElementById('resourceAddSpline').addEventListener('click',()=>addGraphNode('spline'));
+document.getElementById('resourceAddTerminal').addEventListener('click',()=>addGraphNode('terminal'));
+document.getElementById('resourceDeleteNode').addEventListener('click',()=>{const node=selectedGraphNode();if(!node||node.kind==='seed')return;resourceGraphState=resourceGraphState.filter(candidate=>candidate.id!==node.id);for(const candidate of resourceGraphState)if(candidate.parent===node.id)candidate.parent=node.parent;resourceSelectedNodeId=node.parent||resourceGraphState[0]?.id||'';refreshGraphNodeList();renderResourceGraph();syncGraphNodeInspector();scheduleResourcePreview();});
+let graphDragNode=null;function graphPoint(event){const r=resourceGraphCanvas.getBoundingClientRect();return {x:(event.clientX-r.left)/r.width,y:(event.clientY-r.top)/r.height};}
+resourceGraphCanvas.addEventListener('pointerdown',event=>{const p=graphPoint(event);graphDragNode=resourceGraphState.reduce((best,node)=>{const d=Math.hypot(node.x-p.x,node.y-p.y);return d<(best?.d??.06)?{node,d}:best;},null)?.node||null;if(!graphDragNode)return;resourceSelectedNodeId=graphDragNode.id;resourceGraphCanvas.classList.add('dragging');resourceGraphCanvas.setPointerCapture(event.pointerId);refreshGraphNodeList();syncGraphNodeInspector();renderResourceGraph();});
+resourceGraphCanvas.addEventListener('pointermove',event=>{if(!graphDragNode)return;const p=graphPoint(event);graphDragNode.x=Math.max(.04,Math.min(.96,p.x));graphDragNode.y=Math.max(.04,Math.min(.96,p.y));renderResourceGraph();scheduleResourcePreview();});
+resourceGraphCanvas.addEventListener('pointerup',()=>{graphDragNode=null;resourceGraphCanvas.classList.remove('dragging');});
+const resourcePreviewCanvas=document.getElementById('resourcePreview'),previewPointers=new Map();let previewLastDistance=0;
+resourcePreviewCanvas.addEventListener('pointerdown',event=>{previewPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});resourcePreviewCanvas.setPointerCapture(event.pointerId);});
+resourcePreviewCanvas.addEventListener('pointermove',event=>{const previous=previewPointers.get(event.pointerId);if(!previous)return;previewPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});const points=[...previewPointers.values()];if(points.length>1){const distance=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);if(previewLastDistance)resourcePreviewView.zoom=Math.max(.35,Math.min(4,resourcePreviewView.zoom*distance/previewLastDistance));previewLastDistance=distance;}else if(event.shiftKey){resourcePreviewView.panX+=event.clientX-previous.x;resourcePreviewView.panY+=event.clientY-previous.y;}else{resourcePreviewView.yaw+=(event.clientX-previous.x)*.012;resourcePreviewView.pitch=Math.max(-1.35,Math.min(1.35,resourcePreviewView.pitch+(event.clientY-previous.y)*.009));}renderResourcePreview();});
+const endPreviewPointer=event=>{previewPointers.delete(event.pointerId);previewLastDistance=0;};resourcePreviewCanvas.addEventListener('pointerup',endPreviewPointer);resourcePreviewCanvas.addEventListener('pointercancel',endPreviewPointer);resourcePreviewCanvas.addEventListener('wheel',event=>{event.preventDefault();resourcePreviewView.zoom=Math.max(.35,Math.min(4,resourcePreviewView.zoom*Math.exp(-event.deltaY*.0012)));renderResourcePreview();},{passive:false});
+document.getElementById('resourcePreviewCurves').addEventListener('click',()=>{resourcePreviewMode='curves';renderResourcePreview();});document.getElementById('resourcePreviewVoxels').addEventListener('click',()=>{resourcePreviewMode='voxels';renderResourcePreview();});document.getElementById('resourcePreviewReset').addEventListener('click',()=>{resourcePreviewView={yaw:-.72,pitch:.48,zoom:1,panX:0,panY:0};renderResourcePreview();});
+function toggleResourcePane(id,button){const pane=document.getElementById(id),detached=pane.classList.toggle('detached');button.textContent=detached?'Attach':'Detach';bringToFront(resourceWindow);}
+document.getElementById('resourceDetachGraph').addEventListener('click',event=>toggleResourcePane('resourceGraphPane',event.currentTarget));document.getElementById('resourceDetachPreview').addEventListener('click',event=>toggleResourcePane('resourcePreviewPane',event.currentTarget));
+for(const pane of document.querySelectorAll('#resourceDesigner .resource-pane')){
+  const title=pane.querySelector('.resource-pane-title');let drag=null;
+  title.addEventListener('pointerdown',event=>{if(!pane.classList.contains('detached')||event.target.closest('button'))return;const rect=pane.getBoundingClientRect();drag={pointer:event.pointerId,dx:event.clientX-rect.left,dy:event.clientY-rect.top};pane.style.left=`${rect.left}px`;pane.style.top=`${rect.top}px`;pane.style.right='auto';title.setPointerCapture(event.pointerId);event.preventDefault();});
+  title.addEventListener('pointermove',event=>{if(!drag||drag.pointer!==event.pointerId)return;const maxX=Math.max(0,innerWidth-pane.offsetWidth),maxY=Math.max(28,innerHeight-pane.offsetHeight);pane.style.left=`${Math.max(0,Math.min(maxX,event.clientX-drag.dx))}px`;pane.style.top=`${Math.max(28,Math.min(maxY,event.clientY-drag.dy))}px`;});
+  const end=event=>{if(drag?.pointer===event.pointerId)drag=null;};title.addEventListener('pointerup',end);title.addEventListener('pointercancel',end);
+}
 resourceWindow.querySelectorAll('input,select').forEach(el=>{if(el!==resourceTransferIdInput)el.addEventListener('input',scheduleResourcePreview);});
 document.getElementById('resourceRandomSeed').addEventListener('click',()=>{const bytes=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(bytes);else bytes[0]=(Date.now()^Math.floor(performance.now()*1000))>>>0;document.getElementById('resourceSeed').value=String(bytes[0]%100000000);scheduleResourcePreview();document.getElementById('resourceStatus').textContent='New base growth seed selected; natural instances will derive unique child seeds.';});
-function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));renderResourcePreview();refreshResourceTransferId();}
+function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;const type=inferBuilderType(d);resourceType.value=type;refreshResourcePresets(type);const fallback=type==='mineral'?(d.role==='crystal'?'crystal_rock':'eroded_rock'):type==='fungi'?'mushroom':d.name.includes('fern')?'fern':woodyProfile(d).form==='shrub'?'bush':'tree',preset=RESOURCE_BUILDER_PRESETS[type][d.builderPreset]?d.builderPreset:fallback;resourcePreset.value=preset;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));setResourceGraph(d.builderGraph?.length?d.builderGraph:RESOURCE_BUILDER_PRESETS[type][preset].nodes);renderResourcePreview();refreshResourceTransferId();}
 resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')} · 5 cm near / 10 cm far LOD`;});
 document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
 document.getElementById('resourceCopyId').addEventListener('click',async()=>{refreshResourceTransferId();try{await navigator.clipboard.writeText(resourceTransferIdInput.value);document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}catch{resourceTransferIdInput.select();document.execCommand('copy');document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}});
@@ -3034,7 +3123,7 @@ document.getElementById('resourcePlace').addEventListener('click',()=>{
   const baseDef=currentResource(),cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);
   if(!hit){document.getElementById('resourceStatus').textContent='No surface under the crosshair.';return;}
   const serial=++manualResourceSerial,instanceSeed=(Math.imul(hit.px|0,73856093)^Math.imul(hit.py|0,19349663)^Math.imul(hit.pz|0,83492791)^Math.imul(baseDef.seed|0,2654435761)^serial)>>>0,def={...baseDef,seed:instanceSeed};
-  const place=(d,ox,oy,oz,depth=0)=>{const rid=registerResourceName(d.name),foliageRid=d.role==='tree'?registerResourceName(foliageResourceName(d)):rid;for(const [x,y,z,material] of voxelizedResource(d))setVoxel(ox+x,oy+y,oz+z,material,d.role==='tree'&&material!==d.secondary?foliageRid:rid);if(depth<2)for(const [i,name] of (d.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(d.seed||0,i,depth,3911)*Math.PI*2,dist=Math.max(2,d.scale*.42);place(child,Math.round(ox+Math.cos(angle)*dist),oy,Math.round(oz+Math.sin(angle)*dist),depth+1);}};
+  const place=(d,ox,oy,oz,depth=0)=>{for(const [x,y,z,material] of voxelizedResource(d)){const rid=registerResourceName(labelResourcePart(d,x,y,z,material));setVoxel(ox+x,oy+y,oz+z,material,rid);}if(depth<2)for(const [i,name] of (d.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(d.seed||0,i,depth,3911)*Math.PI*2,dist=Math.max(2,d.scale*.42);place(child,Math.round(ox+Math.cos(angle)*dist),oy,Math.round(oz+Math.sin(angle)*dist),depth+1);}};
   place(def,hit.px,hit.py,hit.pz);const extent=def.scale*3+2;uploadRegion(hit.px-extent,hit.py-extent,hit.pz-extent,hit.px+extent,hit.py+extent,hit.pz+extent);document.getElementById('resourceStatus').textContent=`Placed ${def.name} · unique instance seed ${instanceSeed} · ${def.components.length} component${def.components.length===1?'':'s'}`;
 });
 refreshResourceLibrary();resourceLibrary.value='field_boulder';loadResource('field_boulder');document.getElementById('resourceStatus').textContent=`Resource ID ${registerResourceName('field_boulder')} · field boulder`;
@@ -3497,6 +3586,13 @@ let frameCount=0, fpsAccum=0, fps=0,lastOverrunReport=0,lagNoticeUntil=0,lastFra
 let lastMovementInputAt=0,movementHeadingX=0,movementHeadingZ=0;
 function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['north','northeast','east','southeast','south','southwest','west','northwest'];return {degrees,name:names[Math.round(degrees/45)%8]};}
 function updateCompass(){const heading=compassHeading(),compass=document.getElementById('compass');document.getElementById('compassDial').style.transform=`rotate(${-heading.degrees}deg)`;compass.setAttribute('aria-label',`Circular compass, facing ${heading.name}, ${Math.round(heading.degrees)} degrees`);}
+function updateResourceLookLabel(){
+  const label=document.getElementById('resourceLookLabel');
+  if(!hasEnteredWorld||anyToolOpen()){label.textContent='';label.classList.remove('visible');return;}
+  const cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),Math.max(80,editReachMeters/VS));
+  const name=hit?resourceNameById[getVoxelResourceId(hit.x,hit.y,hit.z)]||'':'';
+  label.textContent=name;label.classList.toggle('visible',!!name);
+}
 function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08);}
 
 function describeActiveFrameWork(){
@@ -3565,7 +3661,7 @@ function loop(now){
   if (fpsAccum >= 0.5){
     fps = frameCount/fpsAccum;
     frameCount = 0; fpsAccum = 0;
-    updateCompass();document.getElementById('stats').textContent =
+    updateCompass();updateResourceLookLabel();document.getElementById('stats').textContent =
       `${fps.toFixed(0)} fps · ${resolvedPlatformMode()} · view ${viewDistanceMeters>=1000?'1.00 km':viewDistanceMeters.toFixed(0)+' m'} · lightmode ${lightMode} · ${timeOfDay.toFixed(1)}h${testZoneMode?' · Test zone':''} · ${canvas.width}×${canvas.height}\n`+
       `${chunks.size} allocated / ${generatedChunks.size} known chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB voxel CPU · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\n`+
       `${dirtyChunks.size} edited chunks · ${resourceChunks.size} provenance chunks · water ${waterQueue.length}/${waterMovedLastFrame} · ring ${ringX},${ringZ}\n`+
