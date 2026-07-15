@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.5.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.6 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.5.1';
-  const CURRENT_REVISION = 41;
+  const CURRENT_VERSION = '0.0.1.5.6';
+  const CURRENT_REVISION = 52;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -167,7 +167,18 @@
   .option-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
   #serverWindow { width:min(540px,calc(100vw - 24px)); }
   #serverStatus { color:#bcdcff; white-space:pre-wrap; font-size:10px; line-height:1.55; margin-top:8px; }
-  #compass { color:var(--gold,#ccb010); font:700 13px Palatino,'Book Antiqua',Georgia,serif; letter-spacing:2px; margin-bottom:3px; text-shadow:1px 1px #000; }
+  #compass { position:relative; width:74px; height:74px; margin:0 0 6px auto; border:2px solid var(--gold,#ccb010); border-radius:50%; color:#ececec; background:#141024cc; box-shadow:0 0 0 2px #040818,2px 3px 0 #04081888; overflow:hidden; }
+  #compassDial { position:absolute; inset:5px; border:1px dotted #bcdcff; border-radius:50%; transform-origin:50% 50%; transition:transform .08s linear; }
+  #compassDial::before,#compassDial::after { content:''; position:absolute; background:#444460; }
+  #compassDial::before { left:50%; top:3px; bottom:3px; width:1px; }
+  #compassDial::after { top:50%; left:3px; right:3px; height:1px; }
+  .compass-point { position:absolute; z-index:1; font:700 10px Palatino,'Book Antiqua',Georgia,serif; line-height:1; text-shadow:1px 1px #000; }
+  .compass-n { top:4px; left:50%; transform:translateX(-50%); color:#54fc54; }
+  .compass-e { right:4px; top:50%; transform:translateY(-50%); }
+  .compass-s { bottom:4px; left:50%; transform:translateX(-50%); }
+  .compass-w { left:4px; top:50%; transform:translateY(-50%); }
+  #compassNeedle { position:absolute; z-index:2; left:50%; top:4px; width:0; height:0; transform:translateX(-50%); border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:10px solid #50a4fc; filter:drop-shadow(1px 1px #040818); }
+  #compassHub { position:absolute; z-index:3; left:50%; top:50%; width:6px; height:6px; transform:translate(-50%,-50%); border-radius:50%; background:var(--gold,#ccb010); }
   #mapWindow { width:min(720px,calc(100vw - 24px)); }
   #worldMapCanvas { display:block; width:100%; height:auto; max-height:68vh; border:1px solid #704024; background:#040818; image-rendering:auto; cursor:crosshair; }
   #mapStatus { color:#bcdcff; margin-top:7px; font-size:10px; line-height:1.55; }
@@ -284,8 +295,8 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.5.1 · Infinite Detail Voxel Engine · fine-lighting repair</span></div>
-<div id="topright"><div id="compass" aria-label="Live compass">N · 000°</div><span id="stats"></span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.6 · Infinite Detail Voxel Engine · physical biomes and natural trails</span></div>
+<div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
   <div>LMB <span class="dim">carve nearby</span> &nbsp; RMB <span class="dim">place ball</span> &nbsp; / <span class="dim">console</span> &nbsp; ESC <span class="dim">go back / cancel</span></div>
@@ -293,7 +304,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.5.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.6 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -439,10 +450,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.5.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">seeded biome equations · stable fine lighting · disposable voxel refinement</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.6</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">7.5 km island · physical biome equations · natural trail fields · circular compass</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=51"></script>
+<script src="heightmap-world-v2.js?v=52"></script>
 <script>
 (() => {
 "use strict";
@@ -534,8 +545,8 @@ function proceduralTerrainSample(wx,wz){
   return {height,rawHeight:Math.round(raw),valleyMask,poolMask,poolDepth,riverMask,riverDistance,continental,ridges};
 }
 
-// The shipped level is an immutable six-kilometer atlas built from the supplied
-// 3×5 km SW–NE heightmap. Runtime sampling is bounded interpolation only; the
+// The shipped level is an immutable nine-kilometer atlas built from the supplied
+// SW–NE heightmap, scaled to a 4.5×7.5 km island. Runtime sampling is bounded interpolation only; the
 // expensive octave stack above remains as an offline-authoring fallback.
 function bakedField(bytes,i00,i10,i01,i11,offset,tx,tz,scale=1){const a=bytes[i00+offset]+(bytes[i10+offset]-bytes[i00+offset])*tx,b=bytes[i01+offset]+(bytes[i11+offset]-bytes[i01+offset])*tx;return (a+(b-a)*tz)*scale;}
 function terrainSample(wx,wz){
@@ -552,13 +563,17 @@ function terrainSample(wx,wz){
 const WORLD_ECOLOGY_SEED=0x5eed1337;
 const BIOME_DEFINITIONS=Object.freeze([
   Object.freeze({name:'open_ocean',seed:0x104729,border:90,affinity:['beach_dune']}),
-  Object.freeze({name:'beach_dune',seed:0x161803,border:65,affinity:['open_ocean','coastal_meadow']}),
+  Object.freeze({name:'beach_dune',seed:0x161803,border:65,affinity:['open_ocean','coastal_scrub']}),
+  Object.freeze({name:'coastal_scrub',seed:0x1f4a7c,border:74,affinity:['beach_dune','coastal_meadow']}),
   Object.freeze({name:'riparian_wetland',seed:0x271828,border:48,affinity:['coastal_meadow','sheltered_forest']}),
-  Object.freeze({name:'coastal_meadow',seed:0x314159,border:85,affinity:['beach_dune','sheltered_forest']}),
-  Object.freeze({name:'sheltered_forest',seed:0x577215,border:110,affinity:['coastal_meadow','montane_pine']}),
+  Object.freeze({name:'coastal_meadow',seed:0x314159,border:85,affinity:['coastal_scrub','open_woodland']}),
+  Object.freeze({name:'open_woodland',seed:0x41c64e,border:96,affinity:['coastal_meadow','sheltered_forest']}),
+  Object.freeze({name:'sheltered_forest',seed:0x577215,border:110,affinity:['open_woodland','montane_pine']}),
   Object.freeze({name:'montane_pine',seed:0x618033,border:125,affinity:['sheltered_forest','alpine_heath']}),
-  Object.freeze({name:'alpine_heath',seed:0x707106,border:75,affinity:['montane_pine','exposed_cliff']}),
-  Object.freeze({name:'exposed_cliff',seed:0x866025,border:42,affinity:['alpine_heath','montane_pine']})
+  Object.freeze({name:'alpine_heath',seed:0x707106,border:75,affinity:['montane_pine','mountain_scree']}),
+  Object.freeze({name:'mountain_scree',seed:0x79b9d2,border:52,affinity:['alpine_heath','exposed_cliff']}),
+  Object.freeze({name:'exposed_cliff',seed:0x866025,border:42,affinity:['mountain_scree','coastal_scrub']}),
+  Object.freeze({name:'sheltered_snow',seed:0x9e3779,border:58,affinity:['mountain_scree','alpine_heath']})
 ]);
 function worldWindField(wx,wz,context={}){
   const regional=fbm2(wx*.00042+19,wz*.00042-31,3,2,.5,WORLD_ECOLOGY_SEED),angle=.72+regional*.58,dx=Math.sin(angle),dz=Math.cos(angle),gradientX=context.gradientX||0,gradientZ=context.gradientZ||0,curvature=context.curvature||0;
@@ -566,20 +581,42 @@ function worldWindField(wx,wz,context={}){
   return {x:dx,z:dz,direction:(Math.atan2(dx,dz)*180/Math.PI+360)%360,speed:Math.max(.12,Math.min(1,.58+windward*.28-shelter*.22)),shelter,turbulence:Math.max(0,Math.min(1,.22+Math.abs(curvature)*.08+Math.abs(regional)*.3))};
 }
 function worldBiomeField(wx,wz,context={}){
-  const terrain=context.terrain||terrainSample(wx,wz),height=terrain.height,slope=context.slope??0,curvature=context.curvature??0,moisture=Math.max(0,Math.min(1,context.moisture??(.22+terrain.valleyMask*.48+terrain.poolMask*.42-slope*.035))),wind=worldWindField(wx,wz,context),riverDistance=terrain.riverDistance??255,waterNear=Math.max(terrain.poolMask,terrain.riverMask||0,1-smoothstep(18,150,riverDistance)),erosion=Math.max(0,Math.min(1,slope/13+Math.abs(curvature)/8+(terrain.riverMask||0)*.24+(1-wind.shelter)*.12)),temperature=Math.max(0,Math.min(1,1-height/390-wind.speed*.06));
+  const terrain=context.terrain||terrainSample(wx,wz),height=terrain.height,slope=context.slope??0,curvature=context.curvature??0,gradientX=context.gradientX||0,gradientZ=context.gradientZ||0,wind=worldWindField(wx,wz,context),riverDistance=terrain.riverDistance??255,waterNear=Math.max(terrain.poolMask,terrain.riverMask||0,1-smoothstep(18,150,riverDistance));
+  const elevation=Math.max(0,Math.min(1,(height-30)/320)),concavity=Math.max(0,Math.min(1,-curvature*.18)),convexity=Math.max(0,Math.min(1,curvature*.18)),flow=Math.max(terrain.riverMask||0,terrain.valleyMask*.34),solarAspect=Math.max(0,Math.min(1,.5+(gradientX*.45-gradientZ*.2)/(1+slope)*.5)),oceanExposure=Math.max(0,Math.min(1,(1-wind.shelter)*(.35+wind.speed*.65))),deposition=Math.max(0,Math.min(1,concavity*.52+(1-smoothstep(1.5,8,slope))*.32+flow*.34));
+  const moisture=Math.max(0,Math.min(1,context.moisture??(.16+terrain.valleyMask*.34+waterNear*.42+deposition*.22-oceanExposure*.12))),erosion=Math.max(0,Math.min(1,slope/13+convexity*.35+oceanExposure*.25+flow*.18)),soilDepth=Math.max(0,Math.min(1,.12+deposition*.7+moisture*.24-erosion*.62)),temperature=Math.max(0,Math.min(1,1-elevation*.92-wind.speed*.06)),land=smoothstep(6,30,height),lowSlope=1-smoothstep(2.5,10,slope),steep=smoothstep(5.5,13,slope),nearCoast=(1-smoothstep(38,125,height))*(.55+oceanExposure*.45);
+  const snowAccumulation=Math.max(0,Math.min(1,elevation*.72+(1-solarAspect)*.22+concavity*.24+wind.shelter*.18-steep*.68-convexity*.28));
   const raw={
-    open_ocean:1-smoothstep(2,8,height),
-    beach_dune:smoothstep(3,12,height)*(1-smoothstep(42,70,height))*(1-waterNear*.42),
-    riparian_wetland:waterNear*smoothstep(3,16,height)*(1-smoothstep(95,155,height))*(.55+moisture*.45),
-    coastal_meadow:smoothstep(18,48,height)*(1-smoothstep(175,245,height))*(.42+moisture*.36)*(1-erosion*.55),
-    sheltered_forest:smoothstep(30,68,height)*(1-smoothstep(225,292,height))*(.28+moisture*.55)*(.32+wind.shelter*.68),
-    montane_pine:smoothstep(105,168,height)*(1-smoothstep(300,350,height))*(.34+wind.shelter*.34+terrain.ridges*.22),
-    alpine_heath:smoothstep(220,276,height)*(1-smoothstep(335,380,height))*(1-erosion*.52),
-    exposed_cliff:smoothstep(.36,.82,erosion)*smoothstep(55,125,height)
+    open_ocean:1-land,
+    beach_dune:land*nearCoast*lowSlope*(.45+deposition*.55)*(1-waterNear*.34),
+    coastal_scrub:land*smoothstep(34,78,height)*(1-smoothstep(135,205,height))*(.3+oceanExposure*.58)*(.35+soilDepth*.5)*(1-steep*.7),
+    riparian_wetland:land*waterNear*lowSlope*(.42+moisture*.58)*(1-smoothstep(.45,.82,elevation)),
+    coastal_meadow:land*(1-smoothstep(.45,.72,elevation))*(.3+soilDepth*.6)*(.32+moisture*.32)*(1-steep*.82)*(.55+oceanExposure*.2),
+    open_woodland:land*smoothstep(.08,.22,elevation)*(1-smoothstep(.68,.84,elevation))*(.28+soilDepth*.66)*(.25+moisture*.52)*(1-steep*.8),
+    sheltered_forest:land*smoothstep(.08,.22,elevation)*(1-smoothstep(.72,.86,elevation))*(.22+soilDepth*.72)*(.28+moisture*.62)*(.25+wind.shelter*.75)*(1-steep*.9),
+    montane_pine:land*smoothstep(.33,.55,elevation)*(1-smoothstep(.88,1,elevation))*(.25+wind.shelter*.38+terrain.ridges*.18+soilDepth*.3)*(1-steep*.74),
+    alpine_heath:land*smoothstep(.62,.78,elevation)*(1-smoothstep(.94,1,elevation))*(.3+soilDepth*.5)*(1-steep*.72),
+    mountain_scree:land*smoothstep(.52,.72,elevation)*(.25+erosion*.58+steep*.42)*(1-snowAccumulation*.48),
+    exposed_cliff:land*Math.max(steep*.9,nearCoast*steep,erosion*.7)*(.3+convexity*.42+oceanExposure*.28),
+    sheltered_snow:land*smoothstep(.76,.92,elevation)*snowAccumulation
   };
   let total=0;for(const def of BIOME_DEFINITIONS){raw[def.name]=Math.max(0,raw[def.name]||0);total+=raw[def.name];}if(total<1e-6){raw.coastal_meadow=1;total=1;}
   const weights={},ranked=[];for(const def of BIOME_DEFINITIONS){const weight=raw[def.name]/total;weights[def.name]=weight;ranked.push({...def,weight});}ranked.sort((a,b)=>b.weight-a.weight);const dominant=ranked[0],seed=(hash3(Math.floor(wx/8),dominant.seed,Math.floor(wz/8),WORLD_ECOLOGY_SEED)*4294967296)>>>0;
-  return {weights,ranked,dominant,seed,height,moisture,waterDistance:riverDistance,waterNear,erosion,temperature,wind};
+  return {weights,ranked,dominant,seed,height,elevation,slope,curvature,moisture,soilDepth,waterDistance:riverDistance,waterNear,flow,deposition,erosion,temperature,solarAspect,oceanExposure,snowAccumulation,wind};
+}
+
+// A trail is another immutable world query, not a placed object.  Three
+// independent fields describe animal movement between shelter/water, wind-
+// scoured passages over exposed ground, and seasonally dry drainage.  Broken
+// occupancy and width modulation prevent road-like continuous stripes.
+function worldTrailField(wx,wz,context={}){
+  const terrain=context.terrain||terrainSample(wx,wz),biome=context.biome||worldBiomeField(wx,wz,context),mx=wx*.1,mz=wz*.1,slope=context.slope??biome.slope??0;
+  const meander=fbm2(mx*.0061+13,mz*.0061-29,4,2,.52,0x7a11),branchWarp=fbm2(mx*.014-41,mz*.014+7,3,2.1,.48,0x7a12),breaks=fbm2(mx*.025+5,mz*.025-19,3,2,.5,0x7a13);
+  const animalLine=Math.abs(Math.sin(mx*.012+mz*.0045+meander*2.7)+Math.sin(mz*.009-meander*.8)*.18),animal=(1-smoothstep(.045,.18,animalLine))*(.28+biome.weights.coastal_meadow+biome.weights.open_woodland*.72+biome.weights.sheltered_forest*.34)*smoothstep(-.32,.02,breaks)*(1-smoothstep(5.5,10,slope));
+  const forkLine=Math.abs(Math.sin(mz*.015-mx*.003+branchWarp*2.1)),fork=(1-smoothstep(.035,.14,forkLine))*smoothstep(.1,.5,animal)*smoothstep(-.12,.34,breaks);
+  const windLine=Math.abs(Math.sin((mx*biome.wind.z-mz*biome.wind.x)*.017+meander*1.4)),wind=(1-smoothstep(.035,.13,windLine))*biome.oceanExposure*(biome.weights.coastal_scrub+biome.weights.alpine_heath*.7)*smoothstep(.12,.5,breaks);
+  const dryEdge=1-smoothstep(14,48,Math.abs((terrain.riverDistance??255)-38)),dryWash=dryEdge*(1-terrain.riverMask)*terrain.valleyMask*(1-biome.waterNear*.8)*smoothstep(-.22,.18,branchWarp);
+  const strength=Math.max(0,Math.min(1,Math.max(animal,fork*.82,wind*.7,dryWash))),kind=dryWash>=animal&&dryWash>=wind?'dry stream':wind>animal?'wind trace':'animal trail';
+  return {strength,animal:Math.max(animal,fork),wind,dryWash,kind,seed:(hash3(Math.floor(mx/3),0x7a17,Math.floor(mz/3),WORLD_ECOLOGY_SEED)*4294967296)>>>0};
 }
 
 // Shared plan samples remove duplicated fBm/ridge work along chunk borders.
@@ -773,7 +810,7 @@ function prepareTerrainColumns(cx,cz){
     const patchMacro=fbm2(qx*.0064,qz*.0064,4,2,.52,1801),patchMeso=fbm2(qx*.019+17,qz*.019-9,3,2.1,.46,1847);
     const patch=patchMacro*.72+patchMeso*.28; // nested ecological patches, never voxel dither
     const detail=fbm2(qx*.037,qz*.037,3,2.1,.45,1907);
-    const moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38-patch*.12-slope*.045)),biome=worldBiomeField(wx,wz,{terrain,slope,curvature,moisture,gradientX,gradientZ});
+    const moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38-patch*.12-slope*.045)),biome=worldBiomeField(wx,wz,{terrain,slope,curvature,moisture,gradientX,gradientZ}),trail=worldTrailField(wx,wz,{terrain,biome,slope,curvature,gradientX,gradientZ});
     // A separate long-wave heave field moves the whole soil/rock boundary up
     // and down. Mountain mantles thin gradually, rather than vanishing on any
     // ordinary slope.
@@ -785,17 +822,18 @@ function prepareTerrainColumns(cx,cz){
     const exposedRock=slope>12.5||(slope>8.0&&rockPatch>.44)||(h>315&&slope>5.5&&rockPatch>.18);
     // Snow favors high, sheltered and leeward/concave sites; steep faces shed it.
     const lee=(hx0-hx1)*.08;
-    const snowCoverage=(h-SNOW_LINE)/34+Math.max(-.35,Math.min(.35,lee))+biome.wind.shelter*.18-slope*.045-curvature*.06+patch*.14;
+    const snowCoverage=(h-SNOW_LINE)/34+Math.max(-.35,Math.min(.35,lee))+biome.snowAccumulation*.34+biome.wind.shelter*.12-slope*.045-curvature*.06+patch*.14;
     const snowDepth=Math.max(0,Math.min(8,Math.floor(smoothstep(-.15,.65,snowCoverage)*7))),snowy=snowDepth>0&&!exposedRock;
     const saturatedMud=terrain.poolMask>.10&&moisture>.70&&h<=WATER_LEVEL+2&&patch<.26;
     const sandy=terrain.poolMask>.045&&terrain.poolMask<.52&&h<=WATER_LEVEL+2&&patch>.16;
-    const grassEcology=biome.weights.coastal_meadow+biome.weights.riparian_wetland*.72+biome.weights.alpine_heath*.58+biome.weights.sheltered_forest*.22,grassCoverage=moisture*.62+grassEcology*.58-patch*.10-slope*.018-(h-SNOW_LINE)*.003;
+    const grassEcology=biome.weights.coastal_meadow+biome.weights.riparian_wetland*.72+biome.weights.alpine_heath*.58+biome.weights.coastal_scrub*.32+biome.weights.open_woodland*.28+biome.weights.sheltered_forest*.18,grassCoverage=moisture*.62+grassEcology*.58-patch*.10-slope*.018-(h-SNOW_LINE)*.003-trail.strength*.92;
     const grassy=!saturatedMud&&!sandy&&!snowy&&!exposedRock&&grassCoverage>.27;
     let rockMaterial=MAT_STONE;
     if(stoneField>.42)rockMaterial=MAT_GRANITE;else if(stoneField<-.48)rockMaterial=MAT_SLATE;else if(rockPatch>.55)rockMaterial=MAT_LIMESTONE;
     if(h>250&&rockPatch>.68)rockMaterial=MAT_QUARTZ;
-    const surfaceMaterial=snowy?MAT_SNOW:exposedRock?rockMaterial:saturatedMud?MAT_MUD:sandy?MAT_SAND:grassy?(h>200?MAT_ALPINE_GRASS:moisture>.72?MAT_MOSS:moisture<.38?MAT_DRY_GRASS:MAT_GRASS):(patch>.28?MAT_CLAY:MAT_DIRT);
-    data[lx+lz*CHUNK_SIZE]={terrain,h,mantle,soilHeave,patch,detail,slope,curvature,moisture,biome,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial};
+    const trailMaterial=trail.dryWash>.38?(stoneField>.1?MAT_SAND:MAT_SLATE):moisture>.68?MAT_MUD:moisture<.35?MAT_DRY_GRASS:MAT_DIRT;
+    const surfaceMaterial=snowy?MAT_SNOW:exposedRock?rockMaterial:saturatedMud?MAT_MUD:sandy?MAT_SAND:trail.strength>.42?trailMaterial:grassy?(h>200?MAT_ALPINE_GRASS:moisture>.72?MAT_MOSS:moisture<.38?MAT_DRY_GRASS:MAT_GRASS):(patch>.28?MAT_CLAY:MAT_DIRT);
+    data[lx+lz*CHUNK_SIZE]={terrain,h,mantle,soilHeave,patch,detail,slope,curvature,moisture,biome,trail,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial};
   }
   // Record the tallest actual object scheduled for this horizontal chunk.
   // High empty chunks can then stay implicit without clipping a 20-foot tree
@@ -1965,7 +2003,7 @@ function beginInitialWorldLoad(useTestZone=false){
   loadedGrid=new Uint8Array(activeUploadBytes());
   chunkValidityGrid=new Uint8Array((activeGridSizeX/CHUNK_SIZE)*LOADED_CHUNKS_Y*(activeGridSizeZ/CHUNK_SIZE));
   terrainWeatherGrid=new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
-  loadingLogLines=[];loadingLog('Heightmap atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · ${DREMPLAY_EXAMPLE_WORLD.islandWidthMeters/1000}×${DREMPLAY_EXAMPLE_WORLD.islandLengthMeters/1000} km island · ${DREMPLAY_EXAMPLE_WORLD.interpolation} interpolation · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','3,600 immutable 100×100 m squares indexed across the 6 km atlas; runtime terrain generation disabled');
+  loadingLogLines=[];loadingLog('Heightmap atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · ${DREMPLAY_EXAMPLE_WORLD.islandWidthMeters/1000}×${DREMPLAY_EXAMPLE_WORLD.islandLengthMeters/1000} km island · ${DREMPLAY_EXAMPLE_WORLD.interpolation} interpolation · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','8,100 immutable 100×100 m squares indexed across the 9 km atlas; runtime terrain generation disabled');
   const jobs=[];
   const residentMinCX=Math.floor(windowMinX/CHUNK_SIZE),residentMinCZ=Math.floor(windowMinZ/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE);
   const span=useTestZone?TEST_ZONE_CHUNKS_XZ:LOADED_CHUNKS_XZ+BOOT_PREFETCH_MARGIN*2;
@@ -2664,7 +2702,7 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
   const wx=baseX+lx,wz=baseZ+lz;
   const ecology=col.biome||worldBiomeField(wx,wz,{terrain:col.terrain,slope:col.slope,curvature:col.curvature,moisture:col.moisture}),forestWeight=ecology.weights.sheltered_forest,montaneWeight=ecology.weights.montane_pine,meadowWeight=ecology.weights.coastal_meadow,mountainPine=montaneWeight>.18&&col.moisture>.28&&col.slope<6.8;
   if(n===2&&!mountainPine)return null;
-  if(col.exposedRock||isRockSurfaceMaterial(col.surfaceMaterial)||!isPlantableSurfaceMaterial(col.surfaceMaterial)||col.snowy||col.terrain.poolMask>.22||(!mountainPine&&col.moisture<.40)||(!mountainPine&&col.slope>4.2))return null;
+  if(col.exposedRock||isRockSurfaceMaterial(col.surfaceMaterial)||!isPlantableSurfaceMaterial(col.surfaceMaterial)||col.snowy||col.terrain.poolMask>.22||col.trail?.strength>.34||(!mountainPine&&col.moisture<.40)||(!mountainPine&&col.slope>4.2))return null;
   const recruitment=fbm2(wx*.0063-51,wz*.0063+37,3,2,.52,6073),roll=analyticEcologyField(cx,cz,n+6.089),ecotone=fbm2(wx*.0031+71,wz*.0031-43,3,2,.52,6091);
   const carrying=Math.max(0,Math.min(1,forestWeight+montaneWeight*.92+meadowWeight*.10)),adultThreshold=.985-carrying*.08-Math.max(0,recruitment)*.045,saplingThreshold=.91-carrying*.29-Math.max(0,recruitment)*.17;
   if(roll<=saplingThreshold)return null;
@@ -2685,7 +2723,7 @@ function naturalTreeCandidate(cx,cz,n,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK
 function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE){
   const result=[],sourceBiome=columns[16+16*CHUNK_SIZE]?.biome,biomePhase=((sourceBiome?.dominant.seed||WORLD_ECOLOGY_SEED)>>>0)*2.3283064365386963e-10;for(let n=0;n<2;n++){
     const wx=baseX+3+Math.floor(analyticEcologyField(cx,cz,n+3.101+biomePhase)*26),wz=baseZ+3+Math.floor(analyticEcologyField(cz,cx,n+3.103+biomePhase)*26),col=columns[(wx-baseX)+(wz-baseZ)*CHUNK_SIZE];if(!col)continue;
-    const wy=col.h+1,r=analyticEcologyField(cx,cz,n+3.119),ecology=col.biome||worldBiomeField(wx,wz,{terrain:col.terrain,slope:col.slope,curvature:col.curvature,moisture:col.moisture}),plantable=isPlantableSurfaceMaterial(col.surfaceMaterial)&&!isRockSurfaceMaterial(col.surfaceMaterial)&&!col.exposedRock&&!col.snowy;
+    const wy=col.h+1,r=analyticEcologyField(cx,cz,n+3.119),ecology=col.biome||worldBiomeField(wx,wz,{terrain:col.terrain,slope:col.slope,curvature:col.curvature,moisture:col.moisture}),plantable=isPlantableSurfaceMaterial(col.surfaceMaterial)&&!isRockSurfaceMaterial(col.surfaceMaterial)&&!col.exposedRock&&!col.snowy&&(col.trail?.strength||0)<.28;
     if(col.snowy||col.terrain.poolMask>.3)continue;
     if(r>.82&&col.stoneField>.08)result.push({def:{...variedResource(resourceDefinitions.get('field_boulder'),wx,wz,n),material:col.rockMaterial},wx,wy,wz});
     else if(plantable&&col.grassy&&col.moisture>.72&&r>.68)result.push({def:variedResource(resourceDefinitions.get('moss_cushion'),wx,wz,n),wx,wy,wz});
@@ -2858,7 +2896,7 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
     // Micro-Resources inherit the same root exclusion field. Grass and grains
     // remain dense across the biome but leave coherent soil around flowers,
     // trunks, shrubs and boulders instead of sprouting through their geometry.
-    if(acceptedResources.some(entry=>Math.hypot(wx-entry.wx,wz-entry.wz)<resourceRootRadius(entry.def)+.8))continue;
+    if((col.trail?.strength||0)>.26||acceptedResources.some(entry=>Math.hypot(wx-entry.wx,wz-entry.wz)<resourceRootRadius(entry.def)+.8))continue;
     const biomeSeed=col.biome?.dominant.seed||WORLD_ECOLOGY_SEED,patch=valueNoise2(wx*.034+17,wz*.034-29,4127^biomeSeed),scatter=hash3(wx,col.h,wz,4133^biomeSeed);
     // Pebbles occupy the first water cell above the generated bed, replacing a
     // thin slice of water rather than floating on its surface. Every pebble
@@ -3003,7 +3041,7 @@ function syncOptionsWindow(){
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n3,600 pre-baked 100×100 m regions · supplied 3×5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
@@ -3444,7 +3482,8 @@ function collidesAt(px,py,pz){
 let lastT = performance.now();
 let frameCount=0, fpsAccum=0, fps=0,lastOverrunReport=0,lagNoticeUntil=0,lastFrameCostMs=0;
 let lastMovementInputAt=0,movementHeadingX=0,movementHeadingZ=0;
-function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['N','NE','E','SE','S','SW','W','NW'],name=names[Math.round(degrees/45)%8];return `${name} · ${String(Math.round(degrees)%360).padStart(3,'0')}°`;}
+function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['north','northeast','east','southeast','south','southwest','west','northwest'];return {degrees,name:names[Math.round(degrees/45)%8]};}
+function updateCompass(){const heading=compassHeading(),compass=document.getElementById('compass');document.getElementById('compassDial').style.transform=`rotate(${-heading.degrees}deg)`;compass.setAttribute('aria-label',`Circular compass, facing ${heading.name}, ${Math.round(heading.degrees)} degrees`);}
 function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08);}
 
 function describeActiveFrameWork(){
@@ -3513,7 +3552,7 @@ function loop(now){
   if (fpsAccum >= 0.5){
     fps = frameCount/fpsAccum;
     frameCount = 0; fpsAccum = 0;
-    document.getElementById('compass').textContent=compassHeading();document.getElementById('stats').textContent =
+    updateCompass();document.getElementById('stats').textContent =
       `${fps.toFixed(0)} fps · ${resolvedPlatformMode()} · view ${viewDistanceMeters>=1000?'1.00 km':viewDistanceMeters.toFixed(0)+' m'} · lightmode ${lightMode} · ${timeOfDay.toFixed(1)}h${testZoneMode?' · Test zone':''} · ${canvas.width}×${canvas.height}\n`+
       `${chunks.size} allocated / ${generatedChunks.size} known chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB voxel CPU · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\n`+
       `${dirtyChunks.size} edited chunks · ${resourceChunks.size} provenance chunks · water ${waterQueue.length}/${waterMovedLastFrame} · ring ${ringX},${ringZ}\n`+
@@ -3583,7 +3622,7 @@ function updatePlayer(dt){
   const safetyFloor=(windowMinY+2)*VY;
   if (playerPos.y < safetyFloor){ playerPos.y=safetyFloor; velY=0; grounded=true; }
   // The heightmap level is finite. Keep the player inside its ocean boundary so
-  // the renderer never invents terrain beyond the baked six-kilometer atlas.
+  // the renderer never invents terrain beyond the baked nine-kilometer atlas.
   if(globalThis.DREMPLAY_EXAMPLE_WORLD){const edge=(DREMPLAY_EXAMPLE_WORLD.maxVoxel-20)*VS;playerPos.x=Math.max(-edge,Math.min(edge,playerPos.x));playerPos.z=Math.max(-edge,Math.min(edge,playerPos.z));}
 }
 

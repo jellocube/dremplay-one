@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.5.1**
+Current release: **v0.0.1.5.6**
+
+## v0.0.1.5.6 physical island biomes and natural trails
+
+- Rescales the supplied SW–NE heightmap to a 4.5×7.5 km island inside a finite 9 km ocean atlas. The packed 16-bit authoring field remains under 1 MiB before its JavaScript transport wrapper.
+- Replaces the eight broad biome bands with twelve blended ecological communities: ocean, beach and dune, coastal scrub, riparian wetland, coastal meadow, open woodland, sheltered forest, montane pine, alpine heath, mountain scree, exposed cliff, and sheltered snow.
+- Derives every biome weight from normalized elevation, slope, curvature, concavity, coast proximity, drainage, wetness, sediment deposition, soil depth, wind/ocean exposure, solar aspect, temperature, erosion, and snow accumulation.
+- Keeps the supplied painted concept out of the runtime classifier. The immutable heightfield and deterministic equations remain the only world authority.
+- Adds a coordinate-derived trail field for animal paths, wind-scoured traces, and seasonally dry streambeds. Narrow broken branches remove grass or reveal dirt, mud, sand, and gravel without storing roads or path objects.
+- Excludes tree roots, accent plants, and grass micro-Resources from strong trail cores while preserving stable identities everywhere else.
+- Replaces the text/GPS bearing with a smoothly rotating circular compass rose around a fixed player-facing marker.
 
 ## v0.0.1.5.5.1 fine-voxel lighting repair
 
