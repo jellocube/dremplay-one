@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.1**
+Current release: **v0.0.1.5.3.2**
+
+## v0.0.1.5.3.2 moving biome Resource fix
+
+- Fixes Resources appearing only in the starting region. The runtime previously prohibited deferred Resource work whenever movement was active and rejected it whenever an already-heavy render frame exceeded roughly 19 ms.
+- Resource ecology now continues while walking whenever the terrain streamer yields.
+- Stages one horizontal Resource column per frame in a hidden CPU transaction, spreading the expensive 5×5 neighborhood across about 25 frames.
+- Uploads nothing until the complete trunk/canopy/cross-boundary neighborhood is ready, preserving the atomic visibility guarantee without a single large generation stall.
+- Temporarily protects the moving clipmap's ample safety margin while a Resource transaction finishes, preventing toroidal uploads from exposing a half-staged crown.
 
 ## v0.0.1.5.3.1 atomic Resource cluster fix
 

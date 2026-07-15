@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3.1';
+  const CURRENT_VERSION = '0.0.1.5.3.2';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3.1 · Infinite Detail Voxel Engine · atomic Resource clusters</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3.2 · Infinite Detail Voxel Engine · moving biome Resources</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource clusters · collision-free ecology</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · moving biome Resources · atomic visibility</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=43"></script>
+<script src="heightmap-world-v2.js?v=44"></script>
 <script>
 (() => {
 "use strict";
@@ -1878,7 +1878,7 @@ function beginInitialWorldLoad(useTestZone=false){
   if(!globalThis.DREMPLAY_EXAMPLE_WORLD){loadingLog('World atlas','heightmap-world-v2.js is missing; runtime generation is intentionally disabled');startBtn.disabled=true;startBtn.textContent='World atlas unavailable';testZoneBtn.disabled=true;return;}
   const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
   if(useTestZone){
-    chunks.clear();generatedChunks.clear();dirtyChunks.clear();baseOnlyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();deferredDecorationJobs.length=0;deferredDecorationKeys.clear();deferredDecorationOrderDirty=false;farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
+    chunks.clear();generatedChunks.clear();dirtyChunks.clear();baseOnlyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();deferredDecorationJobs.length=0;deferredDecorationKeys.clear();deferredDecorationOrderDirty=false;resourceCommitTask=null;farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
     engineReady=false;startBtn.disabled=true;startBtn.setAttribute('aria-disabled','true');startBtn.textContent='Wait until loaded…';testZoneBtn.disabled=true;testZoneBtn.textContent='Loading test zone…';
   }
   activeGridSizeX=useTestZone?TEST_ZONE_SIZE_X:LOADED_SIZE_X;
@@ -3344,6 +3344,7 @@ function describeActiveFrameWork(){
   if(streamTask){
     return `clipmap refinement ${Math.min(streamTask.cursor+1,streamTask.jobs.length)}/${streamTask.jobs.length}`;
   }
+  if(resourceCommitTask)return `biome Resource transaction ${Math.min(resourceCommitTask.cursor+1,resourceCommitTask.columns.length)}/${resourceCommitTask.columns.length}`;
   if(prefetchJobs.length&&performance.now()-lastPrefetchWorkAt<100)return `predictive frontier generation · ${prefetchJobs.length} chunks remain`;
   if(farTerrainTask)return `100×100 m atlas square ${Math.min(farTerrainTask.tileIndex+1,farTerrainTask.tiles.length)}/${farTerrainTask.tiles.length}`;
   if(waterQueue.length)return `water simulation queue · ${waterQueue.length} cells remain`;
@@ -3352,7 +3353,7 @@ function describeActiveFrameWork(){
 function reportFrameOverrun(frameMs){
   lastFrameCostMs=frameMs;
   const now=performance.now();if(frameMs<42||now-lastOverrunReport<1500||document.hidden)return;
-  const actualLoad=!!streamTask||!!farTerrainTask||waterQueue.length>0||(prefetchJobs.length&&now-lastPrefetchWorkAt<100);
+  const actualLoad=!!streamTask||!!resourceCommitTask||!!farTerrainTask||waterQueue.length>0||(prefetchJobs.length&&now-lastPrefetchWorkAt<100);
   // Renderer-only slow frames must not rebuild the loading console/conveyor:
   // that DOM work created a periodic hitch of its own. The stats panel reports
   // frame cost continuously; the loader is reserved for real mutable work.
@@ -3492,7 +3493,7 @@ function releaseDerivedCaches(aggressive=false){
 }
 function memoryReport(){return `device tier ${DEVICE_PROFILE.tier}\nallocated voxel chunks ${chunks.size} (${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB)\nknown generated chunks ${generatedChunks.size}\nterrain column plans ${terrainColumnPlans.size}\nResource voxel/architecture caches ${resourceVoxelCache.size}/${resourceArchitectureCache.size}\nResource ceiling plans ${resourceCeilingCache.size}\nfluid cells/sources ${waterLevels.size}/${waterSources.size}\ndirty authored chunks ${dirtyChunks.size}`;}
 function performIdleMemoryMaintenance(now){
-  if(now-lastMemoryMaintenanceAt<5000||streamTask||farTerrainTask||prefetchJobs.length||now-lastMovementInputAt<2500)return;
+  if(now-lastMemoryMaintenanceAt<5000||streamTask||resourceCommitTask||farTerrainTask||prefetchJobs.length||now-lastMovementInputAt<2500)return;
   lastMemoryMaintenanceAt=now;const released=evictDistantCleanChunks();releaseDerivedCaches(false);
   if(released)loadingLog('Idle recycler',`${released} obsolete records retired · ${generatedChunks.size} generated records remain`);
 }
@@ -3549,7 +3550,7 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
-const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0,nextResourceCommitAt=0;const RESOURCE_COMMIT_RADIUS=2,BOOT_RESOURCE_CLUSTER_LIMIT=DEVICE_PROFILE.tier==='mobile'?2:DEVICE_PROFILE.tier==='high'?4:3;let clipmapProgressFloor=0;
+const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0,nextResourceCommitAt=0,resourceCommitTask=null;const RESOURCE_COMMIT_RADIUS=2,BOOT_RESOURCE_CLUSTER_LIMIT=DEVICE_PROFILE.tier==='mobile'?2:DEVICE_PROFILE.tier==='high'?4:3;let clipmapProgressFloor=0;
 function queueDeferredDecoration(job){const chunk=chunkKey(...job);if(!baseOnlyChunks.has(chunk))return;const key=`${job[0]},${job[2]}`;if(deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push([job[0],job[2]]);deferredDecorationOrderDirty=true;}
 function decorationFocusChunk(){if(hasEnteredWorld&&playerPos)return {cx:Math.floor(playerPos.x/VS/CHUNK_SIZE),cz:Math.floor(playerPos.z/VS/CHUNK_SIZE)};return {cx:Math.floor((windowMinX+activeGridSizeX*.5)/CHUNK_SIZE),cz:Math.floor((windowMinZ+activeGridSizeZ*.5)/CHUNK_SIZE)};}
 function takeNearestDeferredDecoration(){
@@ -3562,15 +3563,20 @@ function takeNearestDeferredDecoration(){
   }
   while(deferredDecorationJobs.length){const job=deferredDecorationJobs.pop(),key=`${job[0]},${job[1]}`;if(!deferredDecorationKeys.has(key))continue;deferredDecorationKeys.delete(key);return job;}return null;
 }
+function resourceNeighborhoodColumns(centerCX,centerCZ){
+  const b=residentChunkBounds(),columns=[];
+  for(let cx=Math.max(b.minCX,centerCX-RESOURCE_COMMIT_RADIUS);cx<=Math.min(b.maxCX,centerCX+RESOURCE_COMMIT_RADIUS);cx++)for(let cz=Math.max(b.minCZ,centerCZ-RESOURCE_COMMIT_RADIUS);cz<=Math.min(b.maxCZ,centerCZ+RESOURCE_COMMIT_RADIUS);cz++)columns.push([cx,cz]);
+  return {columns,minCY:b.minCY,maxCY:b.maxCY};
+}
 function decorateResourceNeighborhood(centerCX,centerCZ,uploadNow){
-  const b=residentChunkBounds(),changed=[];
+  const neighborhood=resourceNeighborhoodColumns(centerCX,centerCZ),changed=[];
   // A mature crown can extend two horizontal chunks from its mathematical
   // origin. Commit that complete 5×5 footprint and every vertical child in one
   // JavaScript turn, so no frame can expose leaves without trunk/root voxels or
   // a crown sliced at a chunk boundary.
-  for(let cx=Math.max(b.minCX,centerCX-RESOURCE_COMMIT_RADIUS);cx<=Math.min(b.maxCX,centerCX+RESOURCE_COMMIT_RADIUS);cx++)for(let cz=Math.max(b.minCZ,centerCZ-RESOURCE_COMMIT_RADIUS);cz<=Math.min(b.maxCZ,centerCZ+RESOURCE_COMMIT_RADIUS);cz++){
+  for(const [cx,cz] of neighborhood.columns){
     deferredDecorationKeys.delete(`${cx},${cz}`);
-    for(let cy=b.minCY;cy<=b.maxCY;cy++){const coords=[cx,cy,cz];if(!baseOnlyChunks.has(chunkKey(...coords)))continue;if(decorateBaseOnlyChunk(...coords))changed.push(coords);}
+    for(let cy=neighborhood.minCY;cy<=neighborhood.maxCY;cy++){const coords=[cx,cy,cz];if(!baseOnlyChunks.has(chunkKey(...coords)))continue;if(decorateBaseOnlyChunk(...coords))changed.push(coords);}
   }
   // Decoration above is atomic with respect to rendering. Only after every
   // intersecting child exists do we copy/upload the completed neighborhood.
@@ -3633,11 +3639,29 @@ function processStreamTask(){
   streamMs+=performance.now()-task.started;loadingLog('Clipmap ready',`${task.total} independently valid fine chunks transferred in ${streamMs.toFixed(1)} ms · authored chunks remain in the global sparse world store`);streamTask=null;clipmapProgressFloor=1;hideLoading();clipmapProgressFloor=0;evictDistantCleanChunks();
 }
 function processDeferredDecorations(now,moving){
-  if(moving||streamTask||now<nextResourceCommitAt||!deferredDecorationJobs.length||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.15)return;
-  const job=takeNearestDeferredDecoration();if(!job)return;const changed=decorateResourceNeighborhood(job[0],job[1],true);if(changed){nextResourceCommitAt=performance.now()+650;loadingLog('Resource commit',`${changed} trunk/canopy/cross-boundary chunks revealed atomically around ${job[0]},${job[1]}`);}
+  // Walking no longer disables ecology. Begin a transaction whenever terrain
+  // streaming yields, then stage exactly one horizontal column per frame in
+  // CPU memory. The visible GPU cache remains untouched until all 25 columns
+  // are complete, keeping the transaction atomic without a long frame stall.
+  if(streamTask)return;
+  if(!resourceCommitTask){
+    if(now<nextResourceCommitAt||!deferredDecorationJobs.length)return;const job=takeNearestDeferredDecoration();if(!job)return;
+    const neighborhood=resourceNeighborhoodColumns(job[0],job[1]);resourceCommitTask={center:job,columns:neighborhood.columns,minCY:neighborhood.minCY,maxCY:neighborhood.maxCY,cursor:0,changed:[],started:performance.now()};
+    for(const [cx,cz] of neighborhood.columns)deferredDecorationKeys.delete(`${cx},${cz}`);
+    loadingLog('Resource staging',`${neighborhood.columns.length} biome columns around ${job[0]},${job[1]} · movement remains active · visibility waits for complete transaction`);
+  }
+  const task=resourceCommitTask,[cx,cz]=task.columns[task.cursor++];
+  for(let cy=task.minCY;cy<=task.maxCY;cy++){const coords=[cx,cy,cz];if(baseOnlyChunks.has(chunkKey(...coords))&&decorateBaseOnlyChunk(...coords))task.changed.push(coords);}
+  if(task.cursor<task.columns.length)return;
+  let uploaded=0;for(const coords of task.changed)if(chunkInsideResident(...coords)){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);uploaded++;}
+  const elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?900:300);
+  if(uploaded)loadingLog('Resource commit',`${uploaded} complete trunk/canopy/cross-boundary chunks revealed atomically around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms staged across frames`);
 }
 function updateLoadedWindow(){
-  if(testZoneMode)return;const playerVoxelX=Math.floor(playerPos.x/VS),playerVoxelZ=Math.floor(playerPos.z/VS),now=performance.now();if(now-lastStreamShiftAt<80)return;
+  // A Resource transaction lasts roughly 25 frames and has over 30 m of cache
+  // safety around the player. Finish it before recycling toroidal slots so a
+  // stream upload cannot reveal a half-staged crown.
+  if(testZoneMode||resourceCommitTask)return;const playerVoxelX=Math.floor(playerPos.x/VS),playerVoxelZ=Math.floor(playerPos.z/VS),now=performance.now();if(now-lastStreamShiftAt<80)return;
   const centerX=windowMinX+activeGridSizeX*.5,centerZ=windowMinZ+activeGridSizeZ*.5,hysteresis=STREAM_SECTOR_VOXELS*.5;let shiftX=0,shiftZ=0;
   if(playerVoxelX>centerX+hysteresis)shiftX=STREAM_SECTOR_VOXELS;else if(playerVoxelX<centerX-hysteresis)shiftX=-STREAM_SECTOR_VOXELS;
   if(playerVoxelZ>centerZ+hysteresis)shiftZ=STREAM_SECTOR_VOXELS;else if(playerVoxelZ<centerZ-hysteresis)shiftZ=-STREAM_SECTOR_VOXELS;
