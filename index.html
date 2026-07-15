@@ -5,12 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.3 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.4 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.3';
-  const CURRENT_REVISION = 57;
+  const CURRENT_VERSION = '0.0.1.6.4';
+  const CURRENT_REVISION = 58;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -149,10 +149,23 @@
   .resource-parameters summary { padding:6px; color:#bcdcff; cursor:pointer; }
   .resource-parameter-body { padding:6px; border-top:1px solid #444460; }
   .resource-parameters label { display:grid; grid-template-columns:125px 1fr; gap:7px; align-items:center; margin:5px 0; }
+  .resource-parameters label:has(.resource-live-value) { grid-template-columns:125px minmax(0,1fr) 52px; }
+  .resource-live-value { color:#bcdcff; border:1px solid #444460; background:#040818; padding:3px 4px; font-size:9px; text-align:right; font-variant-numeric:tabular-nums; }
+  #resourcePreview.live-updated { outline:2px solid #bcdcff; outline-offset:-3px; }
   .resource-builder-toolbar input,.resource-builder-toolbar select,.resource-parameters input,.resource-parameters select { width:100%; min-width:0; background:#101810; color:#54fc54; border:1px solid #704024; font:inherit; padding:5px; }
   #resourceGraphNodes { width:100%; min-height:92px; background:#040818; color:#54fc54; border:1px solid #704024; font:inherit; }
   .resource-pane.detached { position:fixed; z-index:2400; width:min(430px,calc(100vw - 20px)); left:14px; top:48px; box-shadow:5px 6px 0 #040818aa; }
   #resourcePreviewPane.detached { left:auto; right:14px; }
+  #resourceDesigner.graph-detached,#resourceDesigner.preview-detached { width:min(820px,calc(100vw - 24px)); }
+  #resourceDesigner.graph-detached.preview-detached { width:min(540px,calc(100vw - 24px)); }
+  #resourceDesigner.graph-detached:not(.dragged),#resourceDesigner.preview-detached:not(.dragged) { transform:none; left:max(12px,calc(50% - 410px)); }
+  #resourceDesigner.graph-detached:not(.preview-detached):not(.dragged) { left:auto; right:12px; }
+  #resourceDesigner.preview-detached:not(.graph-detached):not(.dragged) { left:12px; right:auto; }
+  #resourceDesigner.graph-detached.preview-detached:not(.dragged) { left:max(12px,calc(50% - 270px)); }
+  #resourceDesigner.graph-detached .resource-workspace,#resourceDesigner.preview-detached .resource-workspace { grid-template-columns:minmax(300px,1.15fr) minmax(280px,1fr); }
+  #resourceDesigner.graph-detached.preview-detached .resource-workspace { grid-template-columns:minmax(300px,1fr); }
+  #resourceDesigner.graph-detached.preview-detached .resource-builder-toolbar { grid-template-columns:1fr 1fr; }
+  #resourceDesigner.graph-detached.preview-detached .resource-builder-toolbar label { display:none; }
   .resource-seed-row { display:grid; grid-template-columns:1fr auto; gap:5px; }
   .resource-transfer { align-items:start !important; }
   .resource-transfer > span { min-width:0; }
@@ -270,22 +283,24 @@
   #touchControls { display:none; position:absolute; inset:30px 0 0; z-index:9; pointer-events:none; touch-action:none; user-select:none; --gameboy-shell:#c6c1a8; --gameboy-shadow:#77755f; --gameboy-ink:#151525; --gameboy-button:#72245f; }
   body.touch-platform.in-world #touchControls { display:block; }
   #touchLook { position:absolute; right:0; top:0; bottom:0; width:58%; pointer-events:auto; touch-action:none; }
-  #touchDeck { position:absolute; inset:auto 0 0; height:190px; border-top:3px solid #ccb010; background:linear-gradient(155deg,#d7d1b4,#aca78f); pointer-events:auto; box-shadow:0 -4px 0 #04081888; touch-action:none; }
-  #touchDeck::after { content:'Dremplay One'; position:absolute; left:50%; top:10px; transform:translateX(-50%); color:#44443c; font:italic 700 11px Palatino,Georgia,serif; letter-spacing:1.5px; }
-  #touchMove { position:absolute; left:max(17px,env(safe-area-inset-left)); top:26px; width:138px; height:138px; pointer-events:auto; touch-action:none; }
+  #touchDeck { position:absolute; inset:auto 0 0; height:210px; border-top:1px solid #bcdcff99; background:linear-gradient(to bottom,#04081808,#04081842 22%,#040818a6 100%); pointer-events:auto; box-shadow:inset 0 1px #ececec33; touch-action:none; }
+  #touchDeck::before { content:'CONTROL FIELD · WORLD VIEW CONTINUES BEHIND'; position:absolute; left:50%; top:8px; transform:translateX(-50%); width:max-content; max-width:92vw; color:#ecececcc; font:700 8px monospace; letter-spacing:1px; text-align:center; text-shadow:1px 1px #040818; }
+  #touchDeck::after { content:'Dremplay One'; position:absolute; left:50%; bottom:max(6px,env(safe-area-inset-bottom)); transform:translateX(-50%); color:#ececec99; font:italic 700 10px Palatino,Georgia,serif; letter-spacing:1.5px; }
+  #touchMove { --move-x:0px; --move-y:0px; position:absolute; left:max(14px,env(safe-area-inset-left)); top:48px; width:148px; height:148px; pointer-events:auto; touch-action:none; }
   .touch-direction { position:absolute; width:47px; height:47px; padding:0; border:0; border-radius:5px; background:linear-gradient(#353544,#151525); color:#aaa; box-shadow:inset 2px 2px #575766,inset -3px -3px #080810,2px 3px 0 #77755f; font:700 17px monospace; pointer-events:auto; touch-action:none; }
   .touch-direction.pressed { background:#080810; color:#ececec; transform:translate(1px,2px); box-shadow:inset 1px 1px #000; }
-  .touch-up { left:46px; top:0; } .touch-left { left:0; top:46px; } .touch-right { right:0; top:46px; } .touch-down { left:46px; bottom:0; }
-  #touchMoveKnob { position:absolute; left:46px; top:46px; width:47px; height:47px; border:0; border-radius:5px; background:radial-gradient(circle,#252535 0 4px,#11111d 5px 100%); box-shadow:inset 2px 2px #454555,inset -3px -3px #080810; transform:none; pointer-events:none; }
-  #touchActions { position:absolute; right:max(16px,env(safe-area-inset-right)); top:29px; width:148px; height:112px; transform:rotate(-9deg); }
+  .touch-up { left:50px; top:0; } .touch-left { left:0; top:50px; } .touch-right { right:1px; top:50px; } .touch-down { left:50px; bottom:1px; }
+  #touchMoveKnob { position:absolute; left:50px; top:50px; width:47px; height:47px; border:0; border-radius:8px; background:radial-gradient(circle,#45455b 0 5px,#171726 6px 100%); box-shadow:inset 2px 2px #68687a,inset -3px -3px #080810,0 0 0 2px #bcdcff33; transform:translate(var(--move-x),var(--move-y)); transition:transform 35ms linear; pointer-events:none; }
+  #touchMove.is-diagonal #touchMoveKnob { box-shadow:inset 2px 2px #77778a,inset -3px -3px #080810,0 0 0 2px #bcdcffaa,0 0 10px #50a4fc66; }
+  #touchActions { position:absolute; right:max(12px,env(safe-area-inset-right)); top:46px; width:154px; height:154px; }
   .touch-action { position:absolute; z-index:2; min-width:50px; min-height:50px; border:0; background:linear-gradient(#9c3a83,#642052); color:#fff; font:700 10px 'JetBrains Mono','Consolas',monospace; pointer-events:auto; touch-action:none; border-radius:50%; box-shadow:inset 2px 2px #c56ba9,inset -3px -3px #3a1030,2px 4px 0 #77755f; }
   .touch-action strong { display:block; font:700 16px Palatino,Georgia,serif; line-height:16px; }
   .touch-action small { display:block; margin-top:2px; font:700 7px monospace; letter-spacing:.4px; }
   .touch-action.pressed { background:#4c173e; transform:translate(1px,3px); box-shadow:inset 1px 1px #280820; }
-  #touchCarve { left:7px; top:49px; } #touchPlace { right:4px; top:18px; }
-  #touchJump,#touchCrawl { min-width:45px; min-height:36px; border-radius:18px; background:linear-gradient(#4e526d,#25283e); box-shadow:inset 1px 1px #777b9b,inset -2px -2px #111322,2px 3px 0 #77755f; font-size:8px; transform:rotate(9deg); }
-  #touchJump { left:4px; top:4px; } #touchCrawl { right:4px; bottom:0; }
-  #touchSystem { position:absolute; left:50%; bottom:max(12px,env(safe-area-inset-bottom)); transform:translateX(-50%) rotate(-8deg); display:flex; gap:13px; }
+  #touchCarve { left:0; top:51px; } #touchPlace { right:0; top:51px; }
+  #touchJump,#touchCrawl { min-width:50px; min-height:50px; border-radius:50%; background:linear-gradient(#4e526d,#25283e); box-shadow:inset 1px 1px #777b9b,inset -2px -2px #111322,2px 3px 0 #77755f; font-size:8px; }
+  #touchJump { left:52px; top:0; } #touchCrawl { left:52px; bottom:0; }
+  #touchSystem { position:absolute; left:50%; bottom:max(22px,calc(env(safe-area-inset-bottom) + 16px)); transform:translateX(-50%); display:flex; gap:13px; }
   .touch-system-button { position:relative; min-width:62px; min-height:27px; border:0; border-radius:14px; background:linear-gradient(#55576b,#27293b); color:#fff; box-shadow:inset 1px 1px #83859b,inset -2px -2px #11121d,2px 3px 0 #77755f; font:700 8px monospace; letter-spacing:1px; pointer-events:auto; touch-action:none; }
   .touch-system-button:active,.touch-system-button.pressed { transform:translate(1px,2px); background:#1b1d2b; }
   #touchMenuPanel { display:none; position:fixed; z-index:2600; left:max(8px,env(safe-area-inset-left)); right:max(8px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); padding:8px; border:2px solid #ccb010; background:#0c100cf2; box-shadow:5px 6px 0 #040818aa; pointer-events:auto; }
@@ -302,12 +317,12 @@
     #topright{font-size:9px;right:8px}#topleft{left:8px}
   }
   @media (orientation:portrait) and (max-width:600px){
-    body.touch-platform.in-world #glcanvas { width:100% !important; height:58svh !important; bottom:auto; border-bottom:3px solid #040818; }
-    body.touch-platform.in-world #crosshair { top:29svh; }
-    body.touch-platform.in-world #resourceLookLabel { top:calc(29svh + 18px); max-width:86vw; }
+    body.touch-platform.in-world #glcanvas { width:100% !important; height:100svh !important; bottom:auto; }
+    body.touch-platform.in-world #crosshair { top:40svh; }
+    body.touch-platform.in-world #resourceLookLabel { top:calc(40svh + 18px); max-width:86vw; }
     body.touch-platform.in-world #touchControls { inset:30px 0 0; }
-    body.touch-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(58svh - 30px); bottom:auto; }
-    body.touch-platform.in-world #touchDeck { height:42svh; min-height:290px; max-height:370px; padding-bottom:env(safe-area-inset-bottom); }
+    body.touch-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(56svh - 30px); bottom:auto; }
+    body.touch-platform.in-world #touchDeck { height:44svh; min-height:330px; max-height:400px; padding-bottom:env(safe-area-inset-bottom); }
     body.touch-platform.in-world #topleft { top:38px; max-width:45vw; font-size:10px; }
     body.touch-platform.in-world #topleft span { font-size:7px; }
     body.touch-platform.in-world #topright { top:34px; }
@@ -365,7 +380,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.3 · Infinite Detail Voxel Engine · portrait mobile controls</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.4 · Infinite Detail Voxel Engine · full-view portrait controls</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -374,7 +389,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.3 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.4 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -388,8 +403,8 @@
 
 <div id="touchControls" aria-label="Touch game controls">
   <div id="touchLook" aria-label="Drag across the game screen to look"></div>
-  <div id="touchDeck" aria-label="Portrait Game Boy style controls">
-    <div id="touchMove" role="group" aria-label="Movement D-pad">
+  <div id="touchDeck" aria-label="Transparent portrait control field over the lower world view">
+    <div id="touchMove" role="group" aria-label="Eight-direction movement D-pad" data-direction="center">
       <button class="touch-direction touch-up" type="button" data-dx="0" data-dy="-1" aria-label="Move forward">▲</button>
       <button class="touch-direction touch-left" type="button" data-dx="-1" data-dy="0" aria-label="Move left">◀</button>
       <div id="touchMoveKnob" aria-hidden="true"></div>
@@ -528,15 +543,15 @@
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>In portrait mode, use the Game Boy-style D-pad below the view. Drag the game screen to look. A/B carve and place; hold Jump or Crawl. Select opens every tool and Start opens the map. The platform selector can force touch or desktop controls.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor.</p><h2>Windows</h2><p>Use the top menu, mobile Select launcher, or displayed key to open tools. Mobile windows fill the usable screen and provide large close controls; desktop title bars remain draggable.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Portrait mode keeps the full-height world visible. The translucent lower control field marks the part of the view that may be covered by your thumbs, so important aiming information stays above it. Drag the upper view to look. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor.</p><h2>Windows</h2><p>Use the top menu, mobile Select launcher, or displayed key to open tools. Mobile windows fill the usable screen and provide large close controls; desktop title bars remain draggable.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.3</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">portrait mobile control deck · touch-accessible tools · vegetation, fungi, and mineral formation graphs</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.4</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">full-view portrait controls · eight-direction touch movement · transactional Resource identity and live formation previews</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=57"></script>
+<script src="heightmap-world-v2.js?v=58"></script>
 <script>
 (() => {
 "use strict";
@@ -2219,8 +2234,10 @@ function resize(){
   const dpr = Math.min(window.devicePixelRatio||1, 1.5);
   const scale=activeRenderScale();
   const viewportWidth=window.visualViewport?.width||window.innerWidth,viewportHeight=window.visualViewport?.height||window.innerHeight;
-  const portraitTouch=touchPlatformActive()&&hasEnteredWorld&&matchMedia('(orientation:portrait) and (max-width:600px)').matches;
-  const displayHeight=portraitTouch?viewportHeight*.58:viewportHeight;
+  // Portrait controls overlay the lower view instead of reducing the render
+  // surface. The upper 56% remains the unobstructed look/aim region while the
+  // world continues behind the translucent thumb field at full resolution.
+  const displayHeight=viewportHeight;
   canvas.width = Math.max(1, Math.floor(viewportWidth*dpr*scale));
   canvas.height = Math.max(1, Math.floor(displayHeight*dpr*scale));
   canvas.style.width = viewportWidth+'px';
@@ -2593,6 +2610,10 @@ const resourceDefinitions=new Map([
   ['weathered_stone_pyramid',{name:'weathered_stone_pyramid',role:'architecture',growthStage:'adult',shape:'pyramid',material:MAT_LIMESTONE,secondary:MAT_MOSS,fractal:'ridged',seed:982451759,scale:28,sizeVariance:.08,subsurface:.04,radial:5,angle:52,iterations:6,tropism:0,influence:12,kill:2,components:[]}],
   ['seven_court_stone_temple',{name:'seven_court_stone_temple',role:'architecture',growthStage:'adult',shape:'temple',material:MAT_MARBLE,secondary:MAT_LICHEN,fractal:'cellular',seed:982451773,scale:34,sizeVariance:.06,subsurface:.03,radial:7,angle:38,iterations:7,tropism:0,influence:14,kill:2,components:[]}]
 ]);
+// Built-in identity is authoritative even after an interrupted editor session.
+// A preview can change parameters, but a named birch spray can never silently
+// become a stone merely because a mineral preset was previously selected.
+const RESOURCE_INTRINSIC_ROLES=new Map([...resourceDefinitions].map(([name,def])=>[name,def.role]));
 
 const WOODY_PROFILES=[
   {match:'silver_birch',form:'birch',height:1.55,crownStart:.30,spread:.30,density:1.25,trunk:.72,foliage:'birch_leaf_spray'},
@@ -2647,7 +2668,7 @@ function resourceBounds(def){
   if(def.role==='architecture')return {x:Math.ceil(s*.72),z:Math.ceil(s*.72),y0:-2,y1:Math.ceil(s*.86)};
   return {x:s,z:s,y0:-s,y1:s*2};
 }
-function resourceVoxelCacheKey(def){const graph=(def.builderGraph||[]).map(node=>`${node.id},${node.parent||''},${node.taxonomy},${node.length},${node.children},${node.angle}`).join(';');return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface,graph].join(':');}
+function resourceVoxelCacheKey(def){const graph=(def.builderGraph||[]).map(node=>`${node.id},${node.parent||''},${node.taxonomy},${node.length},${node.children},${node.angle}`).join(';');return [def.name,def.role,def.detail||RESOURCE_MODEL_DETAIL,def.growthStage||'adult',def.seed,def.scale,def.sizeVariance,def.material,def.secondary,def.fractal,def.radial,def.angle,def.iterations,def.tropism,def.influence,def.kill,def.subsurface,graph].join(':');}
 function leafSprayStrokes(seed,center,rx,ry,rz,count){
   // A crown cluster is a compound Resource: a slim terminal twig surrounded
   // by alternating, golden-angle leaf blades. Blades stay roughly one voxel
@@ -2886,13 +2907,16 @@ function resourceCeilingForChunk(cx,cz,columns){
 }
 function rockResourceVoxel(def,x,y,z){
   const s=Math.max(2,def.scale),seed=def.seed|0,turn=hash3(seed,2,7,5407)*Math.PI,ct=Math.cos(turn),st=Math.sin(turn),rx=x*ct-z*st,rz=x*st+z*ct;
-  const ax=s*(.43+.11*hash3(seed,1,0,5413)),ay=s*(.29+.09*hash3(seed,2,0,5417)),az=s*(.40+.13*hash3(seed,3,0,5431)),p=1.65+hash3(seed,4,0,5437)*.75;
+  const variance=Math.max(0,Math.min(.6,def.sizeVariance??.3)),ax=s*(.43+(.04+variance*.17)*hash3(seed,1,0,5413)),ay=s*(.29+(.03+variance*.14)*hash3(seed,2,0,5417)),az=s*(.40+(.04+variance*.19)*hash3(seed,3,0,5431)),p=1.65+hash3(seed,4,0,5437)*(.35+variance);
   const q=Math.pow(Math.pow(Math.abs(rx/ax),p)+Math.pow(Math.abs((y-ay*.05)/ay),p)+Math.pow(Math.abs(rz/az),p),1/p);
   const cleavage=Math.max((rx*.82+rz*.31)/ax,(-rx*.43+rz*.88)/az,((y-ay*.05)*.92+rx*.16)/ay)*.91;
-  const rough=fbm2((rx+seed%31)*.31,(rz-y+seed%43)*.31,3,2.07,.48,5441+seed)*.09+fbm2(y*.43+7,rx*.43-11,2,2,.46,5471+seed)*.045;
+  const roughIterations=Math.max(1,Math.min(8,def.iterations||3)),rough=fbm2((rx+seed%31)*.31,(rz-y+seed%43)*.31,roughIterations,2.07,.48,5441+seed)*(.045+(def.subsurface||0)*.25)+fbm2(y*.43+7,rx*.43-11,2,2,.46,5471+seed)*.045;
   if(Math.max(q,cleavage)+rough>=1||hash3(x,y,z,5483+seed)<(def.subsurface||0)*.08)return 0;
-  // Lichen/mineral accents occur on exposed upper facets, never as internal salt-and-pepper noise.
-  const patina=def.secondary&&y>ay*.18&&fbm2(rx*.27+13,rz*.27-17,2,2,.5,5501+seed)>.38&&hash3(x,y,z,5503+seed)>.42;
+  // The lichen/patina graph stage directly controls visible geology. Length
+  // changes patch scale, child density changes coverage, and formation angle
+  // moves growth from sheltered sides toward exposed upper facets.
+  const patinaStage=(def.builderGraph||[]).find(node=>node.id==='patina'||/patina|lichen/i.test(node.label||'')||node.taxonomy==='leaf'),patinaLength=Math.max(.1,Math.min(2,patinaStage?.length??.55)),patinaChildren=Math.max(1,Math.min(16,patinaStage?.children??def.radial??6)),patinaAngle=Math.max(0,Math.min(180,patinaStage?.angle??def.angle??32)),patchFrequency=.48-patinaLength*.16,coverageThreshold=.78-patinaChildren*.035,heightThreshold=ay*(-.08+patinaAngle/260),saltThreshold=.86-patinaChildren*.032;
+  const patina=def.secondary&&y>heightThreshold&&fbm2(rx*patchFrequency+13,rz*patchFrequency-17,Math.max(2,Math.min(6,roughIterations)),2,.5,5501+seed)>coverageThreshold&&hash3(x,y,z,5503+seed)>saltThreshold;
   return patina?def.secondary:def.material;
 }
 function fungusResourceVoxel(def,x,y,z){
@@ -3070,7 +3094,8 @@ const RESOURCE_BUILDER_PRESETS=Object.freeze({
   vegetation:Object.freeze({
     tree:{label:'Branching tree',shape:'branch graph',fractal:'space colonization',material:MAT_LEAVES,secondary:MAT_BARK,nodes:[['seed','seed','seed',null,.50,.08,.4,2,90],['roots','root system','root','seed',.28,.23,.75,5,235],['trunk','trunk','trunk','seed',.52,.30,1.7,1,90],['branches','primary branches','branch','trunk',.48,.51,1.1,7,38],['twigs','secondary branches','branch','branches',.62,.69,.72,9,44],['leaves','terminal leaves','leaf','twigs',.54,.89,.35,14,32]]},
     bush:{label:'Multi-stem bush',shape:'branch graph',fractal:'branching',material:MAT_LEAVES,secondary:MAT_BARK,nodes:[['seed','seed','seed',null,.50,.08,.4,4,90],['roots','fibrous roots','root','seed',.30,.27,.58,7,225],['stems','branching stems','branch','seed',.51,.36,.9,8,58],['branches','branches on branches','branch','stems',.46,.62,.62,11,46],['leaves','leaves and berries','berry','branches',.57,.88,.28,16,35]]},
-    fern:{label:'Fern frond',shape:'branch graph',fractal:'L-system',material:MAT_GRASS,secondary:MAT_MOSS,nodes:[['seed','rhizome','root',null,.50,.10,.45,3,90],['stipe','stipe','stipe','seed',.50,.32,.85,5,82],['frond','frond rachis','frond','stipe',.50,.55,1.2,7,34],['leaflets','pinnae leaflets','leaf','frond',.50,.84,.32,14,62]]}
+    fern:{label:'Fern frond',shape:'branch graph',fractal:'L-system',material:MAT_GRASS,secondary:MAT_MOSS,nodes:[['seed','rhizome','root',null,.50,.10,.45,3,90],['stipe','stipe','stipe','seed',.50,.32,.85,5,82],['frond','frond rachis','frond','stipe',.50,.55,1.2,7,34],['leaflets','pinnae leaflets','leaf','frond',.50,.84,.32,14,62]]},
+    leaf_spray:{label:'Leaf spray',shape:'branch graph',fractal:'phyllotaxis',material:MAT_LEAVES,secondary:MAT_BARK,nodes:[['bud','growth bud','seed',null,.50,.10,.28,1,90],['twig','supporting twig','branch','bud',.50,.42,.92,3,38],['veins','leaf veins','branch','twig',.45,.66,.46,9,52],['leaves','leaf spray','leaf','veins',.56,.89,.28,14,34]]}
   }),
   fungi:Object.freeze({
     mushroom:{label:'Gilled mushroom',shape:'cylinder',fractal:'branching',material:MAT_MARBLE,secondary:MAT_DIRT,nodes:[['spore','spore','spore',null,.50,.08,.25,5,90],['mycelium','mycelium network','mycelium','spore',.28,.28,.9,12,210],['stipe','mushroom stipe','stipe','mycelium',.51,.48,1.1,1,90],['cap','mushroom cap','cap','stipe',.52,.72,.78,1,20],['gills','mushroom gills','gill','cap',.52,.90,.25,14,55]]},
@@ -3084,10 +3109,12 @@ const RESOURCE_BUILDER_PRESETS=Object.freeze({
 });
 let resourceGraphState=[],resourceSelectedNodeId='',resourcePreviewMode='voxels',resourcePreviewView={yaw:-.72,pitch:.48,zoom:1,panX:0,panY:0};
 const cloneBuilderNodes=nodes=>nodes.map(row=>Array.isArray(row)?{id:row[0],label:row[1],taxonomy:row[2],parent:row[3],x:row[4],y:row[5],length:row[6],children:row[7],angle:row[8],kind:['leaf','fruit','berry','gill','crystal terminal','gem'].includes(row[2])?'terminal':row[3]?'spline':'seed'}:{...row});
-function inferBuilderType(def){return def?.builderType||(def?.role==='fungi'?'fungi':def?.role==='stone'||def?.role==='grain'||def?.role==='crystal'?'mineral':'vegetation');}
+function builderTypeForRole(role){return role==='fungi'?'fungi':role==='stone'||role==='grain'||role==='crystal'?'mineral':'vegetation';}
+function inferBuilderType(def){return builderTypeForRole(RESOURCE_INTRINSIC_ROLES.get(def?.name)||def?.role);}
+function graphMatchesBuilderType(nodes,type){const allowed=type==='mineral'?new Set(['catalyst','rock matrix','crystal shard','crystal terminal','gem']):type==='fungi'?new Set(['seed','spore','mycelium','stipe','cap','gill']):new Set(['seed','root','trunk','branch','frond','leaf','fruit','berry','stipe']);return Array.isArray(nodes)&&nodes.length>0&&nodes.every(node=>allowed.has(Array.isArray(node)?node[2]:node.taxonomy));}
 function refreshResourcePresets(type=resourceType.value){resourcePreset.replaceChildren();for(const [id,preset] of Object.entries(RESOURCE_BUILDER_PRESETS[type]))resourcePreset.add(new Option(preset.label,id));}
 function setResourceGraph(nodes){resourceGraphState=cloneBuilderNodes(nodes);resourceSelectedNodeId=resourceGraphState[0]?.id||'';refreshGraphNodeList();if(resourceWindow.classList.contains('open'))renderResourceGraph();syncGraphNodeInspector();}
-function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),builderType=resourceType.value;let role=known?.role;if(!role||known?.builderType!==builderType)role=builderType==='fungi'?'fungi':builderType==='mineral'?(resourcePreset.value==='crystal_rock'?'crystal':'stone'):'tree';return {name,role,builderType,builderPreset:resourcePreset.value,builderGraph:resourceGraphState.map(node=>({...node})),detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
+function currentResource(){const name=document.getElementById('resourceName').value.trim().replace(/\s+/g,'_')||'unnamed',shape=document.getElementById('resourceShape').value,fractal=document.getElementById('resourceFractal').value,known=resourceDefinitions.get(name),intrinsicRole=RESOURCE_INTRINSIC_ROLES.get(name),requestedType=resourceType.value,builderType=intrinsicRole?builderTypeForRole(intrinsicRole):requestedType;let role=intrinsicRole||known?.role;if(!role)role=builderType==='fungi'?'fungi':builderType==='mineral'?(resourcePreset.value==='crystal_rock'?'crystal':'stone'):'tree';const preset=RESOURCE_BUILDER_PRESETS[builderType][resourcePreset.value]?resourcePreset.value:Object.keys(RESOURCE_BUILDER_PRESETS[builderType])[0];return {name,role,builderType,builderPreset:preset,builderGraph:resourceGraphState.map(node=>({...node})),detail:RESOURCE_MODEL_DETAIL,growthStage:document.getElementById('resourceGrowthStage').value,shape,material:Number(resourceMaterial.value),secondary:Number(resourceSecondary.value),fractal,seed:Number(document.getElementById('resourceSeed').value)||0,scale:Number(document.getElementById('resourceScale').value),sizeVariance:Number(document.getElementById('resourceSizeVariance').value),subsurface:Number(document.getElementById('resourceSubsurface').value),radial:Number(document.getElementById('resourceRadial').value),angle:Number(document.getElementById('resourceAngle').value),iterations:Number(document.getElementById('resourceIterations').value),tropism:Number(document.getElementById('resourceTropism').value),influence:Number(document.getElementById('resourceInfluence').value),kill:Number(document.getElementById('resourceKill').value),components:[...resourceComponents.selectedOptions].map(o=>o.value)};}
 function refreshGraphNodeList(){resourceGraphNodes.replaceChildren();for(const node of resourceGraphState)resourceGraphNodes.add(new Option(`${node.label} · ${node.taxonomy}`,node.id));resourceGraphNodes.value=resourceSelectedNodeId;}
 function selectedGraphNode(){return resourceGraphState.find(node=>node.id===resourceSelectedNodeId)||resourceGraphState[0];}
 function syncGraphNodeInspector(){const node=selectedGraphNode();if(!node)return;resourceSelectedNodeId=node.id;resourceGraphNodes.value=node.id;document.getElementById('resourceNodeLabel').value=node.label;document.getElementById('resourceNodeTaxonomy').value=node.taxonomy;document.getElementById('resourceNodeLength').value=String(node.length);document.getElementById('resourceNodeChildren').value=String(node.children);document.getElementById('resourceNodeAngle').value=String(node.angle);document.getElementById('resourceGraphReadout').textContent=`${node.label} · ${node.taxonomy} · ${node.kind} · length ${Number(node.length).toFixed(2)} · ${node.children} child samples`;}
@@ -3183,7 +3210,8 @@ resourcePreviewCanvas.addEventListener('pointerdown',event=>{previewPointers.set
 resourcePreviewCanvas.addEventListener('pointermove',event=>{const previous=previewPointers.get(event.pointerId);if(!previous)return;previewPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});const points=[...previewPointers.values()];if(points.length>1){const distance=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);if(previewLastDistance)resourcePreviewView.zoom=Math.max(.35,Math.min(4,resourcePreviewView.zoom*distance/previewLastDistance));previewLastDistance=distance;}else if(event.shiftKey){resourcePreviewView.panX+=event.clientX-previous.x;resourcePreviewView.panY+=event.clientY-previous.y;}else{resourcePreviewView.yaw+=(event.clientX-previous.x)*.012;resourcePreviewView.pitch=Math.max(-1.35,Math.min(1.35,resourcePreviewView.pitch+(event.clientY-previous.y)*.009));}renderResourcePreview();});
 const endPreviewPointer=event=>{previewPointers.delete(event.pointerId);previewLastDistance=0;};resourcePreviewCanvas.addEventListener('pointerup',endPreviewPointer);resourcePreviewCanvas.addEventListener('pointercancel',endPreviewPointer);resourcePreviewCanvas.addEventListener('wheel',event=>{event.preventDefault();resourcePreviewView.zoom=Math.max(.35,Math.min(4,resourcePreviewView.zoom*Math.exp(-event.deltaY*.0012)));renderResourcePreview();},{passive:false});
 document.getElementById('resourcePreviewCurves').addEventListener('click',()=>{resourcePreviewMode='curves';renderResourcePreview();});document.getElementById('resourcePreviewVoxels').addEventListener('click',()=>{resourcePreviewMode='voxels';renderResourcePreview();});document.getElementById('resourcePreviewReset').addEventListener('click',()=>{resourcePreviewView={yaw:-.72,pitch:.48,zoom:1,panX:0,panY:0};renderResourcePreview();});
-function toggleResourcePane(id,button){const pane=document.getElementById(id),detached=pane.classList.toggle('detached');button.textContent=detached?'Attach':'Detach';bringToFront(resourceWindow);}
+function syncDetachedResourceLayout(){const graphDetached=document.getElementById('resourceGraphPane').classList.contains('detached'),previewDetached=document.getElementById('resourcePreviewPane').classList.contains('detached');resourceWindow.classList.toggle('graph-detached',graphDetached);resourceWindow.classList.toggle('preview-detached',previewDetached);}
+function toggleResourcePane(id,button){const pane=document.getElementById(id),detached=pane.classList.toggle('detached');button.textContent=detached?'Attach':'Detach';if(!detached){pane.style.left='';pane.style.right='';pane.style.top='';}syncDetachedResourceLayout();bringToFront(resourceWindow);}
 document.getElementById('resourceDetachGraph').addEventListener('click',event=>toggleResourcePane('resourceGraphPane',event.currentTarget));document.getElementById('resourceDetachPreview').addEventListener('click',event=>toggleResourcePane('resourcePreviewPane',event.currentTarget));
 for(const pane of document.querySelectorAll('#resourceDesigner .resource-pane')){
   const title=pane.querySelector('.resource-pane-title');if(!title)continue;let drag=null;
@@ -3191,9 +3219,25 @@ for(const pane of document.querySelectorAll('#resourceDesigner .resource-pane'))
   title.addEventListener('pointermove',event=>{if(!drag||drag.pointer!==event.pointerId)return;const maxX=Math.max(0,innerWidth-pane.offsetWidth),maxY=Math.max(28,innerHeight-pane.offsetHeight);pane.style.left=`${Math.max(0,Math.min(maxX,event.clientX-drag.dx))}px`;pane.style.top=`${Math.max(28,Math.min(maxY,event.clientY-drag.dy))}px`;});
   const end=event=>{if(drag?.pointer===event.pointerId)drag=null;};title.addEventListener('pointerup',end);title.addEventListener('pointercancel',end);
 }
-resourceWindow.querySelectorAll('input,select').forEach(el=>{if(el!==resourceTransferIdInput)el.addEventListener('input',scheduleResourcePreview);});
+let resourceFeedbackTimer=0,resourceLastChange='';
+function resourceControlName(el){const label=el.closest('label');if(!label)return el.getAttribute('aria-label')||el.id;return [...label.childNodes].find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent.trim())?.textContent.trim()||el.id;}
+function syncResourceRangeReadout(el){let output=el.nextElementSibling;if(!output?.classList.contains('resource-live-value')){output=document.createElement('output');output.className='resource-live-value';el.insertAdjacentElement('afterend',output);}output.value=el.value;output.textContent=el.value;}
+function updateResourceControlFeedback(el){
+  if(el===resourceTransferIdInput||el===resourceLibrary)return;
+  const name=resourceControlName(el),value=el.multiple?`${el.selectedOptions.length} selected`:el.options?el.options[el.selectedIndex]?.textContent||el.value:el.value;resourceLastChange=`${name}: ${value}`;
+  if(el.type==='range')syncResourceRangeReadout(el);
+  document.getElementById('resourceStatus').textContent=`Live preview updated · ${resourceLastChange}`;const preview=document.getElementById('resourcePreview');preview.classList.remove('live-updated');requestAnimationFrame(()=>preview.classList.add('live-updated'));clearTimeout(resourceFeedbackTimer);resourceFeedbackTimer=setTimeout(()=>preview.classList.remove('live-updated'),180);scheduleResourcePreview();
+}
+resourceWindow.querySelectorAll('input,select').forEach(el=>{if(el!==resourceTransferIdInput){if(el.type==='range')syncResourceRangeReadout(el);el.addEventListener('input',()=>updateResourceControlFeedback(el));}});
 document.getElementById('resourceRandomSeed').addEventListener('click',()=>{const bytes=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(bytes);else bytes[0]=(Date.now()^Math.floor(performance.now()*1000))>>>0;document.getElementById('resourceSeed').value=String(bytes[0]%100000000);scheduleResourcePreview();document.getElementById('resourceStatus').textContent='New base growth seed selected; natural instances will derive unique child seeds.';});
-function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;const type=inferBuilderType(d);resourceType.value=type;refreshResourcePresets(type);const fallback=type==='mineral'?(d.role==='crystal'?'crystal_rock':'eroded_rock'):type==='fungi'?'mushroom':d.name.includes('fern')?'fern':woodyProfile(d).form==='shrub'?'bush':'tree',preset=RESOURCE_BUILDER_PRESETS[type][d.builderPreset]?d.builderPreset:fallback;resourcePreset.value=preset;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));setResourceGraph(d.builderGraph?.length?d.builderGraph:RESOURCE_BUILDER_PRESETS[type][preset].nodes);if(resourceWindow.classList.contains('open')){renderResourceGraph();renderResourcePreview();}refreshResourceTransferId();}
+function loadResource(name){
+  const d=resourceDefinitions.get(name);if(!d)return;const role=RESOURCE_INTRINSIC_ROLES.get(name)||d.role,type=builderTypeForRole(role);resourceType.value=type;refreshResourcePresets(type);
+  const fallback=type==='mineral'?(role==='crystal'?'crystal_rock':'eroded_rock'):type==='fungi'?'mushroom':role==='foliage'?'leaf_spray':role==='fern'?'fern':woodyProfile(d).form==='shrub'?'bush':'tree',preset=RESOURCE_BUILDER_PRESETS[type][d.builderPreset]?d.builderPreset:fallback;resourcePreset.value=preset;
+  document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));
+  const graph=graphMatchesBuilderType(d.builderGraph,type)?d.builderGraph:RESOURCE_BUILDER_PRESETS[type][preset].nodes;setResourceGraph(graph);resourceLibrary.value=name;
+  for(const range of resourceWindow.querySelectorAll('input[type="range"]')){const output=range.nextElementSibling;if(output?.classList.contains('resource-live-value')){output.value=range.value;output.textContent=range.value;}}
+  if(resourceWindow.classList.contains('open')){renderResourceGraph();renderResourcePreview();}refreshResourceTransferId();document.getElementById('resourceStatus').textContent=`Loaded ${d.name.replaceAll('_',' ')} · ${role} identity verified · ${type} graph synchronized`;
+}
 resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')} · 5 cm near / 10 cm far LOD`;});
 document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();resourcePartIdentityCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
 document.getElementById('resourceCopyId').addEventListener('click',async()=>{refreshResourceTransferId();try{await navigator.clipboard.writeText(resourceTransferIdInput.value);document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}catch{resourceTransferIdInput.select();document.execCommand('copy');document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}});
@@ -3450,14 +3494,34 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 // Pointer Events allow independent move/look/action fingers on iPad while the
 // same page remains a normal pointer-lock game on desktop.
 const touchMove=document.getElementById('touchMove'),touchMoveKnob=document.getElementById('touchMoveKnob'),touchLook=document.getElementById('touchLook');
-const touchDirections=new Map();let lookPointer=-1,lastLookX=0,lastLookY=0;
-function updateTouchDirection(){let x=0,y=0;for(const direction of touchDirections.values()){x+=direction.dx;y+=direction.dy;}touchMoveX=Math.max(-1,Math.min(1,x));touchMoveY=Math.max(-1,Math.min(1,y));}
-function clearTouchState(){touchMoveX=0;touchMoveY=0;touchJump=false;touchCrawl=false;lookPointer=-1;mouseDown=-1;touchDirections.clear();document.querySelectorAll('.touch-action,.touch-direction,.touch-system-button').forEach(button=>button.classList.remove('pressed'));}
-for(const button of document.querySelectorAll('.touch-direction')){
-  const release=e=>{const direction=touchDirections.get(e.pointerId);if(!direction)return;touchDirections.delete(e.pointerId);direction.button.classList.remove('pressed');updateTouchDirection();};
-  button.addEventListener('pointerdown',e=>{if(!gameControlActive())return;button.setPointerCapture(e.pointerId);touchDirections.set(e.pointerId,{dx:Number(button.dataset.dx),dy:Number(button.dataset.dy),button});button.classList.add('pressed');updateTouchDirection();e.preventDefault();});
-  button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
+let touchMovePointer=-1,lookPointer=-1,lastLookX=0,lastLookY=0;
+const touchDirectionNames=['right','down-right','down','down-left','left','up-left','up','up-right'];
+function paintTouchDirection(){
+  const threshold=.24,x=touchMoveX,y=touchMoveY;
+  document.querySelector('.touch-up').classList.toggle('pressed',y<-threshold);
+  document.querySelector('.touch-down').classList.toggle('pressed',y>threshold);
+  document.querySelector('.touch-left').classList.toggle('pressed',x<-threshold);
+  document.querySelector('.touch-right').classList.toggle('pressed',x>threshold);
+  touchMove.classList.toggle('is-diagonal',Math.abs(x)>threshold&&Math.abs(y)>threshold);
+  touchMove.style.setProperty('--move-x',`${(x*17).toFixed(1)}px`);
+  touchMove.style.setProperty('--move-y',`${(y*17).toFixed(1)}px`);
+  if(Math.hypot(x,y)<.18)touchMove.dataset.direction='center';
+  else touchMove.dataset.direction=touchDirectionNames[(Math.round(Math.atan2(y,x)/(Math.PI/4))+8)%8];
+  if(touchMove.dataset.direction!=='center')touchMove.dataset.lastDirection=touchMove.dataset.direction;
+  touchMove.setAttribute('aria-label',`Movement D-pad: ${touchMove.dataset.direction}`);
 }
+function updateTouchDirection(clientX,clientY){
+  const rect=touchMove.getBoundingClientRect(),cx=rect.left+rect.width*.5,cy=rect.top+rect.height*.5,rx=(clientX-cx)/(rect.width*.42),ry=(clientY-cy)/(rect.height*.42),distance=Math.hypot(rx,ry),dead=.13;
+  if(distance<=dead){touchMoveX=0;touchMoveY=0;}
+  else{const strength=Math.min(1,(distance-dead)/(1-dead)),normal=1/(distance||1);touchMoveX=rx*normal*strength;touchMoveY=ry*normal*strength;}
+  paintTouchDirection();
+}
+function resetTouchDirection(){touchMoveX=0;touchMoveY=0;touchMovePointer=-1;paintTouchDirection();}
+function clearTouchState(){resetTouchDirection();touchJump=false;touchCrawl=false;lookPointer=-1;mouseDown=-1;document.querySelectorAll('.touch-action,.touch-system-button').forEach(button=>button.classList.remove('pressed'));}
+touchMove.addEventListener('pointerdown',event=>{if(!gameControlActive()||touchMovePointer!==-1)return;touchMovePointer=event.pointerId;touchMove.setPointerCapture(event.pointerId);updateTouchDirection(event.clientX,event.clientY);event.preventDefault();});
+touchMove.addEventListener('pointermove',event=>{if(event.pointerId!==touchMovePointer)return;updateTouchDirection(event.clientX,event.clientY);event.preventDefault();});
+const releaseTouchMove=event=>{if(event.pointerId!==touchMovePointer)return;resetTouchDirection();};
+touchMove.addEventListener('pointerup',releaseTouchMove);touchMove.addEventListener('pointercancel',releaseTouchMove);touchMove.addEventListener('lostpointercapture',releaseTouchMove);
 touchLook.addEventListener('pointerdown',e=>{if(!gameControlActive())return;lookPointer=e.pointerId;lastLookX=e.clientX;lastLookY=e.clientY;touchLook.setPointerCapture(e.pointerId);e.preventDefault();});
 touchLook.addEventListener('pointermove',e=>{if(e.pointerId!==lookPointer||!gameControlActive())return;const dx=e.clientX-lastLookX,dy=e.clientY-lastLookY;lastLookX=e.clientX;lastLookY=e.clientY;yaw-=dx*.006;pitch=Math.max(-1.5,Math.min(1.5,pitch-dy*.006));e.preventDefault();});
 const releaseLook=e=>{if(e.pointerId===lookPointer)lookPointer=-1;};touchLook.addEventListener('pointerup',releaseLook);touchLook.addEventListener('pointercancel',releaseLook);

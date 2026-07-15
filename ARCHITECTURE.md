@@ -2,7 +2,7 @@
 
 ## Portrait mobile interface
 
-Touch play separates observation from input. In portrait orientation the upper 58% of the visual viewport is a resolution-matched render surface and look gesture area; the lower 42% is a persistent Game Boy-style control deck. The D-pad is digital and multitouch-aware, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
+Touch play separates unobstructed observation from the thumb field without shrinking the world. In portrait orientation the renderer remains full-height. The upper 56% is the look and aim gesture area; a translucent lower control field explains that the world continues behind the buttons but should not carry essential visual information. The cross D-pad is a continuous radial input with eight-direction feedback, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
 
 Select opens a complete touch launcher rather than depending on keyboard shortcuts or an overflowing desktop menu. Every tool window becomes safe-area-aware, full-screen, independently scrollable, and uses iOS-sized controls. Start opens the mathematical heightmap directly. Landscape touch play retains the same controls without shrinking the renderer, and desktop pointer-lock behavior is unchanged.
 
@@ -10,7 +10,9 @@ Select opens a complete touch launcher rather than depending on keyboard shortcu
 
 Resources are authored as compact formation graphs rather than meshes or stored voxel arrays. A graph contains a typed seed and named biological or geological stages connected by parent references. Each stage carries taxonomy, normalized graph position, length, child count, and angle. Vegetation graphs express roots, trunks or stems, branches, and terminals; fungi express spores, mycelium, stipes, caps, gills, or pores; mineral graphs express catalysts, eroded matrices, shards, terminals, and aggregate fields.
 
-The Builder has three coordinated views: a draggable 2D formation graph, an interactive 3D curve or voxel preview, and a parameter pane. The graph and preview may detach into movable panes. Both previews compile from the same definition that the runtime queries; they do not create a second authoring representation.
+The Builder has three coordinated views: a draggable 2D formation graph, an interactive 3D curve or voxel preview, and a parameter pane. The graph and preview may detach into movable panes; detached panes leave normal grid flow and the main window contracts around what remains. Both previews compile from the same definition that the runtime queries; they do not create a second authoring representation. Parameter inputs invalidate the definition-keyed preview cache immediately, display their exact values, and visibly acknowledge the redraw.
+
+Built-in Resource roles are immutable identity facts. Loading a library entry synchronizes its name, biological kingdom, compatible preset, graph taxonomy, materials, and preview in one transaction. A graph whose taxonomy does not belong to the Resource kingdom is discarded in favor of the matching canonical preset. Geological graph stages are not decorative metadata: eroded-rock lichen length, density, and angle feed the same patina equation used by voxel emission.
 
 The graph is serialized inside the portable Resource transfer ID along with type, preset, deterministic seed, materials, and mathematical controls. At runtime the graph and high-level controls compile into bounded equations and seeded architecture. Render voxels remain disposable samples of those equations.
 

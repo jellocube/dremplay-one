@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.3**
+Current release: **v0.0.1.6.4**
+
+## v0.0.1.6.4 Full-view portrait controls and live Resources
+
+- Keeps the world renderer full-height on portrait phones. A translucent lower control field explains that thumbs and buttons occupy the lower view without cropping the landscape into a wide-screen strip.
+- Turns the cross D-pad into one continuous eight-direction surface. The center knob follows the thumb, both relevant arms illuminate on diagonals, and movement strength follows distance from center.
+- Places Jump, Place, Crawl, and Carve in a symmetric diamond while retaining practical right-thumb reach. Select/Tools and Start/Map remain beneath the primary actions.
+- Makes detached Resource graph and preview panes stop reserving grid columns; the main Builder window contracts to two panes or the parameter pane alone.
+- Adds immediate range-value readouts, a live-preview flash, and explicit status feedback for every Resource parameter input.
+- Connects the eroded-rock lichen stage to the actual rock equation: stage length changes patch scale, child density changes coverage, and angle changes the exposed growth band.
+- Makes built-in Resource roles authoritative and loads identity, kingdom, preset, graph, and preview as one transaction. A birch leaf spray can no longer inherit or display a mineral-rock graph.
 
 ## v0.0.1.6.3 Portrait mobile controls
 
