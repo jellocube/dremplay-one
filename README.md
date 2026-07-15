@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.5.1**
+Current release: **v0.0.1.6.5.2**
+
+## v0.0.1.6.5.2 Atmospheric landscape projections
+
+- Restores the softly layered blue-green background projections seen in the v0.0.1.0.19 landscape, while retaining the current one-kilometer view and supplied island heightmap.
+- Shades the immutable far-height atlas as broad ridge, valley, pool, water, coastline, snow, and atmospheric silhouettes instead of exposing its coarse control cells as literal background blocks.
+- Smoothly hands off from far voxels to the projection between the configurable Far away and Background distances. There is no abrupt 300 m representation switch.
+- Keeps the detailed voxel foreground clear. The old release's strong 12 m fog is now confined to the projected distance pass rather than washing over nearby trees, plants, rocks, and terrain.
+- Uses stable world-space derivatives and distance haze only: no temporal dither, alternating samples, framebuffer scaling, screen dimming, or whole-screen color quantization.
+- Renames the background choices to Chunky voxels, Atmospheric projection, and Projection + voxels. Balanced mode uses the combined handoff; Quality uses the pure projection.
 
 ## v0.0.1.6.5.1 Smooth 60 Hz frame scheduler
 

@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.5.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.5.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.5.1';
-  const CURRENT_REVISION = 65;
+  const CURRENT_VERSION = '0.0.1.6.5.2';
+  const CURRENT_REVISION = 66;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -395,7 +395,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.5.1 · Infinite Detail Voxel Engine · smooth frame scheduler</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.5.2 · Infinite Detail Voxel Engine · atmospheric distance projection</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -404,7 +404,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.5.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.5.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -510,7 +510,7 @@
       <div class="option-row"><label for="optionFarVoxel">Far voxel size</label><select id="optionFarVoxel"><option value="0.5">0.5 m</option><option value="1" selected>1 m</option><option value="2">2 m</option><option value="4">4 m</option></select><span id="optionFarVoxelValue">1 m</span></div>
       <div class="option-row"><label for="optionBackgroundDistance">Background</label><input id="optionBackgroundDistance" type="range" min="400" max="1000" step="25" value="500"><span id="optionBackgroundDistanceValue">500 ft</span></div>
       <div class="option-row"><label for="optionBackgroundVoxel">Background voxel</label><select id="optionBackgroundVoxel"><option value="4">4 m</option><option value="8">8 m</option><option value="16" selected>16 m</option><option value="32">32 m</option><option value="64">64 m</option></select><span id="optionBackgroundVoxelValue">16 m</span></div>
-      <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Vector matte</option><option value="2" selected>Combined mask</option></select><span id="optionBackgroundModeValue">Combined</span></div>
+      <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Atmospheric projection</option><option value="2" selected>Projection + voxels</option></select><span id="optionBackgroundModeValue">Projection + voxels</span></div>
       <div class="option-row"><label for="optionBugtesting">Bugtesting mode</label><select id="optionBugtesting"><option value="1" selected>On</option><option value="0">Off</option></select><span id="optionBugtestingValue">On</span></div>
     </div></details>
     <details class="option-section"><summary>Fog and atmosphere</summary><div class="option-section-body">
@@ -564,10 +564,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">60 Hz frame priority · resumable Resources · paced GPU publication</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Stable atmospheric projections · 60 Hz frame priority · resumable Resources</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=65"></script>
+<script src="heightmap-world-v2.js?v=66"></script>
 <script>
 (() => {
 "use strict";
@@ -1294,7 +1294,13 @@ vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
   // continuous elevation/hydrography field on the virtual 1/2/4/8 m lattice;
   // the separate max hierarchy remains conservative traversal acceleration.
   vec4 voxel=farTerrainAt(center);if(voxel.x<0.0)return voxel;
-  if(dist>=max(uPreviewLod.y,3000.0)&&uBackgroundMode>0){vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;voxel=mix(voxel,matte,.62);}
+  // Projection mode observes the same immutable height field continuously.
+  // Combined mode eases from visible far voxels into that projection; it does
+  // not wait until 300 m and then change representation in one obvious step.
+  if(dist>=uPreviewLod.x&&uBackgroundMode>0){
+    vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;
+    float projectionMix=smoothstep(uPreviewLod.x,uPreviewLod.y,dist);voxel=mix(voxel,matte,projectionMix);
+  }
   return voxel;
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
@@ -1591,13 +1597,56 @@ bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface
   }
   return false;
 }
+vec3 shadeAtmosphericProjection(vec3 p,vec4 surface,vec3 rd,float dist){
+  // The projection is a distant matte made from the authoritative heightmap,
+  // not a stored mesh or screen filter. Broad derivative taps deliberately
+  // remove individual background voxel facets while retaining the true ridge,
+  // watershed, pool and coastline silhouettes of the current island.
+  float tap=max(uFarTerrainInfo.z*2.0,180.0);
+  float hx0=farTerrainAt(p.xz-vec2(tap,0.0)).x,hx1=farTerrainAt(p.xz+vec2(tap,0.0)).x;
+  float hz0=farTerrainAt(p.xz-vec2(0.0,tap)).x,hz1=farTerrainAt(p.xz+vec2(0.0,tap)).x;
+  vec3 normal=normalize(vec3(hx0-hx1,tap*2.0,hz0-hz1));
+  float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w;
+  float waterAmount=smoothstep(.22,.48,pool)*(1.0-smoothstep(38.0,70.0,height));
+  float rock=smoothstep(.50,.86,ridges)*smoothstep(78.0,260.0,height);
+  float snowAmount=smoothstep(250.0,318.0,height);
+
+  // These are deliberately restrained cousins of the material palette: close
+  // silhouettes read as cool green land, then recede through teal and blue.
+  // Lighting remains world-space and stable; there is no temporal dither,
+  // framebuffer alternation or full-screen quantization.
+  vec3 deepLand=vec3(42.0,112.0,98.0)/255.0;
+  vec3 meadow=vec3(74.0,138.0,112.0)/255.0;
+  vec3 ridge=vec3(96.0,142.0,158.0)/255.0;
+  vec3 snow=vec3(184.0,202.0,216.0)/255.0;
+  vec3 water=vec3(76.0,168.0,236.0)/255.0;
+  vec3 land=mix(deepLand,meadow,clamp(moisture*.72+.14,0.0,1.0));
+  land=mix(land,ridge,rock*.78);land=mix(land,snow,snowAmount*.82);
+  float diffuse=max(dot(normal,sunDirection()),0.0);
+  float broadLight=.54+.40*sqrt(diffuse)*daylightAmount();
+  land*=broadLight;water*=.82+.16*daylightAmount();
+
+  // Accumulate air from the near-distance boundary (about 15 m by default),
+  // matching the deep perspective of the older 125 m renderer even though the
+  // matte itself does not replace visible far voxels until roughly 122 m.
+  float meters=dist*.1,projectionStart=uLodDistances.y*.1;
+  float depth=max(0.0,meters-projectionStart);
+  float aerial=1.0-exp(-depth*.0048);
+  float heightHaze=(1.0-smoothstep(40.0,310.0,height))*.08;
+  vec3 horizon=skyColor(normalize(vec3(rd.x,.025,rd.z)),false);
+  vec3 projected=mix(land,water,waterAmount);
+  projected=mix(projected,horizon,clamp(aerial*.86+heightHaze,0.0,.94));
+  return floor(projected*255.0+.5)/255.0;
+}
 vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float tap=farVoxelCellSize(dist),hx0=farVoxelTerrainAt(p.xz-vec2(tap,0),dist).x,hx1=farVoxelTerrainAt(p.xz+vec2(tap,0),dist).x,hz0=farVoxelTerrainAt(p.xz-vec2(0,tap),dist).x,hz1=farVoxelTerrainAt(p.xz+vec2(0,tap),dist).x;
   vec3 normal=normalize(vec3(hx0-hx1,tap*2.0,hz0-hz1)),grass=vec3(56,116,52)/255.0,dry=vec3(96,152,76)/255.0,earth=vec3(132,80,44)/255.0,stone=vec3(124,124,152)/255.0,snow=vec3(224,224,224)/255.0,water=vec3(80,164,252)/255.0;
   float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w,rock=smoothstep(.58,.88,ridges)*smoothstep(90.0,250.0,height),snowAmount=smoothstep(255.0,310.0,height);
   vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.24,.48,pool));
   float diffuse=max(dot(normal,sunDirection()),0.0),light=.28+.72*sqrt(diffuse)*daylightAmount();vec3 lit=floor(base*light*16.0+.5)/16.0;
-  float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-max(uFogStart,300.0))*adaptiveDensity);return mix(lit,skyColor(rd,false),clamp(fog,0.0,1.0));
+  float projectionMix=uBackgroundMode==1?smoothstep(uPreviewLod.x*.86,uPreviewLod.x,dist):(uBackgroundMode==2?smoothstep(uPreviewLod.x,uPreviewLod.y,dist):0.0);
+  vec3 shaded=mix(lit,shadeAtmosphericProjection(p,surface,rd,dist),projectionMix);
+  float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-max(uFogStart,300.0))*adaptiveDensity);return mix(shaded,skyColor(rd,false),clamp(fog,0.0,1.0));
 }
 vec3 waterPixelColor(ivec3 p,vec3 faceNormal,vec3 rd,float depthVoxels){
   vec3 base=materialColor(10u,p,1);if(uWaterQuality==0)return base;
@@ -3401,9 +3450,9 @@ function syncOptionsWindow(){
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();
-  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
+  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','Projection + voxels'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky voxels','atmospheric projection','projection + voxels'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}

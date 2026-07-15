@@ -1,5 +1,13 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Atmospheric distance projection
+
+The beautiful background matte is a view of the same immutable world equation, not a second landscape. After detailed and far voxel observations end, the renderer ray-intersects the supplied height atlas and shades that hit with broad world-space derivatives. Ridge, valley, hydrology, snow, and coastline silhouettes therefore agree with the editable foreground and remain deterministic at every camera position.
+
+The projection is intentionally lower-frequency than the height data. Twenty-meter derivative taps suppress individual atlas facets, while continuous height reconstruction preserves the island's true horizon. A smooth handoff between the Far away and Background thresholds changes the observation filter from visible voxels to the matte; it does not change or regenerate the underlying terrain.
+
+Atmospheric color is distance based and stable. Nearby projected land begins in restrained green and teal, water remains brighter blue, and successive depth recedes toward the time-of-day horizon. The pass has no temporal noise, screen-space dither, alternating sample pattern, dynamic resolution, or overlay dimming. It adds four fixed atlas taps only after the detailed renderer misses, so it does not consume the foreground frame budget.
+
 ## 60 Hz frame ownership
 
 The display frame is not a streaming timeslice. At 60 Hz the renderer owns the 16.67 ms interval; background systems run through browser idle callbacks and may consume only a bounded fraction of measured main-thread headroom. The scheduler tracks CPU work separately from requestAnimationFrame spacing, suspends optional refinement after a missed refresh, and runs no more than one background stage per idle callback. Far-atlas refresh, terrain prefetch, Resource compilation, ecology staging, and GPU publication therefore cannot stack their nominal budgets in the animation callback. A bounded timer fallback retains portability where the idle-callback API is absent.
