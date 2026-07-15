@@ -1,5 +1,13 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Full-island horizon panorama
+
+The local far atlas covers 2.6 km and renders editable-world continuity to one kilometer. It cannot prove that a blank ray has no mountain elsewhere on the 7.5 km island. A separate 2 KiB panorama therefore stores maximum terrain elevation angle for 512 world azimuths across three bands: 0.7–1.8 km, 1.8–3.2 km, and 3.2–5.5 km. Every value is sampled from the shipped immutable heightmap.
+
+The panorama is a projection cache, never world data. The fragment shader tests local voxels and the one-kilometer atlas first; only a ray which misses both may reveal the panorama's broad near, middle, and far silhouettes. Sixfold cartographic vertical relief makes the long island's physically low mountain angles readable without changing physical elevations. Refresh work is incremental and a complete new panorama replaces the old one atomically after 250 m of observer travel or a meaningful elevation change.
+
+World refinement is gated by measured JavaScript work, not presentation interval alone. A browser may present a GPU-bound WebGL canvas at 30 Hz while the main thread spends only one millisecond preparing each frame. In that case a paced timer supplies small decoder slices when `requestIdleCallback` is starved. Rendering remains the only work inside `requestAnimationFrame`.
+
 ## Atmospheric distance projection
 
 The beautiful background matte is a view of the same immutable world equation, not a second landscape. After detailed and far voxel observations end, the renderer ray-intersects the supplied height atlas and shades that hit with broad world-space derivatives. Ridge, valley, hydrology, snow, and coastline silhouettes therefore agree with the editable foreground and remain deterministic at every camera position.

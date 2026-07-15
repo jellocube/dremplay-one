@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.5.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.5.2.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.5.2';
-  const CURRENT_REVISION = 66;
+  const CURRENT_VERSION = '0.0.1.6.5.2.1';
+  const CURRENT_REVISION = 67;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -395,7 +395,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.5.2 · Infinite Detail Voxel Engine · atmospheric distance projection</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.5.2.1 · Infinite Detail Voxel Engine · full-island horizon projection</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -404,7 +404,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.5.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.5.2.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -564,10 +564,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Stable atmospheric projections · 60 Hz frame priority · resumable Resources</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.2.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Full-island projected horizon · non-starving refinement · stable frame pacing</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=66"></script>
+<script src="heightmap-world-v2.js?v=67"></script>
 <script>
 (() => {
 "use strict";
@@ -1073,8 +1073,45 @@ let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
 // 300 m of preview coverage in every direction while exposed edge regions load.
 const FAR_MAP_SIZE=260,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3,MINIMUM_PREVIEW_RADIUS_METERS=300;
 let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
+// A tiny full-island panorama complements the one-kilometer editable view.
+// Each azimuth stores the maximum elevation angle in three real distance
+// bands. It is derived from the immutable heightmap, so distant mountains are
+// visible even when the nearest ridge lies beyond the local 2.6 km atlas.
+const HORIZON_BINS=512,HORIZON_MIN_ANGLE=-.40,HORIZON_MAX_ANGLE=.50,HORIZON_RELIEF_EXAGGERATION=6;
+const HORIZON_BANDS=Object.freeze([[7000,18000,400],[18000,32000,600],[32000,55000,900]]);
+let horizonProjectionGrid=new Uint8Array(HORIZON_BINS*4),horizonProjectionTask=null,horizonProjectionCenterX=Infinity,horizonProjectionCenterY=Infinity,horizonProjectionCenterZ=Infinity;
 let windowMinX = 0, windowMinY = -64, windowMinZ = 0; // 6.4 m underground, 15.9 m above datum
 let ringX = 0, ringZ = 0; // physical texture origin for the circular X/Z window
+
+function encodeHorizonAngle(angle){return Math.round(Math.max(0,Math.min(1,(angle-HORIZON_MIN_ANGLE)/(HORIZON_MAX_ANGLE-HORIZON_MIN_ANGLE)))*255);}
+function fillHorizonProjectionBin(grid,bin,centerX,eyeY,centerZ){
+  const theta=(bin+.5)/HORIZON_BINS*Math.PI*2-Math.PI,dx=Math.cos(theta),dz=Math.sin(theta),offset=bin*4;
+  for(let band=0;band<3;band++){
+    const [start,end,step]=HORIZON_BANDS[band];let highest=HORIZON_MIN_ANGLE;
+    // The matte is a cartographic projection: sixfold vertical relief restores
+    // the readable mountain scale of the older background without altering a
+    // single world coordinate, collision height, voxel, or fast-travel point.
+    for(let distance=start;distance<=end;distance+=step){const height=terrainSample(centerX+dx*distance,centerZ+dz*distance).height,angle=Math.atan2((height-eyeY)*HORIZON_RELIEF_EXAGGERATION,distance);if(angle>highest)highest=angle;}
+    grid[offset+band]=encodeHorizonAngle(highest);
+  }
+  grid[offset+3]=255;
+}
+function uploadHorizonProjection(grid){
+  if(!horizonProjectionTex)return;gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,horizonProjectionTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,HORIZON_BINS,1,0,gl.RGBA,gl.UNSIGNED_BYTE,grid);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
+}
+function buildHorizonProjection(centerX,eyeY,centerZ){
+  const grid=new Uint8Array(HORIZON_BINS*4);for(let bin=0;bin<HORIZON_BINS;bin++)fillHorizonProjectionBin(grid,bin,centerX,eyeY,centerZ);
+  horizonProjectionGrid=grid;horizonProjectionCenterX=centerX;horizonProjectionCenterY=eyeY;horizonProjectionCenterZ=centerZ;horizonProjectionTask=null;uploadHorizonProjection(grid);return grid.byteLength;
+}
+function queueHorizonProjection(centerX,eyeY,centerZ){
+  if(horizonProjectionTask)return;horizonProjectionTask={centerX,eyeY,centerZ,grid:new Uint8Array(HORIZON_BINS*4),bin:0,started:performance.now()};
+}
+function processHorizonProjection(budgetMs=1){
+  const task=horizonProjectionTask;if(!task)return;const started=performance.now();
+  do{fillHorizonProjectionBin(task.grid,task.bin++,task.centerX,task.eyeY,task.centerZ);}while(task.bin<HORIZON_BINS&&performance.now()-started<budgetMs);
+  if(task.bin<HORIZON_BINS)return;horizonProjectionGrid=task.grid;horizonProjectionCenterX=task.centerX;horizonProjectionCenterY=task.eyeY;horizonProjectionCenterZ=task.centerZ;uploadHorizonProjection(task.grid);loadingLog('Horizon projection',`${HORIZON_BINS} azimuths · three full-island depth bands committed atomically · ${(performance.now()-task.started).toFixed(1)} ms`);horizonProjectionTask=null;
+}
+function maintainHorizonProjection(centerX,eyeY,centerZ){if(!horizonProjectionTask&&(Math.hypot(centerX-horizonProjectionCenterX,centerZ-horizonProjectionCenterZ)>2500||Math.abs(eyeY-horizonProjectionCenterY)>30))queueHorizonProjection(centerX,eyeY,centerZ);}
 
 function terrainWeatherColumn(wx,wz){
   const cx=Math.floor(wx/CHUNK_SIZE),cz=Math.floor(wz/CHUNK_SIZE),columns=prepareTerrainColumns(cx,cz);
@@ -1224,6 +1261,7 @@ uniform usampler3D uChunkValidity;
 uniform highp usampler2D uTerrainWeather;
 uniform sampler2D uFarTerrain;
 uniform sampler2D uFarMaxHeight;
+uniform sampler2D uHorizonProjection;
 uniform vec4 uFarTerrainInfo; // origin x/z, cell size, map size
 uniform float uTime;
 uniform int uLightMode;
@@ -1638,6 +1676,22 @@ vec3 shadeAtmosphericProjection(vec3 p,vec4 surface,vec3 rd,float dist){
   projected=mix(projected,horizon,clamp(aerial*.86+heightHaze,0.0,.94));
   return floor(projected*255.0+.5)/255.0;
 }
+float decodedHorizonAngle(float packed){return mix(-.40,.50,packed);}
+vec3 shadeFullIslandHorizon(vec3 rd,vec3 sky){
+  if(uBackgroundMode==0)return sky;
+  float azimuth=fract(atan(rd.z,rd.x)/6.28318530718+.5),elevation=atan(rd.y,max(length(rd.xz),.0001));
+  vec4 bands=texture(uHorizonProjection,vec2(azimuth,.5));if(bands.a<.5)return sky;
+  float nearAngle=decodedHorizonAngle(bands.r),midAngle=decodedHorizonAngle(bands.g),farAngle=decodedHorizonAngle(bands.b),feather=.0035;
+  float farMask=1.0-smoothstep(farAngle-feather,farAngle+feather,elevation);
+  float midMask=1.0-smoothstep(midAngle-feather,midAngle+feather,elevation);
+  float nearMask=1.0-smoothstep(nearAngle-feather,nearAngle+feather,elevation);
+  float day=daylightAmount();
+  vec3 farLand=mix(vec3(34.0,52.0,86.0),vec3(142.0,182.0,207.0),day)/255.0;
+  vec3 midLand=mix(vec3(28.0,61.0,74.0),vec3(82.0,151.0,157.0),day)/255.0;
+  vec3 nearLand=mix(vec3(24.0,67.0,63.0),vec3(48.0,125.0,108.0),day)/255.0;
+  vec3 projected=mix(sky,farLand,farMask*.92);projected=mix(projected,midLand,midMask*.94);projected=mix(projected,nearLand,nearMask*.96);
+  return floor(projected*255.0+.5)/255.0;
+}
 vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float tap=farVoxelCellSize(dist),hx0=farVoxelTerrainAt(p.xz-vec2(tap,0),dist).x,hx1=farVoxelTerrainAt(p.xz+vec2(tap,0),dist).x,hz0=farVoxelTerrainAt(p.xz-vec2(0,tap),dist).x,hz1=farVoxelTerrainAt(p.xz+vec2(0,tap),dist).x;
   vec3 normal=normalize(vec3(hx0-hx1,tap*2.0,hz0-hz1)),grass=vec3(56,116,52)/255.0,dry=vec3(96,152,76)/255.0,earth=vec3(132,80,44)/255.0,stone=vec3(124,124,152)/255.0,snow=vec3(224,224,224)/255.0,water=vec3(80,164,252)/255.0;
@@ -1740,7 +1794,7 @@ void main(){
   }
 
   if (!hit){
-    vec3 worldCam=uCamPos+vec3(uWorldOrigin),farP=vec3(0.0);vec4 farSurface=vec4(0.0);float farDist=0.0;bool farHit=traceFarTerrain(worldCam,worldRd,dist,farP,farSurface,farDist);vec3 backdrop=farHit?shadeFarTerrain(farP,farSurface,worldRd,farDist):skyColor(worldRd,true);
+    vec3 worldCam=uCamPos+vec3(uWorldOrigin),farP=vec3(0.0);vec4 farSurface=vec4(0.0);float farDist=0.0;bool farHit=traceFarTerrain(worldCam,worldRd,dist,farP,farSurface,farDist);vec3 sky=skyColor(worldRd,true),backdrop=farHit?shadeFarTerrain(farP,farSurface,worldRd,farDist):shadeFullIslandHorizon(worldRd,sky);
     if(waterHit){
       float waterAlpha=mix(0.62,0.36,clamp(abs(worldRd.y),0.0,1.0));
       vec3 waterCol=waterPixelColor(waterMapPos,waterNormal,worldRd,18.0);
@@ -1861,7 +1915,7 @@ void main(){
   fragColor = vec4(finalCol, 1.0);
 }`;
 
-let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uChunkValidity, uTerrainWeather, uFarTerrain, uFarMaxHeight, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uPreviewLod, uBackgroundMode, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, chunkValidityTex, terrainWeatherTex, farTerrainTex, farMaxHeightTex, paletteTex, vao;
+let prog, uRes, uCamPos, uCamBasis, uFovScale, uGrid, uRing, uWorldOrigin, uVoxels, uChunkValidity, uTerrainWeather, uFarTerrain, uFarMaxHeight, uHorizonProjection, uFarTerrainInfo, uTime, uLightMode, uPerformanceMode, uViewDistance, uFogEnabled, uFogStart, uFogDensity, uMaterialQuality, uCloudQuality, uWaterQuality, uNearDetail, uLodDistances, uPreviewLod, uBackgroundMode, uHour, uPaletteTex, uMaterialSlots, uMaterialParams, uMaterialModes, tex3d, chunkValidityTex, terrainWeatherTex, farTerrainTex, farMaxHeightTex, horizonProjectionTex, paletteTex, vao;
 let playerPos, yaw=Math.PI*0.25, pitch=-0.15;
 let spawnPos;
 // Fixed per-mode internal resolution: never adapt it during play (which caused
@@ -2164,6 +2218,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
+  const horizonStarted=performance.now(),horizonBytes=buildHorizonProjection(playerPos.x/VS,(playerPos.y+EYE_H)/VY,playerPos.z/VS);loadingLog('Full-island horizon',`${HORIZON_BINS} azimuths · three depth layers · ${(horizonBytes/1024).toFixed(1)} KiB · ${(performance.now()-horizonStarted).toFixed(1)} ms`);
   const previewCoverage=farPreviewCoverageMeters(playerPos.x/VS,playerPos.z/VS);
   if(previewCoverage<MINIMUM_PREVIEW_RADIUS_METERS){engineReady=false;startBtn.disabled=true;startBtn.textContent='300 m voxel ring unavailable';loadingLog('Coverage gate',`${previewCoverage.toFixed(1)} m available; ${MINIMUM_PREVIEW_RADIUS_METERS} m required in every direction`);showLoading('Voxel coverage verification failed',1,false);return;}
   loadingLog('Coverage gate',`${previewCoverage.toFixed(0)} m resident mathematical-voxel coverage in every direction · required ${MINIMUM_PREVIEW_RADIUS_METERS} m · accepted`);
@@ -2269,7 +2324,7 @@ function initGL(){
   uVoxels = gl.getUniformLocation(prog,'uVoxels');
   uChunkValidity = gl.getUniformLocation(prog,'uChunkValidity');
   uTerrainWeather = gl.getUniformLocation(prog,'uTerrainWeather');
-  uFarTerrain = gl.getUniformLocation(prog,'uFarTerrain');uFarMaxHeight=gl.getUniformLocation(prog,'uFarMaxHeight');uFarTerrainInfo=gl.getUniformLocation(prog,'uFarTerrainInfo');
+  uFarTerrain = gl.getUniformLocation(prog,'uFarTerrain');uFarMaxHeight=gl.getUniformLocation(prog,'uFarMaxHeight');uHorizonProjection=gl.getUniformLocation(prog,'uHorizonProjection');uFarTerrainInfo=gl.getUniformLocation(prog,'uFarTerrainInfo');
   uTime = gl.getUniformLocation(prog,'uTime');
   uLightMode = gl.getUniformLocation(prog,'uLightMode');
   uPerformanceMode = gl.getUniformLocation(prog,'uPerformanceMode');
@@ -2317,6 +2372,8 @@ function initGL(){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,0);
   farMaxHeightTex=gl.createTexture();gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_BASE_LEVEL,0);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,8);
+  horizonProjectionTex=gl.createTexture();gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,horizonProjectionTex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,HORIZON_BINS,1,0,gl.RGBA,gl.UNSIGNED_BYTE,horizonProjectionGrid);
   paletteTex=gl.createTexture();
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,paletteTex);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
@@ -3941,20 +3998,23 @@ function updateResourceLookLabel(){
 function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08);}
 function backgroundWorkAllowance(requestedMs,moving=false){
   // V-sync owns the frame. Refinement may spend only measured main-thread
-  // headroom, and a missed refresh suspends optional work for the next frame.
+  // headroom. A GPU-limited 30 Hz presentation still has CPU headroom, so rAF
+  // spacing alone must never starve the world decoder.
   if(idleDeadlineAllowance>0)return Math.max(0,Math.min(requestedMs,idleDeadlineAllowance));
   const targetWork=DEVICE_PROFILE.tier==='mobile'?7.5:10.5;
-  if(smoothedFrameGapMs>18.2||lastFrameWorkMs>targetWork)return 0;
-  const cap=moving?(DEVICE_PROFILE.tier==='mobile'?.45:.75):(DEVICE_PROFILE.tier==='mobile'?1.4:2.4);
+  if(lastFrameWorkMs>targetWork)return 0;
+  const gpuLimited=smoothedFrameGapMs>20.5&&lastFrameWorkMs<targetWork*.55;
+  const cap=gpuLimited?(moving?.35:.8):(moving?(DEVICE_PROFILE.tier==='mobile'?.45:.75):(DEVICE_PROFILE.tier==='mobile'?1.4:2.4));
   return Math.max(0,Math.min(requestedMs,cap,(targetWork-lastFrameWorkMs)*.45));
 }
-function pendingWorldBackgroundWork(){return !!farTerrainTask||!!streamTask||!!resourceCommitTask||deferredDecorationJobs.length>0||prefetchJobs.length>0||resourceVoxelCompilationQueue.length>0||(!testZoneMode&&performance.now()>=nextIdlePredictivePollAt);}
+function pendingWorldBackgroundWork(){return !!horizonProjectionTask||!!farTerrainTask||!!streamTask||!!resourceCommitTask||deferredDecorationJobs.length>0||prefetchJobs.length>0||resourceVoxelCompilationQueue.length>0||(!testZoneMode&&performance.now()>=nextIdlePredictivePollAt);}
 function scheduleWorldIdlePump(){
   if(idleWorldPumpScheduled||!hasEnteredWorld||!pendingWorldBackgroundWork())return;idleWorldPumpScheduled=true;
   const run=deadline=>{
     idleWorldPumpScheduled=false;if(!gl||document.hidden)return;const remaining=typeof deadline?.timeRemaining==='function'?deadline.timeRemaining():1.25;if(remaining<.35){scheduleWorldIdlePump();return;}
     idleDeadlineAllowance=Math.max(.25,Math.min(streamingBudgetMs,remaining-1));const now=performance.now(),moving=movementInputActive();
-    if(farTerrainTask)processFarTerrainRefresh(idleDeadlineAllowance);
+    if(horizonProjectionTask)processHorizonProjection(idleDeadlineAllowance);
+    else if(farTerrainTask)processFarTerrainRefresh(idleDeadlineAllowance);
     else if(streamTask){if(resourceCommitTask)processDeferredDecorations(now,moving);else processStreamTask();}
     else if(resourceCommitTask||deferredDecorationJobs.length)processDeferredDecorations(now,moving);
     else if(prefetchJobs.length)processBackgroundPrefetch(now,moving);
@@ -3962,10 +4022,15 @@ function scheduleWorldIdlePump(){
     else if(!testZoneMode){nextIdlePredictivePollAt=now+250;processBackgroundPrefetch(now,moving);}
     idleDeadlineAllowance=0;scheduleWorldIdlePump();
   };
-  if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:180});else setTimeout(()=>run({timeRemaining:()=>1.25}),0);
+  // Firefox may report no requestIdleCallback window while a GPU-bound WebGL
+  // canvas presents at 30 Hz. A paced timer supplies one small CPU slice rather
+  // than allowing thousands of fine children to remain permanently queued.
+  const gpuLimited=smoothedFrameGapMs>20.5&&lastFrameWorkMs<5.0;
+  if(typeof requestIdleCallback==='function'&&!gpuLimited)requestIdleCallback(run,{timeout:80});else setTimeout(()=>run({timeRemaining:()=>1.8}),12);
 }
 
 function describeActiveFrameWork(){
+  if(horizonProjectionTask)return `full-island horizon azimuth ${Math.min(horizonProjectionTask.bin+1,HORIZON_BINS)}/${HORIZON_BINS}`;
   if(streamTask){
     return `clipmap refinement ${Math.min(streamTask.cursor+1,streamTask.jobs.length)}/${streamTask.jobs.length}`;
   }
@@ -4003,6 +4068,7 @@ function loop(now){
   // atlas source is pre-baked, and each scheduled unit is a complete 100 m
   // square, so this lookup/packing work normally finishes in a few frames.
   if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(predictedPreviewX,predictedPreviewZ);
+  maintainHorizonProjection(playerVX,(playerPos.y+currentEyeH)/VY,playerVZ);
   // World refinement runs between display callbacks through the idle pump.
   // This animation callback owns only input, simulation and rendering.
   performIdleMemoryMaintenance(now);
@@ -4256,7 +4322,7 @@ function beginMapFastTravel(targetWX,targetWZ){
   windowMinX=targetMinX;windowMinZ=targetMinZ;ringX=0;ringZ=0;streamTask=null;resourceCommitTask=null;prefetchJobs.length=0;prefetchSignature='';deferredDecorationJobs.length=0;deferredDecorationKeys.clear();loadedGrid.fill(0);chunkValidityGrid.fill(0);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX/CHUNK_SIZE,LOADED_CHUNKS_Y,activeGridSizeZ/CHUNK_SIZE,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,chunkValidityGrid);
   assembleMathematicalTerrainWeatherGrid(8);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);buildFarTerrainMap(targetWX,targetWZ);uploadFarTerrainControlField(farTerrainGrid);uploadFarHeightPyramid(farTerrainGrid);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
-  playerPos={x:(targetWX+.5)*VS,y:(h+2)*VY,z:(targetWZ+.5)*VS};velY=0;grounded=false;queueFullResidentRefinement();fastTravelInProgress=false;const biome=worldBiomeField(targetWX,targetWZ);loadingLog('Instant travel',`${biome.dominant.name.replaceAll('_',' ')} · seed ${biome.seed} · mathematical destination published before voxel refinement`);renderWorldMap();
+  playerPos={x:(targetWX+.5)*VS,y:(h+2)*VY,z:(targetWZ+.5)*VS};velY=0;grounded=false;buildHorizonProjection(targetWX,(playerPos.y+EYE_H)/VY,targetWZ);queueFullResidentRefinement();fastTravelInProgress=false;const biome=worldBiomeField(targetWX,targetWZ);loadingLog('Instant travel',`${biome.dominant.name.replaceAll('_',' ')} · seed ${biome.seed} · mathematical destination and full-island horizon published before voxel refinement`);renderWorldMap();
 }
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}
@@ -4424,6 +4490,7 @@ function render(){
   gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,farTerrainTex);gl.uniform1i(uFarTerrain,3);
   gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,farMaxHeightTex);gl.uniform1i(uFarMaxHeight,4);
   gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);gl.uniform1i(uChunkValidity,5);
+  gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,horizonProjectionTex);gl.uniform1i(uHorizonProjection,6);
 
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }

@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.5.2**
+Current release: **v0.0.1.6.5.2.1**
+
+## v0.0.1.6.5.2.1 Full-island background and loading repair
+
+- Fixes the blank horizon when the nearest major ridge lies beyond the local one-kilometer render radius. A compact 512-azimuth panorama now projects the supplied island's real mountains in near, middle, and far depth layers out to 5.5 km.
+- Builds the panorama from the immutable heightmap equation. It is a 2 KiB observation cache, not invented scenery, placed objects, or a replacement world.
+- Uses sixfold cartographic vertical relief in the matte so this long, low island produces readable mountain silhouettes like the older background. Physical terrain, collision, editing, and fast-travel elevations are unchanged.
+- Keeps the detailed one-kilometer terrain ray intersection in front of the panorama, so nearby terrain, water, edits, and Resources always occlude it correctly.
+- Commits panorama refreshes atomically after substantial movement or elevation change. A partially calculated skyline is never shown and no screen-space temporal effect is used.
+- Fixes refinement starvation on Firefox when WebGL is GPU-limited near 30 Hz but main-thread frame work remains inexpensive. Frame spacing no longer masquerades as CPU saturation.
+- Adds a paced 12 ms scheduler fallback when `requestIdleCallback` supplies no usable window. The decoder continues advancing without placing world generation back inside the animation callback.
 
 ## v0.0.1.6.5.2 Atmospheric landscape projections
 
