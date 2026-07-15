@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.2';
+  const CURRENT_VERSION = '0.0.1.5.3';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.2 · Infinite Detail Voxel Engine · continuous surface-span cache</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3 · Infinite Detail Voxel Engine · biome Resources restored</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · exact proxy heights · complete surface spans</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · biome Resources · collision-free ecology</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=41"></script>
+<script src="heightmap-world-v2.js?v=42"></script>
 <script>
 (() => {
 "use strict";
@@ -827,7 +827,10 @@ function generateChunk(cx, cy, cz, includeResources=true) {
   }
 
   if(includeResources){baseOnlyChunks.delete(key);stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz);}
-  else baseOnlyChunks.add(key);
+  // Only surface/canopy chunks can contain Resources. Shallow terrain remains
+  // editable but never enters the decoration queue, preventing the preload
+  // budget from being consumed by underground chunks with nothing to stamp.
+  else if(baseY+CHUNK_SIZE-1>=columns.minSurface+1)baseOnlyChunks.add(key);
 
   // Empty high-altitude chunks are represented implicitly and cost no voxel array.
   if (!chunk.some(Boolean)){chunks.delete(key);resourceChunks.delete(key);}
@@ -1857,6 +1860,10 @@ function initialLoadProgress(workFraction=1){
 function waitForMinimumPreload(loadToken=initialLoadToken){
   if(loadToken!==initialLoadToken)return;
   const elapsed=performance.now()-bootLoadStarted;
+  // Spend otherwise idle audit frames restoring a small, near-spawn Resource
+  // neighborhood. This does not extend boot time and keeps expensive canopy
+  // rasterization out of the first walking frames.
+  processBootDeferredDecoration();
   if(!verificationStarted){verificationStarted=performance.now();verificationDuration=Math.max(1,activeMinimumBootMs-elapsed);loadingLog('Cache audit',`${chunks.size} generated chunks entering consistency pass`);}
   if(elapsed<activeMinimumBootMs){
     showLoading(testZoneMode?'Auditing Test zone':'Auditing resident ring',initialLoadProgress(1),false);
@@ -1871,7 +1878,7 @@ function beginInitialWorldLoad(useTestZone=false){
   if(!globalThis.DREMPLAY_EXAMPLE_WORLD){loadingLog('World atlas','heightmap-world-v2.js is missing; runtime generation is intentionally disabled');startBtn.disabled=true;startBtn.textContent='World atlas unavailable';testZoneBtn.disabled=true;return;}
   const loadToken=++initialLoadToken;testZoneMode=useTestZone;activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
   if(useTestZone){
-    chunks.clear();generatedChunks.clear();dirtyChunks.clear();baseOnlyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
+    chunks.clear();generatedChunks.clear();dirtyChunks.clear();baseOnlyChunks.clear();resourceChunks.clear();terrainColumnPlans.clear();resourceCeilingCache.clear();waterLevels.clear();waterSources.clear();waterQueue.length=0;waterQueued.clear();waterDirtyTiles.clear();deferredDecorationJobs.length=0;deferredDecorationKeys.clear();deferredDecorationOrderDirty=false;farTerrainTask=null;terrainColumnCacheKey='';terrainColumnCache=null;ringX=0;ringZ=0;
     engineReady=false;startBtn.disabled=true;startBtn.setAttribute('aria-disabled','true');startBtn.textContent='Wait until loaded…';testZoneBtn.disabled=true;testZoneBtn.textContent='Loading test zone…';
   }
   activeGridSizeX=useTestZone?TEST_ZONE_SIZE_X:LOADED_SIZE_X;
@@ -1881,7 +1888,7 @@ function beginInitialWorldLoad(useTestZone=false){
   windowMinX=useTestZone?(LOADED_SIZE_X-activeGridSizeX)/2:0;
   windowMinZ=useTestZone?(LOADED_SIZE_Z-activeGridSizeZ)/2:0;
   ringX=0;ringZ=0;
-  verificationStarted=0;verificationDuration=1;lastAuditLog=-1;
+  verificationStarted=0;verificationDuration=1;lastAuditLog=-1;bootDecorationsDone=0;
   bootLoadStarted=performance.now();
   loadedGrid=new Uint8Array(activeUploadBytes());
   chunkValidityGrid=new Uint8Array((activeGridSizeX/CHUNK_SIZE)*LOADED_CHUNKS_Y*(activeGridSizeZ/CHUNK_SIZE));
@@ -1905,7 +1912,7 @@ function beginInitialWorldLoad(useTestZone=false){
   const batch=()=>{
     if(loadToken!==initialLoadToken)return;
     const started=performance.now();
-    while(done<jobs.length&&performance.now()-started<14){const job=jobs[done++],coords=job.slice(0,3);generateChunk(...coords,false);copyChunkToLoadedGrid(...coords);const key=chunkKey(...coords);if(baseOnlyChunks.has(key)&&!deferredDecorationKeys.has(key)){deferredDecorationKeys.add(key);deferredDecorationJobs.push(coords);}}
+    while(done<jobs.length&&performance.now()-started<14){const job=jobs[done++],coords=job.slice(0,3);generateChunk(...coords,false);copyChunkToLoadedGrid(...coords);queueDeferredDecoration(coords);}
     const work=done/jobs.length;
     showLoading(`Decoding ${span}×${span} ${useTestZone?'chunk Test zone':'chunk moving voxel cache'}`,initialLoadProgress(work),false);
     const logStep=Math.floor(work*20);
@@ -2599,6 +2606,22 @@ function naturalAccentCandidates(cx,cz,columns,baseX=cx*CHUNK_SIZE,baseZ=cz*CHUN
     }
   }return result;
 }
+function resourceIsPlant(def){return def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';}
+function resourceIsRock(def){return def.role==='stone'||def.role==='grain'||def.role==='crystal';}
+function resourceRootRadius(def){
+  const bounds=resourceBounds(def);
+  if(resourceIsRock(def))return Math.max(1.5,Math.min(6,Math.max(bounds.x,bounds.z)*.72));
+  if(def.role==='tree')return woodyProfile(def).form==='shrub'?Math.max(2,def.scale*.18):Math.max(2.2,def.scale*.075);
+  if(def.role==='flower'||def.role==='fern')return Math.max(1.4,def.scale*.16);
+  if(def.role==='moss')return Math.max(1.2,def.scale*.18);
+  return Math.max(1,Math.min(3,Math.max(bounds.x,bounds.z)*.35));
+}
+function resourcesConflict(a,b){
+  const aPlant=resourceIsPlant(a.def),bPlant=resourceIsPlant(b.def),aRock=resourceIsRock(a.def),bRock=resourceIsRock(b.def);
+  if(!((aPlant&&bPlant)||(aPlant&&bRock)||(aRock&&bPlant)))return false;
+  const dy=Math.abs(a.wy-b.wy);if(dy>Math.max(5,(a.def.scale+b.def.scale)*.16))return false;
+  return Math.hypot(a.wx-b.wx,a.wz-b.wz)<resourceRootRadius(a.def)+resourceRootRadius(b.def);
+}
 function resourceCeilingForChunk(cx,cz,columns){
   const key=`${cx},${cz}`,cached=resourceCeilingCache.get(key);if(cached!==undefined)return cached;
   const x0=cx*CHUNK_SIZE,x1=x0+CHUNK_SIZE-1,z0=cz*CHUNK_SIZE,z1=z0+CHUNK_SIZE-1;let top=columns.maxSurface+12;
@@ -2702,13 +2725,20 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const put=(x,y,z,m,rid,airOnly=false)=>{const lx=x-baseX,ly=y-baseY,lz=z-baseZ;if(lx>=0&&ly>=0&&lz>=0&&lx<32&&ly<32&&lz<32){const i=lx+ly*32+lz*1024;if(airOnly&&chunk[i]!==MAT_AIR)return;chunk[i]=m;tag(i,rid);}};
   const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const rid=registerResourceName(def.name),foliageRid=def.role==='tree'?registerResourceName(foliageResourceName(def)):rid,plant=def.role==='tree'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material] of voxelizedResource(def))put(wx+x,wy+y,wz+z,material,def.role==='tree'&&material!==def.secondary?foliageRid:rid,plant);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
   // Main props are emitted from every neighboring origin chunk whose true
-  // occupied bounds overlap this chunk. This removes the old invisible chunk
-  // box that sheared foxglove bells, boulders and broad tree crowns at borders.
+  // occupied bounds overlap this chunk. Resolve the candidate set before
+  // rasterization: stone wins its footprint first, then trees, shrubs and
+  // flowers. A plant can therefore never be rooted in a boulder or another
+  // flower merely because two independent biome fields happened to overlap.
+  const candidates=[],candidateKeys=new Set(),addCandidate=entry=>{if(!entry)return;const id=`${entry.def.name}:${entry.wx}:${entry.wy}:${entry.wz}`;if(!candidateKeys.has(id)){candidateKeys.add(id);candidates.push(entry);}};
   for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){
     const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;
-    for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))stamp(entry.def,entry.wx,entry.wy,entry.wz);
-    for(let n=0;n<3;n++){const tree=naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ);if(tree)stamp(tree.def,tree.wx,tree.wy,tree.wz);}
+    for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))addCandidate(entry);
+    for(let n=0;n<3;n++)addCandidate(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));
   }
+  const priority=entry=>resourceIsRock(entry.def)?0:entry.def.role==='tree'&&woodyProfile(entry.def).form!=='shrub'?1:entry.def.role==='tree'?2:3;
+  candidates.sort((a,b)=>priority(a)-priority(b)||a.wx-b.wx||a.wz-b.wz||a.def.name.localeCompare(b.def.name));
+  const acceptedResources=[];
+  for(const entry of candidates){if(acceptedResources.some(other=>resourcesConflict(entry,other)))continue;acceptedResources.push(entry);stamp(entry.def,entry.wx,entry.wy,entry.wz);}
 
   // Surface micro-Resources are reconstructed from a jittered 2×2 voxel lattice.
   // This produces a much denser living carpet of individually identified blades across
@@ -2720,6 +2750,10 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
     const jx=Math.floor(hash3(cx,gx,gz+cz*17,4103)*2),jz=Math.floor(hash3(cx,gx+gz*19,cz,4111)*2);
     const lx=Math.min(31,gx*2+jx),lz=Math.min(31,gz*2+jz),wx=baseX+lx,wz=baseZ+lz,col=columns[lx+lz*32];
     if(!col)continue;
+    // Micro-Resources inherit the same root exclusion field. Grass and grains
+    // remain dense across the biome but leave coherent soil around flowers,
+    // trunks, shrubs and boulders instead of sprouting through their geometry.
+    if(acceptedResources.some(entry=>Math.hypot(wx-entry.wx,wz-entry.wz)<resourceRootRadius(entry.def)+.8))continue;
     const patch=valueNoise2(wx*.034+17,wz*.034-29,4127),scatter=hash3(wx,col.h,wz,4133);
     // Pebbles occupy the first water cell above the generated bed, replacing a
     // thin slice of water rather than floating on its surface. Every pebble
@@ -3511,11 +3545,29 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   // only after a healthy frame and then observes a cooldown.
   if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.35))return;
   const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
-  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);const key=chunkKey(...job);if(baseOnlyChunks.has(key)&&!deferredDecorationKeys.has(key)){deferredDecorationKeys.add(key);deferredDecorationJobs.push(job);}worked=true;lastPrefetchWorkAt=performance.now();}
+  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);queueDeferredDecoration(job);worked=true;lastPrefetchWorkAt=performance.now();}
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
-const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let clipmapProgressFloor=0;
+const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0;const BOOT_RESOURCE_CHUNK_LIMIT=DEVICE_PROFILE.tier==='mobile'?24:DEVICE_PROFILE.tier==='high'?72:48;let clipmapProgressFloor=0;
+function queueDeferredDecoration(job){const key=chunkKey(...job);if(!baseOnlyChunks.has(key)||deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push(job);deferredDecorationOrderDirty=true;}
+function decorationFocusChunk(){if(hasEnteredWorld&&playerPos)return {cx:Math.floor(playerPos.x/VS/CHUNK_SIZE),cz:Math.floor(playerPos.z/VS/CHUNK_SIZE)};return {cx:Math.floor((windowMinX+activeGridSizeX*.5)/CHUNK_SIZE),cz:Math.floor((windowMinZ+activeGridSizeZ*.5)/CHUNK_SIZE)};}
+function takeNearestDeferredDecoration(){
+  if(!deferredDecorationJobs.length)return null;const focus=decorationFocusChunk();
+  if(deferredDecorationOrderDirty||Math.abs(focus.cx-lastDecorationFocusCX)>1||Math.abs(focus.cz-lastDecorationFocusCZ)>1){
+    // Descending order makes pop() consume the nearest surface/canopy child.
+    // Vertical distance is a small tie-breaker; horizontal biome continuity is
+    // more important than filling an arbitrary high canopy cell first.
+    deferredDecorationJobs.sort((a,b)=>{const da=(a[0]-focus.cx)**2+(a[2]-focus.cz)**2+Math.abs(a[1])*.002,db=(b[0]-focus.cx)**2+(b[2]-focus.cz)**2+Math.abs(b[1])*.002;return db-da;});
+    deferredDecorationOrderDirty=false;lastDecorationFocusCX=focus.cx;lastDecorationFocusCZ=focus.cz;
+  }
+  const job=deferredDecorationJobs.pop();if(job)deferredDecorationKeys.delete(chunkKey(...job));return job;
+}
+function processBootDeferredDecoration(){
+  if(bootDecorationsDone>=BOOT_RESOURCE_CHUNK_LIMIT)return false;const job=takeNearestDeferredDecoration();if(!job)return false;
+  if(!baseOnlyChunks.has(chunkKey(...job)))return false;
+  if(decorateBaseOnlyChunk(...job)){copyChunkToLoadedGrid(...job);bootDecorationsDone++;if(bootDecorationsDone===BOOT_RESOURCE_CHUNK_LIMIT)loadingLog('Biome Resources',`${bootDecorationsDone} near-spawn surface/canopy chunks restored before play · remaining ecology stays distance-gated`);return true;}return false;
+}
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}
 function validityIndexForWorldChunk(cx,cy,cz){const b=residentChunkBounds(),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE,lx=cx-b.minCX,ly=cy-b.minCY,lz=cz-b.minCZ;if(lx<0||ly<0||lz<0||lx>=gx||ly>=LOADED_CHUNKS_Y||lz>=gz)return -1;const px=mod(lx+ringX/CHUNK_SIZE,gx),pz=mod(lz+ringZ/CHUNK_SIZE,gz);return px+ly*gx+pz*gx*LOADED_CHUNKS_Y;}
@@ -3560,7 +3612,7 @@ function processStreamTask(){
     if(!generatedChunks.has(chunkKey(cx,cy,cz)))generateChunk(cx,cy,cz,false);
     uploadRegion(cx*CHUNK_SIZE,cy*CHUNK_SIZE,cz*CHUNK_SIZE,(cx+1)*CHUNK_SIZE-1,(cy+1)*CHUNK_SIZE-1,(cz+1)*CHUNK_SIZE-1);setResidentChunkValidity(cx,cy,cz,1);validityChanged=true;worked=true;
     const columnKey=`${cx},${cz}`;if(cy===surfaceCY&&!task.weatherDone.has(columnKey)){task.weatherDone.add(columnKey);uploadResidentWeatherColumn(cx,cz);}
-    const key=chunkKey(cx,cy,cz);if(baseOnlyChunks.has(key)&&!deferredDecorationKeys.has(key)){deferredDecorationKeys.add(key);deferredDecorationJobs.push([cx,cy,cz]);}
+    queueDeferredDecoration([cx,cy,cz]);
   }
   if(validityChanged)uploadChunkValidity();if(!task)return;
   const progress=task.jobs.length?task.cursor/task.jobs.length:1;clipmapProgressFloor=Math.max(clipmapProgressFloor,progress);showLoading('Refining moving voxel clipmap',clipmapProgressFloor,true);
@@ -3569,7 +3621,7 @@ function processStreamTask(){
 }
 function processDeferredDecorations(now,moving){
   if(moving||streamTask||!deferredDecorationJobs.length||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.15)return;
-  const job=deferredDecorationJobs.pop(),key=chunkKey(...job);deferredDecorationKeys.delete(key);if(!baseOnlyChunks.has(key))return;
+  const job=takeNearestDeferredDecoration();if(!job)return;const key=chunkKey(...job);if(!baseOnlyChunks.has(key))return;
   if(decorateBaseOnlyChunk(...job)&&chunkInsideResident(...job))uploadRegion(job[0]*CHUNK_SIZE,job[1]*CHUNK_SIZE,job[2]*CHUNK_SIZE,(job[0]+1)*CHUNK_SIZE-1,(job[1]+1)*CHUNK_SIZE-1,(job[2]+1)*CHUNK_SIZE-1);
 }
 function updateLoadedWindow(){

@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.2**
+Current release: **v0.0.1.5.3**
+
+## v0.0.1.5.3 biome Resources restored
+
+- Restored deterministic biome Resources to the working mathematical terrain cache: trees and saplings, shrubs, flowers, moss, grass blades, boulders, stone fragments, sand grains, and stream pebbles again resolve from their continuous ecology fields.
+- Replaced the reversed deferred-decoration order with a near-first surface/canopy queue. Nearby Resources now become visible before distant canopy work instead of remaining trapped behind thousands of far cells.
+- Uses the existing preload audit frames to rasterize a device-scaled near-spawn Resource neighborhood without extending the startup timer or interrupting walking.
+- Added deterministic root exclusion. Rocks reserve their footprints before trees; trees reserve theirs before shrubs and flowers; micro-grass and grains leave coherent clearance around all accepted props. Plants no longer emerge from flowers, and trees no longer grow from rocks.
+- Keeps Resources surface-only, reproducible, provenance-tagged, and disposable as render-cache samples. The mathematical biome definition remains independent of voxel resolution.
 
 ## v0.0.1.5.2 continuous surface-span fix
 
