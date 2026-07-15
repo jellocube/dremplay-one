@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.2**
+Current release: **v0.0.1.5.3.3**
+
+## v0.0.1.5.3.3 streamer-integrated ecology fix
+
+- Fixes biome Resources still remaining near spawn when the moving clipmap never becomes idle. Repeated walking shifts could merge work into the same terrain task indefinitely, starving every post-stream Resource transaction.
+- Moves Resource staging inside the active streaming branch. Ecology no longer waits for the terrain task to become empty.
+- A Resource transaction temporarily owns the streamer, resolves its own exact surface and three canopy children, then returns control to ordinary clipmap refinement.
+- Generates missing surface/canopy children directly from the mathematical world definition rather than depending on their order in the terrain queue.
+- Commits every completed child and its validity state together, so streamed trees and ground Resources follow the player without exposing partial canopies.
 
 ## v0.0.1.5.3.2 moving biome Resource fix
 
