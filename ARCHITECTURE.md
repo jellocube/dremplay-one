@@ -10,6 +10,8 @@ The graph is serialized inside the portable Resource transfer ID along with type
 
 Every emitted Resource voxel receives provenance at part granularity. The identifier is a stable combination of Resource name and taxonomy label, such as `silver birch tree trunk`, `woodland mushroom gill`, or `pentagonal quartz cluster crystal terminal`. Inspection resolves this identity directly from the sparse provenance sidecar, allowing later harvesting, damage, crafting, and editor tools to address meaningful parts without changing the underlying material number.
 
+Builder visualization is not part of engine initialization. Graph and voxel previews are evaluated lazily when the Builder opens and are guarded from the world loader. Runtime emission caches the registered identity for each `(Resource, taxonomy)` pair, so thousands of voxels may share one semantic part ID without repeating string construction or registry work during preload.
+
 ## Immutable world query
 
 The authoritative level is a pure coordinate field. `terrainSample(x,z)`, `worldBiomeField(x,z)`, `worldTrailField(x,z)`, and the Resource equations return the same terrain, blended biome weights, ecological seed, natural trail occupancy, wind, and Resource roots independently of query order. Fine voxels are a disposable observation cache, not world data.

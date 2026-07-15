@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6**
+Current release: **v0.0.1.6.1**
+
+## v0.0.1.6.1 Resource Builder startup repair
+
+- Removes all hidden Resource graph and 3D preview rendering from the engine startup path. The Builder now compiles its preview lazily only when the window opens, so an editor-only canvas failure cannot prevent the world loader from starting.
+- Adds a guarded Builder initialization path. A preview error is isolated to the Builder status panel and console instead of terminating the game script.
+- Caches Resource part identities by Resource and taxonomy. World generation no longer constructs and registers the same trunk, branch, leaf, root, cap, or crystal label for every individual voxel during preload.
+- Retains per-part provenance while reducing the taxonomy hot path to a numeric lookup after the first occurrence of each part.
+- Makes the Resource Builder a regular closable tool window and refreshes its graph and preview when opened.
 
 ## v0.0.1.6 Resource Builder
 
