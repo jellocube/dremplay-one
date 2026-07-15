@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3**
+Current release: **v0.0.1.5.3.1**
+
+## v0.0.1.5.3.1 atomic Resource cluster fix
+
+- Fixes the floating and chopped vegetation visible in v0.0.1.5.3. The deferred queue previously revealed individual vertical chunks, allowing leaves and neighboring crown slices to appear before their trunk and root chunks.
+- Queues Resources by horizontal ecological neighborhood instead of by vertical voxel child.
+- Rasterizes a complete 5×5-chunk footprint—large enough for the widest mature crown—and all intersecting vertical children before making any part visible.
+- Commits the finished Resource neighborhood to the GPU in one render turn, so trunks, roots, canopies, flowers, rocks, and cross-boundary crown pieces appear together.
+- Retains the deterministic plant/flower and tree/rock exclusion rules from v0.0.1.5.3.
 
 ## v0.0.1.5.3 biome Resources restored
 

@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3';
+  const CURRENT_VERSION = '0.0.1.5.3.1';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3 · Infinite Detail Voxel Engine · biome Resources restored</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3.1 · Infinite Detail Voxel Engine · atomic Resource clusters</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · biome Resources · collision-free ecology</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource clusters · collision-free ecology</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=42"></script>
+<script src="heightmap-world-v2.js?v=43"></script>
 <script>
 (() => {
 "use strict";
@@ -3549,24 +3549,37 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
-const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0;const BOOT_RESOURCE_CHUNK_LIMIT=DEVICE_PROFILE.tier==='mobile'?24:DEVICE_PROFILE.tier==='high'?72:48;let clipmapProgressFloor=0;
-function queueDeferredDecoration(job){const key=chunkKey(...job);if(!baseOnlyChunks.has(key)||deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push(job);deferredDecorationOrderDirty=true;}
+const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0,nextResourceCommitAt=0;const RESOURCE_COMMIT_RADIUS=2,BOOT_RESOURCE_CLUSTER_LIMIT=DEVICE_PROFILE.tier==='mobile'?2:DEVICE_PROFILE.tier==='high'?4:3;let clipmapProgressFloor=0;
+function queueDeferredDecoration(job){const chunk=chunkKey(...job);if(!baseOnlyChunks.has(chunk))return;const key=`${job[0]},${job[2]}`;if(deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push([job[0],job[2]]);deferredDecorationOrderDirty=true;}
 function decorationFocusChunk(){if(hasEnteredWorld&&playerPos)return {cx:Math.floor(playerPos.x/VS/CHUNK_SIZE),cz:Math.floor(playerPos.z/VS/CHUNK_SIZE)};return {cx:Math.floor((windowMinX+activeGridSizeX*.5)/CHUNK_SIZE),cz:Math.floor((windowMinZ+activeGridSizeZ*.5)/CHUNK_SIZE)};}
 function takeNearestDeferredDecoration(){
   if(!deferredDecorationJobs.length)return null;const focus=decorationFocusChunk();
   if(deferredDecorationOrderDirty||Math.abs(focus.cx-lastDecorationFocusCX)>1||Math.abs(focus.cz-lastDecorationFocusCZ)>1){
-    // Descending order makes pop() consume the nearest surface/canopy child.
-    // Vertical distance is a small tie-breaker; horizontal biome continuity is
-    // more important than filling an arbitrary high canopy cell first.
-    deferredDecorationJobs.sort((a,b)=>{const da=(a[0]-focus.cx)**2+(a[2]-focus.cz)**2+Math.abs(a[1])*.002,db=(b[0]-focus.cx)**2+(b[2]-focus.cz)**2+Math.abs(b[1])*.002;return db-da;});
+    // Descending order makes pop() consume the nearest complete horizontal
+    // Resource neighborhood, never an arbitrary canopy slice.
+    deferredDecorationJobs.sort((a,b)=>{const da=(a[0]-focus.cx)**2+(a[1]-focus.cz)**2,db=(b[0]-focus.cx)**2+(b[1]-focus.cz)**2;return db-da;});
     deferredDecorationOrderDirty=false;lastDecorationFocusCX=focus.cx;lastDecorationFocusCZ=focus.cz;
   }
-  const job=deferredDecorationJobs.pop();if(job)deferredDecorationKeys.delete(chunkKey(...job));return job;
+  while(deferredDecorationJobs.length){const job=deferredDecorationJobs.pop(),key=`${job[0]},${job[1]}`;if(!deferredDecorationKeys.has(key))continue;deferredDecorationKeys.delete(key);return job;}return null;
+}
+function decorateResourceNeighborhood(centerCX,centerCZ,uploadNow){
+  const b=residentChunkBounds(),changed=[];
+  // A mature crown can extend two horizontal chunks from its mathematical
+  // origin. Commit that complete 5×5 footprint and every vertical child in one
+  // JavaScript turn, so no frame can expose leaves without trunk/root voxels or
+  // a crown sliced at a chunk boundary.
+  for(let cx=Math.max(b.minCX,centerCX-RESOURCE_COMMIT_RADIUS);cx<=Math.min(b.maxCX,centerCX+RESOURCE_COMMIT_RADIUS);cx++)for(let cz=Math.max(b.minCZ,centerCZ-RESOURCE_COMMIT_RADIUS);cz<=Math.min(b.maxCZ,centerCZ+RESOURCE_COMMIT_RADIUS);cz++){
+    deferredDecorationKeys.delete(`${cx},${cz}`);
+    for(let cy=b.minCY;cy<=b.maxCY;cy++){const coords=[cx,cy,cz];if(!baseOnlyChunks.has(chunkKey(...coords)))continue;if(decorateBaseOnlyChunk(...coords))changed.push(coords);}
+  }
+  // Decoration above is atomic with respect to rendering. Only after every
+  // intersecting child exists do we copy/upload the completed neighborhood.
+  for(const coords of changed)uploadNow?uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1):copyChunkToLoadedGrid(...coords);
+  return changed.length;
 }
 function processBootDeferredDecoration(){
-  if(bootDecorationsDone>=BOOT_RESOURCE_CHUNK_LIMIT)return false;const job=takeNearestDeferredDecoration();if(!job)return false;
-  if(!baseOnlyChunks.has(chunkKey(...job)))return false;
-  if(decorateBaseOnlyChunk(...job)){copyChunkToLoadedGrid(...job);bootDecorationsDone++;if(bootDecorationsDone===BOOT_RESOURCE_CHUNK_LIMIT)loadingLog('Biome Resources',`${bootDecorationsDone} near-spawn surface/canopy chunks restored before play · remaining ecology stays distance-gated`);return true;}return false;
+  if(bootDecorationsDone>=BOOT_RESOURCE_CLUSTER_LIMIT)return false;const job=takeNearestDeferredDecoration();if(!job)return false;
+  const changed=decorateResourceNeighborhood(job[0],job[1],false);if(changed){bootDecorationsDone++;if(bootDecorationsDone===BOOT_RESOURCE_CLUSTER_LIMIT)loadingLog('Biome Resources',`${bootDecorationsDone} near-spawn 5×5 Resource clusters committed atomically · ${changed} final surface/canopy chunks in last cluster`);return true;}return false;
 }
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}
@@ -3620,9 +3633,8 @@ function processStreamTask(){
   streamMs+=performance.now()-task.started;loadingLog('Clipmap ready',`${task.total} independently valid fine chunks transferred in ${streamMs.toFixed(1)} ms · authored chunks remain in the global sparse world store`);streamTask=null;clipmapProgressFloor=1;hideLoading();clipmapProgressFloor=0;evictDistantCleanChunks();
 }
 function processDeferredDecorations(now,moving){
-  if(moving||streamTask||!deferredDecorationJobs.length||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.15)return;
-  const job=takeNearestDeferredDecoration();if(!job)return;const key=chunkKey(...job);if(!baseOnlyChunks.has(key))return;
-  if(decorateBaseOnlyChunk(...job)&&chunkInsideResident(...job))uploadRegion(job[0]*CHUNK_SIZE,job[1]*CHUNK_SIZE,job[2]*CHUNK_SIZE,(job[0]+1)*CHUNK_SIZE-1,(job[1]+1)*CHUNK_SIZE-1,(job[2]+1)*CHUNK_SIZE-1);
+  if(moving||streamTask||now<nextResourceCommitAt||!deferredDecorationJobs.length||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.15)return;
+  const job=takeNearestDeferredDecoration();if(!job)return;const changed=decorateResourceNeighborhood(job[0],job[1],true);if(changed){nextResourceCommitAt=performance.now()+650;loadingLog('Resource commit',`${changed} trunk/canopy/cross-boundary chunks revealed atomically around ${job[0]},${job[1]}`);}
 }
 function updateLoadedWindow(){
   if(testZoneMode)return;const playerVoxelX=Math.floor(playerPos.x/VS),playerVoxelZ=Math.floor(playerPos.z/VS),now=performance.now();if(now-lastStreamShiftAt<80)return;
