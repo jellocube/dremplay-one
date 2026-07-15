@@ -2,7 +2,14 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.4.1**
+Current release: **v0.0.1.5.3.4.2**
+
+## v0.0.1.5.3.4.2 blue spruce material fix
+
+- Applies the requested material properties ID `0xD32000A800B00096823AC702` to the dedicated `blue_spruce_frond` slot.
+- Changes its base/light/dark palette indices to 168/176/150 and its noise/scale/softness parameters to the exact encoded values.
+- Keeps blue spruce needles isolated from ordinary green leaves and shared conifer materials; birch, oak, fir, apple, and shrub foliage are unchanged.
+- Fixes blue spruce fronds appearing white because the previous dedicated slot carried the wrong palette payload.
 
 ## v0.0.1.5.3.4.1 predictive Resource guard
 

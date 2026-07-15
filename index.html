@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3.4.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3.4.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3.4.1';
+  const CURRENT_VERSION = '0.0.1.5.3.4.2';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3.4.1 · Infinite Detail Voxel Engine · predictive Resource guard</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3.4.2 · Infinite Detail Voxel Engine · blue spruce material fix</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3.4.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3.4.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · guarded predictive ecology</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · corrected blue spruce fronds</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=47"></script>
+<script src="heightmap-world-v2.js?v=48"></script>
 <script>
 (() => {
 "use strict";
@@ -1695,7 +1695,7 @@ const DEFAULT_MATERIAL_SLOTS=[
   [32,31,33],[2,1,3],
   [35,34,36],[38,37,39],[41,40,42],[44,43,45],[47,46,48],[149,148,150],[50,49,51],
   [53,52,54],[56,55,57],[59,58,60],[62,61,63],[65,64,66],[68,67,69],
-  [71,70,72],[74,73,75],[77,76,78],[80,79,81],[83,82,84],[86,85,87],[11,133,12]
+  [71,70,72],[74,73,75],[77,76,78],[80,79,81],[83,82,84],[86,85,87],[168,176,150]
 ];
 // strength, pattern scale in voxels, softness. Stone is deliberately broad and
 // blurred; decorative colors retain crisp, granular microvoxel texture.
@@ -1705,10 +1705,10 @@ const DEFAULT_MATERIAL_PARAMS=[
   [0.12,5,0.70],[0.25,2.25,.30],
   [.14,5,.72],[.12,7,.86],[.18,5,.66],[.10,8,.92],[.18,3,.46],[.14,2.2,.42],
   [.24,3.5,.66],[.20,4,.78],[.22,7,.92],[.12,9,.94],[.24,6,.86],[.21,7,.88],
-  [.24,4,.82],[.18,5,.88],[.23,3,.44],[.16,5,.72],[.17,4,.76],[.16,4,.66],[.18,2,.28],[0x1f/255,1+0xa2/255*11,0xc7/255]
+  [.24,4,.82],[.18,5,.88],[.23,3,.44],[.16,5,.72],[.17,4,.76],[.16,4,.66],[.18,2,.28],[0x82/255,1+0x3a/255*11,0xc7/255]
 ];
 // Slot 32 is a new blue-spruce material carrying the aesthetic payload from
-// source properties ID 0xD304000B0085000C1FA2C702 without replacing slot 4.
+// properties ID 0xD32000A800B00096823AC702 without replacing any shared foliage material.
 const DEFAULT_MATERIAL_MODES=[0,2,3,2,2,1,1,1,1,1,2,2,2,2,2,3,2,2,2,2,4,6,5,5,3,4,4,6,3,3,4,1,2];
 let materialSlots=DEFAULT_MATERIAL_SLOTS.map(v=>v.slice());
 let materialParams=DEFAULT_MATERIAL_PARAMS.map(v=>v.slice());
