@@ -1,5 +1,11 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Portrait mobile interface
+
+Touch play separates observation from input. In portrait orientation the upper 58% of the visual viewport is a resolution-matched render surface and look gesture area; the lower 42% is a persistent Game Boy-style control deck. The D-pad is digital and multitouch-aware, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
+
+Select opens a complete touch launcher rather than depending on keyboard shortcuts or an overflowing desktop menu. Every tool window becomes safe-area-aware, full-screen, independently scrollable, and uses iOS-sized controls. Start opens the mathematical heightmap directly. Landscape touch play retains the same controls without shrinking the renderer, and desktop pointer-lock behavior is unchanged.
+
 ## Graph-compiled Resource Builder
 
 Resources are authored as compact formation graphs rather than meshes or stored voxel arrays. A graph contains a typed seed and named biological or geological stages connected by parent references. Each stage carries taxonomy, normalized graph position, length, child count, and angle. Vegetation graphs express roots, trunks or stems, branches, and terminals; fungi express spores, mycelium, stipes, caps, gills, or pores; mineral graphs express catalysts, eroded matrices, shards, terminals, and aggregate fields.

@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.2**
+Current release: **v0.0.1.6.3**
+
+## v0.0.1.6.3 Portrait mobile controls
+
+- Replaced the floating mobile joystick with a Game Boy-style portrait control deck: four-way D-pad, A/Place, B/Carve, Jump, Crawl, Select/Tools, and Start/Map.
+- Portrait play now reserves the upper 58% of the screen for the rendered world and the lower 42% for controls, so fingers do not cover the landscape or crosshair.
+- Added a touch launcher for Console, Materials, Resource Builder, Map, Server, Options, Mods, Help, and About.
+- Mobile editor windows use the full safe-area-aware screen, larger close controls, scrolling bodies, 44 px touch targets, and 16 px form controls to avoid iOS focus zoom.
+- The top application bar remains horizontally scrollable as a secondary route to every tool.
 
 ## v0.0.1.6.2 Startup crash fix
 
