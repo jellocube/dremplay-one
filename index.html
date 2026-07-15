@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3.4.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.4 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3.4.2';
+  const CURRENT_VERSION = '0.0.1.5.4';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -167,6 +167,9 @@
   .option-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
   #serverWindow { width:min(540px,calc(100vw - 24px)); }
   #serverStatus { color:#bcdcff; white-space:pre-wrap; font-size:10px; line-height:1.55; margin-top:8px; }
+  #mapWindow { width:min(720px,calc(100vw - 24px)); }
+  #worldMapCanvas { display:block; width:100%; height:auto; max-height:68vh; border:1px solid #704024; background:#040818; image-rendering:auto; cursor:crosshair; }
+  #mapStatus { color:#bcdcff; margin-top:7px; font-size:10px; line-height:1.55; }
   .muted { color:#a8a8a8; }
   #loadingOverlay { position:absolute; right:16px; bottom:16px; z-index:2000; display:block; width:min(470px,calc(100vw - 32px)); color:#54fc54; pointer-events:auto; background:#141024; border:1px solid #54fc54; box-shadow:5px 6px 0 #04081888; font-size:12px; }
   #loadingOverlay.streaming { background:var(--ink); }
@@ -261,6 +264,7 @@
   <button class="menu-button" data-window="console">[/] Console</button>
   <button class="menu-button" data-hotkey="m" data-window="materialDesigner">[M] Materials</button>
   <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resources</button>
+  <button class="menu-button" data-hotkey="g" data-window="mapWindow">[G] Map</button>
   <button class="menu-button" data-hotkey="f10" data-window="serverWindow">[F10] Server</button>
   <button class="menu-button" data-hotkey="f12" data-window="optionsWindow">[F12] Options</button>
   <button class="menu-button" data-hotkey="f11" data-window="modsWindow">[F11] Mods</button>
@@ -279,7 +283,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3.4.2 · Infinite Detail Voxel Engine · blue spruce material fix</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.4 · Infinite Detail Voxel Engine · compiled ecology cache</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +292,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3.4.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.4 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -352,6 +356,11 @@
     <div><button id="resourceSave" class="tool-button">Save resource</button> <button id="resourcePlace" class="tool-button">Place at crosshair</button></div>
     <div id="resourceStatus" class="muted">Resources are named procedural objects used by plants, stones, and future crafting.</div>
   </div>
+</div>
+
+<div id="mapWindow" class="tool-window simple-window" role="dialog" aria-label="World map">
+  <div class="titlebar"><span>World map</span><button class="window-close" aria-label="Close world map">×</button></div>
+  <div class="window-body"><canvas id="worldMapCanvas" width="640" height="640" aria-label="Heightmap and fast travel map"></canvas><div id="mapStatus">Gold cross: current location. Click the island to fast travel; the mathematical atlas is immediate and its nearby editable voxels are rebuilt before arrival.</div></div>
 </div>
 
 <div id="optionsWindow" class="tool-window simple-window" role="dialog" aria-label="Options">
@@ -424,15 +433,15 @@
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Left pad moves. Drag the right side to look. Hold Carve, Place, Jump, or Crawl. The platform selector can force touch or desktop controls.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor.</p><h2>Windows</h2><p>Use the top menu or its displayed key to open tools. Drag any title bar—including the AI Loading Monitor—to reposition its window.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Left pad moves. Drag the right side to look. Hold Carve, Place, Jump, or Crawl. The platform selector can force touch or desktop controls.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G. The gold cross marks your position; click an island location to rebuild the nearby editable cache there and travel.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor.</p><h2>Windows</h2><p>Use the top menu or its displayed key to open tools. Drag any title bar—including the AI Loading Monitor—to reposition its window.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4.2</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · corrected blue spruce fronds</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.4</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · compiled ecology plans · rapid Resource streaming</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=48"></script>
+<script src="heightmap-world-v2.js?v=49"></script>
 <script>
 (() => {
 "use strict";
@@ -447,7 +456,8 @@ const LOADED_CHUNKS_XZ = 24;           // 768 voxels loaded in X/Z (~76.8 m), 9x
 const LOADED_CHUNKS_Y = 13;            // 416 isotropic cells: 41.6 m, including 6.4 m underground
 const PREFETCH_MARGIN=14;               // fine-voxel predictive cache grown during play
 const TERRAIN_PLAN_MARGIN=18;            // lightweight mathematical reserve beyond fine voxels
-const BOOT_PREFETCH_MARGIN=4;           // one complete 12.8 m sector of terrain + Resources on every side
+const BOOT_PREFETCH_MARGIN=0;           // launcher materializes only the resident cache; prediction begins after release
+const BOOT_RESOURCE_RADIUS=6;            // 13×13 columns = 41.6 m Resource-complete neighborhood around spawn
 const MINIMUM_BOOT_PRELOAD_MS=0;        // readiness follows completed work, never an artificial timer
 
 const LOADED_SIZE_X = LOADED_CHUNKS_XZ * CHUNK_SIZE;
@@ -1860,12 +1870,11 @@ function initialLoadProgress(workFraction=1){
 function waitForMinimumPreload(loadToken=initialLoadToken){
   if(loadToken!==initialLoadToken)return;
   const elapsed=performance.now()-bootLoadStarted;
-  // "Ready" now means complete ecology, not merely terrain. Consume the full
-  // initial ring plus its ahead reserve before enabling play; there is no
-  // post-title Resource debt left to pop into view around spawn.
+  // Ready means the entire interaction neighborhood is Resource-complete.
+  // Distant ecology stays mathematical instead of blocking the launcher.
   if(bootResourceCursor<bootResourceColumns.length){
     processBootResourcePreload();const fraction=bootResourceColumns.length?bootResourceCursor/bootResourceColumns.length:1;
-    showLoading(`Preloading biome Resources ${bootResourceCursor}/${bootResourceColumns.length}`,.95+fraction*.04,false);
+    showLoading(`Compiling near-field ecology ${bootResourceCursor}/${bootResourceColumns.length}`,.95+fraction*.04,false);
     const step=Math.floor(fraction*20);if(step!==bootResourceLogStep){bootResourceLogStep=step;const column=bootResourceColumns[Math.max(0,bootResourceCursor-1)]||[0,0];loadingLog('Ecology resolver',`${bootResourceCursor}/${bootResourceColumns.length} complete columns · ${resourceChunks.size} provenance chunks · coordinate ${column[0]},${column[1]}`);}
     requestAnimationFrame(()=>waitForMinimumPreload(loadToken));return;
   }
@@ -1929,7 +1938,7 @@ function beginInitialWorldLoad(useTestZone=false){
     if(done<jobs.length){requestAnimationFrame(batch);return;}
     assembleTerrainWeatherGrid();loadingLog('Weather relief',`${activeGridSizeX}×${activeGridSizeZ} exact height/moisture texels assembled for orographic clouds`);
     const farCenterX=windowMinX+activeGridSizeX*.5,farCenterZ=windowMinZ+activeGridSizeZ*.5,farStarted=performance.now();buildFarTerrainMap(farCenterX,farCenterZ);loadingLog('Far horizon',`${FAR_MAP_SIZE}×${FAR_MAP_SIZE} atlas lookups assembled by complete 100 m squares · ${(performance.now()-farStarted).toFixed(1)} ms`);
-    initializeBootResourcePreload(minCX,minCZ,span,bootCenterCX,bootCenterCZ);persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident surface cache indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${jobs.length} view-dependent surface/shallow/canopy samples cached · ${bootResourceColumns.length} complete biome columns required before release`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
+    initializeBootResourcePreload(minCX,minCZ,span,bootCenterCX,bootCenterCZ);persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident surface cache indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${jobs.length} view-dependent surface/shallow/canopy samples cached · ${bootResourceColumns.length} near-field ecology columns required before release`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
   };
   requestAnimationFrame(batch);
 }
@@ -2218,7 +2227,7 @@ consoleEl.querySelector('.window-close').addEventListener('click',()=>setConsole
 designerEl.querySelector('.window-close').addEventListener('click',()=>setDesigner(false));
 function setSimpleWindow(win,open){
   win.classList.toggle('open',open);for(const k in keys)keys[k]=false;clearTouchState();
-  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(win);if(win.id==='optionsWindow')syncOptionsWindow();if(win.id==='serverWindow')syncServerWindow();}
+  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(win);if(win.id==='optionsWindow')syncOptionsWindow();if(win.id==='serverWindow')syncServerWindow();if(win.id==='mapWindow')renderWorldMap();}
   refreshWindowState();
 }
 function setWindowById(id,open){
@@ -2231,6 +2240,25 @@ function returnToGameControl(){
 document.querySelectorAll('.simple-window .window-close').forEach(button=>button.addEventListener('click',()=>setSimpleWindow(button.closest('.tool-window'),false)));
 document.querySelectorAll('.menu-button').forEach(button=>button.addEventListener('click',()=>{const win=document.getElementById(button.dataset.window);setWindowById(win.id,!win.classList.contains('open'));}));
 platformToggle.addEventListener('click',()=>{const modes=['auto','touch','desktop'];applyPlatformMode(modes[(modes.indexOf(platformMode)+1)%modes.length]);});
+
+const worldMapCanvas=document.getElementById('worldMapCanvas'),mapStatus=document.getElementById('mapStatus');
+let worldMapBase=null,lastMapMarkerX=NaN,lastMapMarkerZ=NaN;
+function buildWorldMapBase(){
+  const world=globalThis.DREMPLAY_EXAMPLE_WORLD;if(!world)return null;const base=document.createElement('canvas');base.width=worldMapCanvas.width;base.height=worldMapCanvas.height;const ctx=base.getContext('2d'),image=ctx.createImageData(base.width,base.height),bytes=world.bytes;
+  for(let py=0;py<base.height;py++)for(let px=0;px<base.width;px++){
+    const sx=Math.min(world.size-1,Math.round(px/(base.width-1)*(world.size-1))),sz=Math.min(world.size-1,Math.round((1-py/(base.height-1))*(world.size-1))),i=(sx+sz*world.size)*world.stride,h=bytes[i]|bytes[i+1]<<8,pool=bytes[i+3]/255,ridge=bytes[i+7]/255,o=(px+py*base.width)*4;let r,g,b;
+    if(h<=3){const deep=Math.max(0,Math.min(1,(3-h)/3));r=6;g=39+deep*12;b=76+deep*31;}
+    else if(pool>.28){r=34;g=112;b=148;}
+    else {const elevation=Math.max(0,Math.min(1,h/360)),contour=((h/12)|0)%2,light=.78+.22*ridge;r=44+elevation*174*light;g=104+elevation*108*light;b=48+elevation*164*light;if(contour){r*=.92;g*=.92;b*=.92;}}
+    image.data[o]=r;image.data[o+1]=g;image.data[o+2]=b;image.data[o+3]=255;
+  }
+  ctx.putImageData(image,0,0);worldMapBase=base;return base;
+}
+function mapCanvasPosition(wx,wz){const world=DREMPLAY_EXAMPLE_WORLD,span=world.maxVoxel-world.minVoxel;return {x:(wx-world.minVoxel)/span*worldMapCanvas.width,y:(1-(wz-world.minVoxel)/span)*worldMapCanvas.height};}
+function renderWorldMap(){
+  const ctx=worldMapCanvas.getContext('2d'),base=worldMapBase||buildWorldMapBase();if(!base)return;ctx.drawImage(base,0,0);if(!playerPos)return;const marker=mapCanvasPosition(playerPos.x/VS,playerPos.z/VS);lastMapMarkerX=marker.x;lastMapMarkerZ=marker.y;ctx.strokeStyle='#f4d31a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(marker.x-9,marker.y);ctx.lineTo(marker.x+9,marker.y);ctx.moveTo(marker.x,marker.y-9);ctx.lineTo(marker.x,marker.y+9);ctx.stroke();ctx.fillStyle='#ececec';ctx.font='11px monospace';ctx.fillText(`${playerPos.x.toFixed(0)} m, ${playerPos.z.toFixed(0)} m`,Math.min(worldMapCanvas.width-125,marker.x+11),Math.max(14,marker.y-8));
+}
+worldMapCanvas.addEventListener('click',event=>{if(!engineReady||fastTravelInProgress){mapStatus.textContent=fastTravelInProgress?'Fast travel cache is already being prepared.':'Enter the world before using fast travel.';return;}const rect=worldMapCanvas.getBoundingClientRect(),u=(event.clientX-rect.left)/rect.width,v=(event.clientY-rect.top)/rect.height,world=DREMPLAY_EXAMPLE_WORLD,wx=Math.round(world.minVoxel+u*(world.maxVoxel-world.minVoxel)),wz=Math.round(world.minVoxel+(1-v)*(world.maxVoxel-world.minVoxel)),sample=terrainSample(wx,wz);if(sample.height<=3){mapStatus.textContent='Choose land rather than open ocean.';return;}mapStatus.textContent=`Preparing ${(wx*VS).toFixed(0)} m, ${(wz*VS).toFixed(0)} m…`;beginMapFastTravel(wx,wz);});
 
 function rgb(hex){return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
 function previewHash(x,y){let h=Math.imul(x|0,374761393)^Math.imul(y|0,668265263);h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;}
@@ -2627,11 +2655,32 @@ function resourcesConflict(a,b){
   const dy=Math.abs(a.wy-b.wy);if(dy>Math.max(5,(a.def.scale+b.def.scale)*.16))return false;
   return Math.hypot(a.wx-b.wx,a.wz-b.wz)<resourceRootRadius(a.def)+resourceRootRadius(b.def);
 }
+// Two-stage compiled ecology cache. Source candidates are evaluated once per
+// mathematical biome cell, then each target column resolves/deduplicates its
+// overlapping 5×5 sources once. The old stamper repeated both calculations for
+// every vertical child—often 75+ identical noise/candidate passes per column.
+const naturalSourceResourceCache=new Map(),acceptedTargetResourceCache=new Map();
+function naturalSourceResources(sx,sz,sourceColumns=null){
+  const key=`${sx},${sz}`,cached=naturalSourceResourceCache.get(key);if(cached)return cached;
+  const columns=sourceColumns||prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE,result=naturalAccentCandidates(sx,sz,columns,sourceX,sourceZ);
+  for(let n=0;n<3;n++){const tree=naturalTreeCandidate(sx,sz,n,columns,sourceX,sourceZ);if(tree)result.push(tree);}
+  naturalSourceResourceCache.set(key,result);trimOldestMap(naturalSourceResourceCache,cacheLimitForDevice(1024,2048,4096));return result;
+}
+function acceptedResourcesForTargetColumn(cx,cz,columns){
+  const key=`${cx},${cz}`,cached=acceptedTargetResourceCache.get(key);if(cached)return cached;
+  const candidates=[],candidateKeys=new Set(),addCandidate=entry=>{if(!entry)return;const id=`${entry.def.name}:${entry.wx}:${entry.wy}:${entry.wz}`;if(!candidateKeys.has(id)){candidateKeys.add(id);candidates.push(entry);}};
+  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:null;for(const entry of naturalSourceResources(sx,sz,sourceColumns))addCandidate(entry);}
+  const priority=entry=>resourceIsRock(entry.def)?0:entry.def.role==='tree'&&woodyProfile(entry.def).form!=='shrub'?1:entry.def.role==='tree'?2:3;
+  candidates.sort((a,b)=>priority(a)-priority(b)||a.wx-b.wx||a.wz-b.wz||a.def.name.localeCompare(b.def.name));
+  const accepted=[];for(const entry of candidates)if(!accepted.some(other=>resourcesConflict(entry,other)))accepted.push(entry);
+  acceptedTargetResourceCache.set(key,accepted);trimOldestMap(acceptedTargetResourceCache,cacheLimitForDevice(512,1024,2048));return accepted;
+}
+function clearNaturalResourcePlanningCaches(){naturalSourceResourceCache.clear();acceptedTargetResourceCache.clear();}
 function resourceCeilingForChunk(cx,cz,columns){
   const key=`${cx},${cz}`,cached=resourceCeilingCache.get(key);if(cached!==undefined)return cached;
   const x0=cx*CHUNK_SIZE,x1=x0+CHUNK_SIZE-1,z0=cz*CHUNK_SIZE,z1=z0+CHUNK_SIZE-1;let top=columns.maxSurface+12;
   const consider=entry=>{if(!entry)return;const b=resourceBounds(entry.def);if(entry.wx+b.x<x0||entry.wx-b.x>x1||entry.wz+b.z<z0||entry.wz-b.z>z1)return;top=Math.max(top,entry.wy+b.y1);};
-  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))consider(entry);for(let n=0;n<3;n++)consider(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));}
+  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){const sourceColumns=sx===cx&&sz===cz?columns:null;for(const entry of naturalSourceResources(sx,sz,sourceColumns))consider(entry);}
   resourceCeilingCache.set(key,top);trimOldestMap(resourceCeilingCache,cacheLimitForDevice(512,1024,2048));return top;
 }
 function rockResourceVoxel(def,x,y,z){
@@ -2734,16 +2783,8 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   // rasterization: stone wins its footprint first, then trees, shrubs and
   // flowers. A plant can therefore never be rooted in a boulder or another
   // flower merely because two independent biome fields happened to overlap.
-  const candidates=[],candidateKeys=new Set(),addCandidate=entry=>{if(!entry)return;const id=`${entry.def.name}:${entry.wx}:${entry.wy}:${entry.wz}`;if(!candidateKeys.has(id)){candidateKeys.add(id);candidates.push(entry);}};
-  for(let sx=cx-2;sx<=cx+2;sx++)for(let sz=cz-2;sz<=cz+2;sz++){
-    const sourceColumns=sx===cx&&sz===cz?columns:prepareTerrainColumns(sx,sz),sourceX=sx*CHUNK_SIZE,sourceZ=sz*CHUNK_SIZE;
-    for(const entry of naturalAccentCandidates(sx,sz,sourceColumns,sourceX,sourceZ))addCandidate(entry);
-    for(let n=0;n<3;n++)addCandidate(naturalTreeCandidate(sx,sz,n,sourceColumns,sourceX,sourceZ));
-  }
-  const priority=entry=>resourceIsRock(entry.def)?0:entry.def.role==='tree'&&woodyProfile(entry.def).form!=='shrub'?1:entry.def.role==='tree'?2:3;
-  candidates.sort((a,b)=>priority(a)-priority(b)||a.wx-b.wx||a.wz-b.wz||a.def.name.localeCompare(b.def.name));
-  const acceptedResources=[];
-  for(const entry of candidates){if(acceptedResources.some(other=>resourcesConflict(entry,other)))continue;acceptedResources.push(entry);stamp(entry.def,entry.wx,entry.wy,entry.wz);}
+  const acceptedResources=acceptedResourcesForTargetColumn(cx,cz,columns);
+  for(const entry of acceptedResources)stamp(entry.def,entry.wx,entry.wy,entry.wz);
 
   // Surface micro-Resources are reconstructed from a jittered 2×2 voxel lattice.
   // This produces a much denser living carpet of individually identified blades across
@@ -2874,9 +2915,9 @@ resourceWindow.querySelectorAll('input,select').forEach(el=>{if(el!==resourceTra
 document.getElementById('resourceRandomSeed').addEventListener('click',()=>{const bytes=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(bytes);else bytes[0]=(Date.now()^Math.floor(performance.now()*1000))>>>0;document.getElementById('resourceSeed').value=String(bytes[0]%100000000);scheduleResourcePreview();document.getElementById('resourceStatus').textContent='New base growth seed selected; natural instances will derive unique child seeds.';});
 function loadResource(name){const d=resourceDefinitions.get(name);if(!d)return;document.getElementById('resourceName').value=d.name;document.getElementById('resourceShape').value=d.shape;resourceMaterial.value=String(d.material);resourceSecondary.value=String(d.secondary||d.material);document.getElementById('resourceFractal').value=d.fractal;document.getElementById('resourceGrowthStage').value=d.growthStage||'adult';document.getElementById('resourceSeed').value=String(d.seed||0);document.getElementById('resourceScale').value=String(d.scale);document.getElementById('resourceSizeVariance').value=String(d.sizeVariance??.28);document.getElementById('resourceSubsurface').value=String(d.subsurface);document.getElementById('resourceRadial').value=String(d.radial);document.getElementById('resourceAngle').value=String(d.angle||30);document.getElementById('resourceIterations').value=String(d.iterations||3);document.getElementById('resourceTropism').value=String(d.tropism||0);document.getElementById('resourceInfluence').value=String(d.influence||10);document.getElementById('resourceKill').value=String(d.kill||2);[...resourceComponents.options].forEach(o=>o.selected=(d.components||[]).includes(o.value));renderResourcePreview();refreshResourceTransferId();}
 resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')} · 5 cm near / 10 cm far LOD`;});
-document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
+document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
 document.getElementById('resourceCopyId').addEventListener('click',async()=>{refreshResourceTransferId();try{await navigator.clipboard.writeText(resourceTransferIdInput.value);document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}catch{resourceTransferIdInput.select();document.execCommand('copy');document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}});
-document.getElementById('resourceLoadId').addEventListener('click',()=>{try{const def=parseResourceTransferId(resourceTransferIdInput.value);applyResourceAesthetic(def);resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;loadResource(def.name);document.getElementById('resourceStatus').textContent=`Loaded ${def.name} · runtime ID ${rid} · geometry and palette aesthetic verified`;}catch(error){document.getElementById('resourceStatus').textContent=error.message;}});
+document.getElementById('resourceLoadId').addEventListener('click',()=>{try{const def=parseResourceTransferId(resourceTransferIdInput.value);applyResourceAesthetic(def);resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;loadResource(def.name);document.getElementById('resourceStatus').textContent=`Loaded ${def.name} · runtime ID ${rid} · geometry and palette aesthetic verified`;}catch(error){document.getElementById('resourceStatus').textContent=error.message;}});
 let manualResourceSerial=0;
 document.getElementById('resourcePlace').addEventListener('click',()=>{
   const baseDef=currentResource(),cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);
@@ -3018,7 +3059,7 @@ resource load <hex>   verify and load a Resource identity`);
       const material=getVoxelA(hit.x,hit.y,hit.z),rid=getVoxelResourceId(hit.x,hit.y,hit.z);return say(`voxel ${hit.x},${hit.y},${hit.z}\nmaterial ${material}: ${MATERIAL_NAMES[material]||'unknown'}\nResource ID ${rid}: ${resourceNameById[rid]||'none (terrain or manual voxel)'}`);
     }
     if(parts[1]==='id'){const portable=resourceDefinitions.get(parts[2]||resourceLibrary.value);if(!portable)return say('Usage: resource id <name>');return say(`${portable.name} portable Resource identity\n${resourceTransferId(portable)}`);}
-    if(parts[1]==='load'){try{const loaded=parseResourceTransferId(parts[2]||'');applyResourceAesthetic(loaded);resourceDefinitions.set(loaded.name,loaded);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();registerResourceName(loaded.name);refreshResourceLibrary();resourceLibrary.value=loaded.name;loadResource(loaded.name);return say(`Loaded ${loaded.name}; checksum, generator schema, and palette aesthetic verified.`);}catch(error){return say(error.message);}}
+    if(parts[1]==='load'){try{const loaded=parseResourceTransferId(parts[2]||'');applyResourceAesthetic(loaded);resourceDefinitions.set(loaded.name,loaded);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();registerResourceName(loaded.name);refreshResourceLibrary();resourceLibrary.value=loaded.name;loadResource(loaded.name);return say(`Loaded ${loaded.name}; checksum, generator schema, and palette aesthetic verified.`);}catch(error){return say(error.message);}}
     const def=resourceDefinitions.get(parts[2]);
     if(parts[1]!=='place'||!def)return say('Usage: resource <place|id|load|sample>  (use “resources” to list names)');
     loadResource(def.name);document.getElementById('resourcePlace').click();return say(`placed Resource ${def.name}`);
@@ -3497,7 +3538,9 @@ function releaseDerivedCaches(aggressive=false){
   trimOldestMap(resourceVoxelCache,Math.max(12,Math.floor(cacheLimitForDevice(24,40,64)/divisor)));
   trimOldestMap(resourceArchitectureCache,Math.max(16,Math.floor(cacheLimitForDevice(32,48,64)/divisor)));
   trimOldestMap(resourceCeilingCache,Math.max(256,Math.floor(cacheLimitForDevice(512,1024,2048)/divisor)));
-  if(aggressive){terrainColumnCacheKey='';terrainColumnCache=null;}
+  trimOldestMap(naturalSourceResourceCache,Math.max(256,Math.floor(cacheLimitForDevice(1024,2048,4096)/divisor)));
+  trimOldestMap(acceptedTargetResourceCache,Math.max(128,Math.floor(cacheLimitForDevice(512,1024,2048)/divisor)));
+  if(aggressive){terrainColumnCacheKey='';terrainColumnCache=null;clearNaturalResourcePlanningCaches();}
 }
 function memoryReport(){return `device tier ${DEVICE_PROFILE.tier}\nallocated voxel chunks ${chunks.size} (${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB)\nknown generated chunks ${generatedChunks.size}\nterrain column plans ${terrainColumnPlans.size}\nResource voxel/architecture caches ${resourceVoxelCache.size}/${resourceArchitectureCache.size}\nResource ceiling plans ${resourceCeilingCache.size}\nfluid cells/sources ${waterLevels.size}/${waterSources.size}\ndirty authored chunks ${dirtyChunks.size}`;}
 function performIdleMemoryMaintenance(now){
@@ -3605,9 +3648,14 @@ function decorateResourceNeighborhood(centerCX,centerCZ,uploadNow){
   return changed.length;
 }
 function initializeBootResourcePreload(minCX,minCZ,span,centerCX,centerCZ){
-  bootResourceColumns.length=0;for(let cx=minCX;cx<minCX+span;cx++)for(let cz=minCZ;cz<minCZ+span;cz++)bootResourceColumns.push([cx,cz]);
+  // Release the launcher after the complete interaction neighborhood exists.
+  // The remainder is never pre-expanded into 1,024 placed objects: its compact
+  // deterministic ecology field is compiled only when a column approaches the
+  // resident cache, then terrain and Resources become visible atomically.
+  bootResourceColumns.length=0;const ccx=Math.floor(centerCX),ccz=Math.floor(centerCZ),radius=Math.min(BOOT_RESOURCE_RADIUS,Math.floor(span*.5));
+  for(let cx=ccx-radius;cx<=ccx+radius;cx++)for(let cz=ccz-radius;cz<=ccz+radius;cz++)if(cx>=minCX&&cx<minCX+span&&cz>=minCZ&&cz<minCZ+span)bootResourceColumns.push([cx,cz]);
   bootResourceColumns.sort((a,b)=>{const da=(a[0]-centerCX)**2+(a[1]-centerCZ)**2,db=(b[0]-centerCX)**2+(b[1]-centerCZ)**2;return da-db;});bootResourceCursor=0;bootResourceLogStep=-1;bootResourceFinalized=false;
-  loadingLog('Ecology manifest',`${bootResourceColumns.length} columns cover the entire initial ring and ahead reserve · play remains locked until all Resources resolve`);
+  loadingLog('Ecology manifest',`${bootResourceColumns.length} near-field columns cover the complete 50-foot interaction neighborhood · distant ecology remains a compact deterministic field`);
 }
 function processBootResourcePreload(){
   const started=performance.now(),budget=DEVICE_PROFILE.tier==='mobile'?5:DEVICE_PROFILE.tier==='high'?11:8,b=residentChunkBounds();let worked=false;
@@ -3616,8 +3664,21 @@ function processBootResourcePreload(){
     for(let cy=b.minCY;cy<=b.maxCY;cy++){const coords=[cx,cy,cz];if(!baseOnlyChunks.has(chunkKey(...coords)))continue;if(decorateBaseOnlyChunk(...coords)&&chunkInsideResident(...coords))copyChunkToLoadedGrid(...coords);}
     worked=true;
   }
-  if(bootResourceCursor===bootResourceColumns.length&&!bootResourceFinalized){bootResourceFinalized=true;deferredDecorationJobs.length=0;deferredDecorationKeys.clear();loadingLog('Ecology commit',`${bootResourceColumns.length} complete columns accepted · ${resourceChunks.size} Resource provenance chunks · no initial Resource debt remains`);}
+  if(bootResourceCursor===bootResourceColumns.length&&!bootResourceFinalized){bootResourceFinalized=true;loadingLog('Ecology commit',`${bootResourceColumns.length} complete near-field columns accepted · ${resourceChunks.size} Resource provenance chunks · launcher debt cleared`);}
   return worked;
+}
+let fastTravelInProgress=false;
+function beginMapFastTravel(targetWX,targetWZ){
+  if(fastTravelInProgress)return;fastTravelInProgress=true;setSimpleWindow(document.getElementById('mapWindow'),false);showLoading('Indexing fast-travel destination',.02,true);loadingLog('Fast travel',`atlas coordinate ${targetWX},${targetWZ} · ${(targetWX*VS).toFixed(1)} m, ${(targetWZ*VS).toFixed(1)} m`);
+  const targetMinX=Math.floor((targetWX-activeGridSizeX*.5)/CHUNK_SIZE)*CHUNK_SIZE,targetMinZ=Math.floor((targetWZ-activeGridSizeZ*.5)/CHUNK_SIZE)*CHUNK_SIZE,minCX=Math.floor(targetMinX/CHUNK_SIZE),minCZ=Math.floor(targetMinZ/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),centerCX=Math.floor(targetWX/CHUNK_SIZE),centerCZ=Math.floor(targetWZ/CHUNK_SIZE),jobs=[];
+  for(let dx=0;dx<activeGridSizeX/CHUNK_SIZE;dx++)for(let dz=0;dz<activeGridSizeZ/CHUNK_SIZE;dz++){const cx=minCX+dx,cz=minCZ+dz,surface=mathematicalSurfaceSpan(cx,cz,minCY,minCY+LOADED_CHUNKS_Y-1),distance=(cx-centerCX)**2+(cz-centerCZ)**2;for(let cy=surface.minCY;cy<=surface.maxCY;cy++)jobs.push([cx,cy,cz,distance]);jobs.push([cx,surface.minCY-1,cz,distance+1e5],[cx,surface.minCY-2,cz,distance+2e5],[cx,surface.maxCY+1,cz,distance+1e6],[cx,surface.maxCY+2,cz,distance+1.1e6],[cx,surface.maxCY+3,cz,distance+1.2e6]);}
+  jobs.sort((a,b)=>a[3]-b[3]);let cursor=0;const compiledColumns=new Set();
+  const batch=()=>{const started=performance.now();while(cursor<jobs.length&&performance.now()-started<11){const [cx,cy,cz]=jobs[cursor++];if(cy<minCY||cy>=minCY+LOADED_CHUNKS_Y)continue;if(!generatedChunks.has(chunkKey(cx,cy,cz)))generateChunk(cx,cy,cz,false);const near=Math.abs(cx-centerCX)<=BOOT_RESOURCE_RADIUS&&Math.abs(cz-centerCZ)<=BOOT_RESOURCE_RADIUS,key=`${cx},${cz}`;if(near&&!compiledColumns.has(key)){compiledColumns.add(key);for(const coords of resourceColumnDetailChunks(cx,cz,minCY,minCY+LOADED_CHUNKS_Y-1)){if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);}}}
+    const fraction=cursor/jobs.length;showLoading(`Preparing destination terrain and ecology ${cursor}/${jobs.length}`,.04+fraction*.88,true);if(cursor<jobs.length){requestAnimationFrame(batch);return;}
+    windowMinX=targetMinX;windowMinZ=targetMinZ;ringX=0;ringZ=0;loadedGrid=new Uint8Array(activeUploadBytes());chunkValidityGrid=new Uint8Array((activeGridSizeX/CHUNK_SIZE)*LOADED_CHUNKS_Y*(activeGridSizeZ/CHUNK_SIZE));terrainWeatherGrid=new Uint16Array(activeGridSizeX*activeGridSizeZ*2);assembleLoadedGrid();assembleTerrainWeatherGrid();buildFarTerrainMap(targetWX,targetWZ);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);const b=residentChunkBounds(),gx=activeGridSizeX/CHUNK_SIZE,gz=activeGridSizeZ/CHUNK_SIZE;for(let cx=0;cx<gx;cx++)for(let cy=0;cy<LOADED_CHUNKS_Y;cy++)for(let cz=0;cz<gz;cz++)if(generatedChunks.has(chunkKey(b.minCX+cx,b.minCY+cy,b.minCZ+cz)))chunkValidityGrid[cx+cy*gx+cz*gx*LOADED_CHUNKS_Y]=1;gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,gx,LOADED_CHUNKS_Y,gz,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,chunkValidityGrid);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);uploadFarTerrainControlField(farTerrainGrid);uploadFarHeightPyramid(farTerrainGrid);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
+    const h=terrainSample(targetWX,targetWZ).height;playerPos={x:(targetWX+.5)*VS,y:(h+2)*VY,z:(targetWZ+.5)*VS};velY=0;grounded=false;streamTask=null;resourceCommitTask=null;deferredDecorationJobs.length=0;deferredDecorationKeys.clear();prefetchSignature='';fastTravelInProgress=false;loadingLog('Fast travel',`${compiledColumns.size} Resource-complete near-field columns committed with terrain · destination ready`);hideLoading('Fast travel complete. Ready to play.');evictDistantCleanChunks();renderWorldMap();
+  };requestAnimationFrame(batch);
 }
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}
@@ -3653,17 +3714,24 @@ function queueStreamShift(shiftX,shiftZ){
   if(streamTask)for(let i=streamTask.cursor;i<streamTask.jobs.length;i++){const job=streamTask.jobs[i],key=chunkKey(job[0],job[1],job[2]);if(chunkInsideResident(job[0],job[1],job[2])&&!keys.has(key)){keys.add(key);pending.push(job);}}
   for(const job of fresh){const key=chunkKey(job[0],job[1],job[2]);if(!keys.has(key)){keys.add(key);pending.push(job);}}
   pending.sort((a,b)=>(a[4]||0)-(b[4]||0));
-  streamTask={jobs:pending,cursor:0,started,total:pending.length,weatherDone:new Set()};uploadChunkValidity();prefetchSignature='';lastStreamShiftAt=performance.now();
+  streamTask={jobs:pending,cursor:0,started,total:pending.length,weatherDone:new Set(),resourceColumns:new Set()};uploadChunkValidity();prefetchSignature='';lastStreamShiftAt=performance.now();
   showLoading('Refining moving voxel clipmap',pending.length?clipmapProgressFloor:1,true);loadingLog('Clipmap shift',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m toroidal advance committed immediately · ${fresh.length} fine cells refining · mathematical parent remains visible`);
 }
 function processStreamTask(){
   const task=streamTask,started=performance.now();let worked=false,validityChanged=false;
   while(task&&task.cursor<task.jobs.length&&(!worked||performance.now()-started<streamingBudgetMs)){
     const [cx,cy,cz,surfaceCY]=task.jobs[task.cursor++];if(!chunkInsideResident(cx,cy,cz))continue;
+    const columnKey=`${cx},${cz}`;
+    if(!task.resourceColumns.has(columnKey)){
+      // Visibility transaction: generate the exact surface/canopy children,
+      // resolve their deterministic Resource field, upload all of them, and
+      // only then mark any child valid. Blank terrain can never precede plants.
+      task.resourceColumns.add(columnKey);const b=residentChunkBounds(),ready=resourceColumnDetailChunks(cx,cz,b.minCY,b.maxCY);
+      for(const coords of ready){if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);setResidentChunkValidity(...coords,1);}
+      if(!task.weatherDone.has(columnKey)){task.weatherDone.add(columnKey);uploadResidentWeatherColumn(cx,cz);}validityChanged=true;worked=true;continue;
+    }
     if(!generatedChunks.has(chunkKey(cx,cy,cz)))generateChunk(cx,cy,cz,false);
     uploadRegion(cx*CHUNK_SIZE,cy*CHUNK_SIZE,cz*CHUNK_SIZE,(cx+1)*CHUNK_SIZE-1,(cy+1)*CHUNK_SIZE-1,(cz+1)*CHUNK_SIZE-1);setResidentChunkValidity(cx,cy,cz,1);validityChanged=true;worked=true;
-    const columnKey=`${cx},${cz}`;if(cy===surfaceCY&&!task.weatherDone.has(columnKey)){task.weatherDone.add(columnKey);uploadResidentWeatherColumn(cx,cz);}
-    queueDeferredDecoration([cx,cy,cz]);
   }
   if(validityChanged)uploadChunkValidity();if(!task)return;
   const progress=task.jobs.length?task.cursor/task.jobs.length:1;clipmapProgressFloor=Math.max(clipmapProgressFloor,progress);showLoading('Refining moving voxel clipmap',clipmapProgressFloor,true);
@@ -3681,18 +3749,20 @@ function processDeferredDecorations(now,moving){
     for(const [cx,cz] of neighborhood.columns)deferredDecorationKeys.delete(`${cx},${cz}`);
     loadingLog('Resource staging',`${neighborhood.columns.length} biome columns around ${job[0]},${job[1]} · movement remains active · visibility waits for complete transaction`);
   }
-  const task=resourceCommitTask,[cx,cz]=task.columns[task.cursor++];
+  const task=resourceCommitTask,stageStarted=performance.now(),stageBudget=DEVICE_PROFILE.tier==='mobile'?3.5:DEVICE_PROFILE.tier==='high'?9:6;let staged=0;
   // Do not depend on the perpetually growing clipmap task to have finished
   // these children. Materialize the exact surface/canopy set for this column,
   // decorate it in CPU memory, and retain it for the final atomic GPU commit.
-  for(const coords of resourceColumnDetailChunks(cx,cz,task.minCY,task.maxCY)){
-    if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);
-    if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);
-    task.ready.push(coords);
+  while(task.cursor<task.columns.length&&(!staged||performance.now()-stageStarted<stageBudget)){
+    const [cx,cz]=task.columns[task.cursor++];for(const coords of resourceColumnDetailChunks(cx,cz,task.minCY,task.maxCY)){
+      if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);
+      if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);
+      task.ready.push(coords);
+    }staged++;
   }
   if(task.cursor<task.columns.length)return;
   let uploaded=0;for(const coords of task.ready)if(chunkInsideResident(...coords)){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);setResidentChunkValidity(...coords,1);uploaded++;}if(uploaded)uploadChunkValidity();
-  const elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?900:300);
+  const elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?60:20);
   if(uploaded)loadingLog('Resource commit',`${uploaded} complete trunk/canopy/cross-boundary chunks revealed atomically around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms staged inside active streamer`);
   else loadingLog('Resource prefetch',`25 off-ring biome columns cached around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms · visibility deferred until clipmap arrival`);
 }

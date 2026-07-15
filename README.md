@@ -2,7 +2,20 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.4.2**
+Current release: **v0.0.1.5.4**
+
+## v0.0.1.5.4 compiled ecology cache
+
+- Restores a fast launcher by compiling only the Resource-complete 50-foot interaction neighborhood: 169 nearby columns instead of expanding 1,024 resident-and-reserve columns before play.
+- Adds the draggable `[G] Map` window. It renders the baked 3×5 km island height, water, and ridge fields directly, marks the current location, and fast-travels to clicked land.
+- Fast travel recenters the disposable voxel cache while retaining the mathematical atlas as world authority, then arrives only after the destination terrain and nearby ecology have committed.
+- Makes incoming terrain and its Resources one visibility transaction. A streamed column cannot display as an empty biome and fill with plants later.
+- Replaces repeated procedural Resource discovery with a two-stage compiled ecology cache. Each mathematical source biome evaluates its rocks, plants, shrubs, and trees once; each target column resolves overlaps once.
+- Removes dozens of identical noise, species-selection, size-variation, and root-conflict passes formerly repeated for every vertical surface/canopy child.
+- Shares source plans across the 25 neighboring target columns that consume them, while preserving deterministic seeds, Resource IDs, and exact placement.
+- Replaces the fixed one-column-per-frame transaction with a device-scaled time budget that consumes as many cached columns as the current frame can safely prepare.
+- Reduces the moving Resource transaction cooldown from 900 ms to 60 ms, so prepared biome clusters follow terrain streaming nearly immediately instead of appearing one by one.
+- Preserves complete-cluster GPU commits: the faster CPU planner still reveals no partial trunk or canopy.
 
 ## v0.0.1.5.3.4.2 blue spruce material fix
 
