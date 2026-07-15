@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.4.3**
+Current release: **v0.0.1.6.4.4**
+
+## v0.0.1.6.4.4 Dremplay Navigator and manual loading monitor
+
+- Introduces **Dremplay Navigator**, a dedicated phone mode with the full-height portrait renderer, upper two-thirds drag viewport, lower thumb controls, safe-area sizing, and phone-scale tool windows.
+- Separates **Tablet Touch** into its own robust mode. Tablets retain the D-pad, action controls, and multi-touch camera without inheriting Navigator's narrow phone window layout.
+- Keeps **PC Desktop** focused on the complete movable editor layout, mouse, keyboard, and pointer lock.
+- Expands automatic platform detection to select Navigator for phones, Tablet Touch for larger coarse-pointer devices, and PC Desktop otherwise; the title switch and Options selector can override all three.
+- Gives the AI Loading Monitor a real closed state. Once closed after a task, subsequent background loading updates its data without reopening or moving the window.
+- Adds `[L] Loading` to the main menu and Loading Monitor to the Navigator launcher, providing the only routes that reopen a closed monitor.
+- Moves the live Resource identifier from the crosshair to dynamic bottom-right HUD text, above Navigator's control boundary on phones.
 
 ## v0.0.1.6.4.3 Two-thirds touch viewport
 

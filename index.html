@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.4.3 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.4.4 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.4.3';
-  const CURRENT_REVISION = 61;
+  const CURRENT_VERSION = '0.0.1.6.4.4';
+  const CURRENT_REVISION = 62;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -65,7 +65,7 @@
   }
   #crosshair::before { left:7px; top:0; width:2px; height:16px; }
   #crosshair::after  { top:7px; left:0; width:16px; height:2px; }
-  #resourceLookLabel { position:absolute; left:50%; top:calc(50% + 18px); transform:translateX(-50%); z-index:8; max-width:min(440px,80vw); padding:3px 7px; color:#ececec; background:#141024bb; border:1px solid #444460; font-size:10px; text-align:center; pointer-events:none; opacity:0; transition:opacity .12s linear; }
+  #resourceLookLabel { position:absolute; right:16px; bottom:16px; z-index:8; max-width:min(440px,80vw); padding:3px 7px; color:#ececec; background:#141024bb; border:1px solid #444460; font-size:10px; text-align:right; pointer-events:none; opacity:0; transition:opacity .12s linear; }
   #resourceLookLabel.visible { opacity:1; }
 
   #hud {
@@ -218,6 +218,7 @@
   #mapStatus { color:#bcdcff; margin-top:7px; font-size:10px; line-height:1.55; }
   .muted { color:#a8a8a8; }
   #loadingOverlay { position:absolute; right:16px; bottom:16px; z-index:2000; display:block; width:min(470px,calc(100vw - 32px)); color:#54fc54; pointer-events:auto; background:#141024; border:1px solid #54fc54; box-shadow:5px 6px 0 #04081888; font-size:12px; }
+  #loadingOverlay.closed { display:none; }
   #loadingOverlay.streaming { background:var(--ink); }
   #loadingPanel { max-height:calc(100vh - 72px); overflow-y:auto; scrollbar-gutter:stable; background:#141024; padding:12px; }
   #loadingOverlay.minimized { width:260px; }
@@ -310,47 +311,48 @@
   #touchMenuPanel button { min-height:44px; border:1px solid #704024; background:#141814; color:#ececec; font:700 11px monospace; }
   #touchMenuPanel button:active { background:#243c24; }
   body:not(.touch-platform) #touchControls, body:not(.in-world) #touchControls { display:none; }
-  body.touch-platform #hud { display:none; }
+  body.navigator-platform #hud { display:none; }
+  body.tablet-platform.in-world #resourceLookLabel { bottom:226px; }
   @media (max-width:900px){
     #menubar{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}#menubar::-webkit-scrollbar{display:none}
     #menubar .brand{display:none}.menu-button{flex:0 0 auto;min-width:74px;padding:0 8px;font-size:9px}
     #topright{font-size:9px;right:8px}#topleft{left:8px}
   }
   @media (orientation:portrait) and (max-width:600px){
-    body.touch-platform.in-world #glcanvas { width:100% !important; height:100svh !important; bottom:auto; }
-    body.touch-platform.in-world #crosshair { top:40svh; }
-    body.touch-platform.in-world #resourceLookLabel { top:calc(40svh + 18px); max-width:86vw; }
-    body.touch-platform.in-world #touchControls { inset:30px 0 0; }
-    body.touch-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(66.667svh - 30px); bottom:auto; }
-    body.touch-platform.in-world #touchDeck { height:33.333svh; padding-bottom:env(safe-area-inset-bottom); }
-    body.touch-platform.in-world #touchMove { top:24px; }
-    body.touch-platform.in-world #touchActions { top:22px; }
-    body.touch-platform.in-world #touchSystem { bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px)); }
-    body.touch-platform.in-world #topleft { top:38px; max-width:45vw; font-size:10px; }
-    body.touch-platform.in-world #topleft span { font-size:7px; }
-    body.touch-platform.in-world #topright { top:34px; }
-    body.touch-platform.in-world #stats { display:none; }
-    body.touch-platform.in-world #compass { width:54px; height:54px; }
-    body.touch-platform #menubar .menu-button { min-width:72px; min-height:30px; }
-    body.touch-platform .tool-window.open:not(#loadingOverlay) { position:fixed !important; left:max(6px,env(safe-area-inset-left)) !important; right:max(6px,env(safe-area-inset-right)) !important; top:36px !important; bottom:max(6px,env(safe-area-inset-bottom)) !important; width:auto !important; max-width:none !important; max-height:none !important; min-width:0 !important; transform:none !important; overflow:hidden; }
-    body.touch-platform .tool-window.open:not(#loadingOverlay) > .window-body { max-height:calc(100svh - 78px) !important; overflow:auto; -webkit-overflow-scrolling:touch; }
-    body.touch-platform .titlebar { min-height:42px; height:42px; cursor:default; }
-    body.touch-platform .window-close { width:46px; height:41px; font-size:18px; }
-    body.touch-platform input,body.touch-platform select,body.touch-platform button { font-size:16px; }
-    body.touch-platform .tool-button { min-height:44px; }
-    body.touch-platform #consoleOutput { height:calc(100svh - 160px); }
-    body.touch-platform #consoleInput { min-height:44px; font-size:16px; }
-    body.touch-platform .editor-section .section-body,body.touch-platform .resource-parameters label { grid-template-columns:1fr; }
-    body.touch-platform #resourceDesigner .window-body { max-height:calc(100svh - 78px); }
-    body.touch-platform #resourceGraph,body.touch-platform #resourcePreview { max-height:42svh; }
-    body.touch-platform .resource-pane.detached { position:static; width:auto; box-shadow:none; }
-    body.touch-platform #loadingOverlay:not(.dragged) { left:8px !important; right:8px !important; top:38px !important; bottom:auto !important; width:auto !important; max-height:45svh; }
-    body.touch-platform #loadingOverlay.dragged { position:fixed !important; right:auto !important; bottom:auto !important; width:min(470px,calc(100vw - 16px)) !important; max-height:45svh; }
-    body.touch-platform #loadingOverlay.minimized:not(.dragged) { left:auto !important; right:max(8px,env(safe-area-inset-right)) !important; width:min(310px,calc(100vw - 16px)) !important; }
-    body.touch-platform #loadingOverlay.minimized.dragged { width:min(310px,calc(100vw - 16px)) !important; }
-    body.touch-platform #loadingOverlay .titlebar { cursor:move; touch-action:none; }
-    body.touch-platform #loadingMinimize { width:46px; height:41px; font-size:18px; touch-action:manipulation; }
-    body.touch-platform #loadingPanel { max-height:calc(45svh - 42px); }
+    body.navigator-platform.in-world #glcanvas { width:100% !important; height:100svh !important; bottom:auto; }
+    body.navigator-platform.in-world #crosshair { top:40svh; }
+    body.navigator-platform.in-world #resourceLookLabel { right:8px; bottom:calc(33.333svh + 8px); max-width:86vw; }
+    body.navigator-platform.in-world #touchControls { inset:30px 0 0; }
+    body.navigator-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(66.667svh - 30px); bottom:auto; }
+    body.navigator-platform.in-world #touchDeck { height:33.333svh; padding-bottom:env(safe-area-inset-bottom); }
+    body.navigator-platform.in-world #touchMove { top:24px; }
+    body.navigator-platform.in-world #touchActions { top:22px; }
+    body.navigator-platform.in-world #touchSystem { bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px)); }
+    body.navigator-platform.in-world #topleft { top:38px; max-width:45vw; font-size:10px; }
+    body.navigator-platform.in-world #topleft span { font-size:7px; }
+    body.navigator-platform.in-world #topright { top:34px; }
+    body.navigator-platform.in-world #stats { display:none; }
+    body.navigator-platform.in-world #compass { width:54px; height:54px; }
+    body.navigator-platform #menubar .menu-button { min-width:72px; min-height:30px; }
+    body.navigator-platform .tool-window.open:not(#loadingOverlay) { position:fixed !important; left:max(6px,env(safe-area-inset-left)) !important; right:max(6px,env(safe-area-inset-right)) !important; top:36px !important; bottom:max(6px,env(safe-area-inset-bottom)) !important; width:auto !important; max-width:none !important; max-height:none !important; min-width:0 !important; transform:none !important; overflow:hidden; }
+    body.navigator-platform .tool-window.open:not(#loadingOverlay) > .window-body { max-height:calc(100svh - 78px) !important; overflow:auto; -webkit-overflow-scrolling:touch; }
+    body.navigator-platform .titlebar { min-height:42px; height:42px; cursor:default; }
+    body.navigator-platform .window-close { width:46px; height:41px; font-size:18px; }
+    body.navigator-platform input,body.navigator-platform select,body.navigator-platform button { font-size:16px; }
+    body.navigator-platform .tool-button { min-height:44px; }
+    body.navigator-platform #consoleOutput { height:calc(100svh - 160px); }
+    body.navigator-platform #consoleInput { min-height:44px; font-size:16px; }
+    body.navigator-platform .editor-section .section-body,body.navigator-platform .resource-parameters label { grid-template-columns:1fr; }
+    body.navigator-platform #resourceDesigner .window-body { max-height:calc(100svh - 78px); }
+    body.navigator-platform #resourceGraph,body.navigator-platform #resourcePreview { max-height:42svh; }
+    body.navigator-platform .resource-pane.detached { position:static; width:auto; box-shadow:none; }
+    body.navigator-platform #loadingOverlay:not(.dragged) { left:8px !important; right:8px !important; top:38px !important; bottom:auto !important; width:auto !important; max-height:45svh; }
+    body.navigator-platform #loadingOverlay.dragged { position:fixed !important; right:auto !important; bottom:auto !important; width:min(470px,calc(100vw - 16px)) !important; max-height:45svh; }
+    body.navigator-platform #loadingOverlay.minimized:not(.dragged) { left:auto !important; right:max(8px,env(safe-area-inset-right)) !important; width:min(310px,calc(100vw - 16px)) !important; }
+    body.navigator-platform #loadingOverlay.minimized.dragged { width:min(310px,calc(100vw - 16px)) !important; }
+    body.navigator-platform #loadingOverlay .titlebar { cursor:move; touch-action:none; }
+    body.navigator-platform #loadingMinimize { width:46px; height:41px; font-size:18px; touch-action:manipulation; }
+    body.navigator-platform #loadingPanel { max-height:calc(45svh - 42px); }
     #startscreen { overflow:auto; justify-content:flex-start; padding:68px 18px calc(28px + env(safe-area-inset-bottom)); }
     #startscreen h1 { font-size:22px; letter-spacing:3px; }
     #startscreen p { font-size:10px; line-height:1.55; }
@@ -370,6 +372,7 @@
   <button class="menu-button" data-hotkey="m" data-window="materialDesigner">[M] Materials</button>
   <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resource Builder</button>
   <button class="menu-button" data-hotkey="g" data-window="mapWindow">[G] Map</button>
+  <button class="menu-button" data-hotkey="l" data-window="loadingOverlay">[L] Loading</button>
   <button class="menu-button" data-hotkey="f10" data-window="serverWindow">[F10] Server</button>
   <button class="menu-button" data-hotkey="f12" data-window="optionsWindow">[F12] Options</button>
   <button class="menu-button" data-hotkey="f11" data-window="modsWindow">[F11] Mods</button>
@@ -388,7 +391,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.4.3 · Infinite Detail Voxel Engine · two-thirds touch viewport</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.4.4 · Infinite Detail Voxel Engine · Dremplay Navigator</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -397,7 +400,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.4.3 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.4.4 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -432,6 +435,7 @@
     <div class="mobile-menu-grid">
       <button type="button" data-mobile-window="console">Console</button><button type="button" data-mobile-window="materialDesigner">Materials</button>
       <button type="button" data-mobile-window="resourceDesigner">Resource Builder</button><button type="button" data-mobile-window="mapWindow">Map</button>
+      <button type="button" data-mobile-window="loadingOverlay">Loading Monitor</button>
       <button type="button" data-mobile-window="serverWindow">Server</button><button type="button" data-mobile-window="optionsWindow">Options</button>
       <button type="button" data-mobile-window="modsWindow">Mods</button><button type="button" data-mobile-window="helpWindow">Help</button>
       <button type="button" data-mobile-window="aboutWindow">About</button><button id="touchResume" type="button">Resume game</button>
@@ -487,7 +491,7 @@
     <details class="option-section" open><summary>Performance and display</summary><div class="option-section-body">
       <div class="option-row"><label for="optionPreset">Preset</label><select id="optionPreset"><option value="quality">Quality</option><option value="balanced">Balanced</option><option value="performance">Performance</option><option value="custom">Custom</option></select><span></span></div>
       <div class="option-row"><label for="optionResolution">Resolution</label><select id="optionResolution"><option value="0.35">70% of standard</option><option value="0.45">90% of standard</option><option value="0.50">Standard</option><option value="0.65">High</option><option value="0.80">Very high</option><option value="1.00">Native</option></select><span id="optionResolutionValue"></span></div>
-      <div class="option-row"><label for="optionPlatformMode">Platform</label><select id="optionPlatformMode"><option value="auto">Auto-detect</option><option value="touch">Touch / mobile</option><option value="desktop">Mouse + keyboard</option></select><span id="optionPlatformValue"></span></div>
+      <div class="option-row"><label for="optionPlatformMode">Platform</label><select id="optionPlatformMode"><option value="auto">Auto-detect</option><option value="navigator">Dremplay Navigator · phone</option><option value="tablet">Tablet · touch</option><option value="desktop">PC · mouse + keyboard</option></select><span id="optionPlatformValue"></span></div>
       <div class="option-row"><label for="optionViewDistance">View distance</label><input id="optionViewDistance" type="range" min="1000" max="1000" step="1" value="1000" disabled><span id="optionViewDistanceValue"></span></div>
       <div class="option-row"><label for="optionLightingQuality">Lighting</label><select id="optionLightingQuality"><option value="0">Hard / fastest</option><option value="1">Fast soft</option><option value="2">Full soft</option></select><span></span></div>
       <div class="option-row"><label for="optionMaterialQuality">Materials</label><select id="optionMaterialQuality"><option value="0">Solid</option><option value="1">Stable hashed</option><option value="2">Full procedural</option></select><span></span></div>
@@ -551,15 +555,15 @@
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Portrait mode keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor. Drag its title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, mobile Select launcher, or displayed key to open tools. Mobile windows fill the usable screen and provide large close controls; desktop title bars remain draggable.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Device modes</h2><p>Dremplay Navigator is the dedicated phone interface with the upper two-thirds drag viewport and lower thumb controls. Tablet Touch keeps touch movement and actions with the robust window layout. PC Desktop retains mouse, keyboard, pointer lock, and the complete editor layout.</p><h2>Touch controls</h2><p>Navigator keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · L Loading Monitor · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor. Close it after loading and it stays closed while background work continues. Open it manually with L, the top menu, or Select → Loading Monitor. Drag its title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, Navigator Select launcher, or displayed key to open tools. Navigator windows fill the usable phone screen and provide large close controls; Tablet and Desktop retain robust movable layouts.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.3</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">upper two-thirds touch viewport · lower controls · movable loading monitor · deterministic sugar maple family</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.4</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Dremplay Navigator phone mode · robust tablet and PC modes · manually launched loading monitor</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=61"></script>
+<script src="heightmap-world-v2.js?v=62"></script>
 <script>
 (() => {
 "use strict";
@@ -2044,9 +2048,15 @@ function setLoadingMinimized(minimized){
   const pct=parseFloat(loadingPercent.textContent)||0;loadingWindowTitle.textContent=minimized?`AI ${loadingActive?'Loading':'Ready'} · ${pct.toFixed(0)}%`:'AI Loading Monitor';
 }
 loadingMinimize.addEventListener('click',()=>setLoadingMinimized(!loadingOverlay.classList.contains('minimized')));
-// Closing an idle monitor now minimizes it. The overlay is never display:none,
-// so its compositor animation clock cannot be destroyed and restarted.
-loadingClose.addEventListener('click',()=>{if(!loadingActive)setLoadingMinimized(true);});
+function loadingWindowOpen(){return !loadingOverlay.classList.contains('closed');}
+function setLoadingWindow(open){
+  loadingOverlay.classList.toggle('closed',!open);
+  if(open)bringToFront(loadingOverlay);
+  refreshWindowState();
+}
+// Closing is an explicit user preference. Background tasks continue updating
+// the monitor's state, but only the menu may make the window visible again.
+loadingClose.addEventListener('click',()=>{if(!loadingActive)setLoadingWindow(false);});
 let lastStableStatus='';
 function hideLoading(message='Task complete. Ready to play.'){
   // Accessibility invariant: this panel is persistent. Never toggle display,
@@ -2365,16 +2375,19 @@ let locked=false;
 let hasEnteredWorld=false;
 let focusMenuOnUnlock=false;
 const detectedTouchPlatform=!!(navigator.maxTouchPoints>0&&(matchMedia('(pointer:coarse)').matches||/iPad|iPhone|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)));
-let platformMode='auto';try{const saved=localStorage.getItem('dremplay:platform-mode');if(['auto','touch','desktop'].includes(saved))platformMode=saved;}catch{}
+const detectedPhonePlatform=detectedTouchPlatform&&(/iPhone|iPod|Android.+Mobile/i.test(navigator.userAgent)||matchMedia('(max-width: 600px)').matches);
+let platformMode='auto';try{const saved=localStorage.getItem('dremplay:platform-mode');if(['auto','navigator','tablet','desktop'].includes(saved))platformMode=saved;else if(saved==='touch')platformMode=detectedPhonePlatform?'navigator':'tablet';}catch{}
 let touchMoveX=0,touchMoveY=0,touchJump=false,touchCrawl=false,mobileMenuOpen=false;
-function resolvedPlatformMode(){return platformMode==='auto'?(detectedTouchPlatform?'touch':'desktop'):platformMode;}
-function touchPlatformActive(){return resolvedPlatformMode()==='touch';}
+function resolvedPlatformMode(){return platformMode==='auto'?(detectedPhonePlatform?'navigator':detectedTouchPlatform?'tablet':'desktop'):platformMode;}
+function platformModeLabel(mode=resolvedPlatformMode()){return mode==='navigator'?'Dremplay Navigator':mode==='tablet'?'Tablet touch':'PC desktop';}
+function touchPlatformActive(){return ['navigator','tablet'].includes(resolvedPlatformMode());}
+function navigatorPlatformActive(){return resolvedPlatformMode()==='navigator';}
 function gameControlActive(){return hasEnteredWorld&&!mobileMenuOpen&&!anyToolOpen()&&(locked||touchPlatformActive());}
 function applyPlatformMode(mode=platformMode,persist=true){
-  platformMode=['auto','touch','desktop'].includes(mode)?mode:'auto';const resolved=resolvedPlatformMode();document.body.classList.toggle('touch-platform',resolved==='touch');document.body.classList.toggle('cursor-mode',resolved!=='touch'&&!locked);
-  platformToggle.textContent=platformMode==='auto'?`Platform: Auto → ${resolved==='touch'?'Touch':'Desktop'}`:`Platform: ${resolved==='touch'?'Touch / mobile':'Desktop'}`;
-  const selector=document.getElementById('optionPlatformMode'),readout=document.getElementById('optionPlatformValue');if(selector)selector.value=platformMode;if(readout)readout.textContent=resolved==='touch'?'Touch':'Desktop';
-  if(resolved==='touch'&&document.pointerLockElement)document.exitPointerLock();if(resolved!=='touch')clearTouchState();
+  platformMode=['auto','navigator','tablet','desktop'].includes(mode)?mode:'auto';const resolved=resolvedPlatformMode(),touch=resolved!=='desktop';document.body.classList.toggle('touch-platform',touch);document.body.classList.toggle('navigator-platform',resolved==='navigator');document.body.classList.toggle('tablet-platform',resolved==='tablet');document.body.classList.toggle('desktop-platform',resolved==='desktop');document.body.classList.toggle('cursor-mode',!touch&&!locked);
+  platformToggle.textContent=platformMode==='auto'?`Platform: Auto → ${platformModeLabel(resolved)}`:`Platform: ${platformModeLabel(resolved)}`;
+  const selector=document.getElementById('optionPlatformMode'),readout=document.getElementById('optionPlatformValue');if(selector)selector.value=platformMode;if(readout)readout.textContent=platformModeLabel(resolved);
+  if(touch&&document.pointerLockElement)document.exitPointerLock();if(!touch)clearTouchState();
   if(persist)try{localStorage.setItem('dremplay:platform-mode',platformMode);}catch{}
   requestAnimationFrame(resize);
 }
@@ -2405,7 +2418,7 @@ function anyToolOpen(){return !!document.querySelector('.tool-window.open');}
 function refreshWindowState(){
   startScreen.style.display=hasEnteredWorld?'none':'flex';
   document.body.classList.toggle('in-world',hasEnteredWorld);
-  document.querySelectorAll('.menu-button').forEach(button=>button.classList.toggle('active',document.getElementById(button.dataset.window)?.classList.contains('open')));
+  document.querySelectorAll('.menu-button').forEach(button=>button.classList.toggle('active',button.dataset.window==='loadingOverlay'?loadingWindowOpen():document.getElementById(button.dataset.window)?.classList.contains('open')));
 }
 
 function bringToFront(win){win.style.zIndex=String(++topWindowZ);}
@@ -2452,16 +2465,17 @@ function setSimpleWindow(win,open){
   refreshWindowState();
 }
 function setWindowById(id,open){
-  if(id==='console')setConsole(open);else if(id==='materialDesigner')setDesigner(open);else setSimpleWindow(document.getElementById(id),open);
+  if(id==='loadingOverlay')setLoadingWindow(open);else if(id==='console')setConsole(open);else if(id==='materialDesigner')setDesigner(open);else setSimpleWindow(document.getElementById(id),open);
 }
+function windowIsOpen(id){return id==='loadingOverlay'?loadingWindowOpen():document.getElementById(id)?.classList.contains('open');}
 function returnToGameControl(){
   if(mobileMenuOpen)setMobileMenu(false);
   document.querySelectorAll('.tool-window.open').forEach(win=>win.classList.remove('open'));
   consoleOpen=false;designerOpen=false;consoleInput.blur();refreshWindowState();if(!touchPlatformActive())canvas.requestPointerLock();
 }
 document.querySelectorAll('.simple-window .window-close').forEach(button=>button.addEventListener('click',()=>setSimpleWindow(button.closest('.tool-window'),false)));
-document.querySelectorAll('.menu-button').forEach(button=>button.addEventListener('click',()=>{const win=document.getElementById(button.dataset.window);setWindowById(win.id,!win.classList.contains('open'));}));
-platformToggle.addEventListener('click',()=>{const modes=['auto','touch','desktop'];applyPlatformMode(modes[(modes.indexOf(platformMode)+1)%modes.length]);});
+document.querySelectorAll('.menu-button').forEach(button=>button.addEventListener('click',()=>setWindowById(button.dataset.window,!windowIsOpen(button.dataset.window))));
+platformToggle.addEventListener('click',()=>{const modes=['auto','navigator','tablet','desktop'];applyPlatformMode(modes[(modes.indexOf(platformMode)+1)%modes.length]);});
 
 const worldMapCanvas=document.getElementById('worldMapCanvas'),mapStatus=document.getElementById('mapStatus');
 let worldMapBase=null,lastMapMarkerX=NaN,lastMapMarkerZ=NaN;
@@ -3273,7 +3287,7 @@ function syncOptionsWindow(){
   optionResolution.value=Number(pendingRenderScale).toFixed(2);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
-  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
+  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
   optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
@@ -3462,7 +3476,7 @@ window.addEventListener('keydown', e => {
   const typing=e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement;
   if(hasEnteredWorld&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
     const button=document.querySelector(`.menu-button[data-hotkey="${e.key.toLowerCase()}"]`);
-    if(button){const win=document.getElementById(button.dataset.window);setWindowById(win.id,!win.classList.contains('open'));e.preventDefault();return;}
+    if(button){setWindowById(button.dataset.window,!windowIsOpen(button.dataset.window));e.preventDefault();return;}
   }
   if(hasEnteredWorld&&!typing&&(e.code==='Escape'||e.code==='Space')){
     if(locked){if(e.code==='Escape')focusMenuOnUnlock=true;document.exitPointerLock();}else returnToGameControl();
