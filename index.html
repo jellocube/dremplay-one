@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3.4 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3.4.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3.4';
+  const CURRENT_VERSION = '0.0.1.5.3.4.1';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3.4 · Infinite Detail Voxel Engine · complete Resource preload</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3.4.1 · Infinite Detail Voxel Engine · predictive Resource guard</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3.4 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3.4.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · atomic visibility</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4.1</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · guarded predictive ecology</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=46"></script>
+<script src="heightmap-world-v2.js?v=47"></script>
 <script>
 (() => {
 "use strict";
@@ -3573,7 +3573,11 @@ function takeNearestDeferredDecoration(){
 }
 function resourceNeighborhoodColumns(centerCX,centerCZ){
   const b=residentChunkBounds(),columns=[];
-  for(let cx=Math.max(b.minCX,centerCX-RESOURCE_COMMIT_RADIUS);cx<=Math.min(b.maxCX,centerCX+RESOURCE_COMMIT_RADIUS);cx++)for(let cz=Math.max(b.minCZ,centerCZ-RESOURCE_COMMIT_RADIUS);cz<=Math.min(b.maxCZ,centerCZ+RESOURCE_COMMIT_RADIUS);cz++)columns.push([cx,cz]);
+  // Predictive jobs commonly sit just outside the visible ring. Preserve the
+  // full mathematical 5×5 neighborhood instead of clipping it to zero cells;
+  // off-ring results remain in CPU cache and become visible only after the
+  // toroidal clipmap reaches them.
+  for(let cx=centerCX-RESOURCE_COMMIT_RADIUS;cx<=centerCX+RESOURCE_COMMIT_RADIUS;cx++)for(let cz=centerCZ-RESOURCE_COMMIT_RADIUS;cz<=centerCZ+RESOURCE_COMMIT_RADIUS;cz++)columns.push([cx,cz]);
   return {columns,minCY:b.minCY,maxCY:b.maxCY};
 }
 function resourceColumnDetailChunks(cx,cz,minCY,maxCY){
@@ -3673,7 +3677,7 @@ function processDeferredDecorations(now,moving){
   // are complete, keeping the transaction atomic without a long frame stall.
   if(!resourceCommitTask){
     if(now<nextResourceCommitAt||!deferredDecorationJobs.length)return;const job=takeNearestDeferredDecoration();if(!job)return;
-    const neighborhood=resourceNeighborhoodColumns(job[0],job[1]);resourceCommitTask={center:job,columns:neighborhood.columns,minCY:neighborhood.minCY,maxCY:neighborhood.maxCY,cursor:0,ready:[],started:performance.now()};
+    const neighborhood=resourceNeighborhoodColumns(job[0],job[1]);if(!neighborhood.columns.length){loadingLog('Resource guard',`rejected empty predictive neighborhood at ${job[0]},${job[1]}`);nextResourceCommitAt=performance.now()+300;return;}resourceCommitTask={center:job,columns:neighborhood.columns,minCY:neighborhood.minCY,maxCY:neighborhood.maxCY,cursor:0,ready:[],started:performance.now()};
     for(const [cx,cz] of neighborhood.columns)deferredDecorationKeys.delete(`${cx},${cz}`);
     loadingLog('Resource staging',`${neighborhood.columns.length} biome columns around ${job[0]},${job[1]} · movement remains active · visibility waits for complete transaction`);
   }
@@ -3690,6 +3694,7 @@ function processDeferredDecorations(now,moving){
   let uploaded=0;for(const coords of task.ready)if(chunkInsideResident(...coords)){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);setResidentChunkValidity(...coords,1);uploaded++;}if(uploaded)uploadChunkValidity();
   const elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?900:300);
   if(uploaded)loadingLog('Resource commit',`${uploaded} complete trunk/canopy/cross-boundary chunks revealed atomically around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms staged inside active streamer`);
+  else loadingLog('Resource prefetch',`25 off-ring biome columns cached around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms · visibility deferred until clipmap arrival`);
 }
 function updateLoadedWindow(){
   // A Resource transaction lasts roughly 25 frames and has over 30 m of cache

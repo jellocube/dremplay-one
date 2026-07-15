@@ -2,7 +2,14 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.4**
+Current release: **v0.0.1.5.3.4.1**
+
+## v0.0.1.5.3.4.1 predictive Resource guard
+
+- Fixes the completely blue first frame in v0.0.1.5.3.4. After readiness, the predictor selected an off-ring Resource coordinate; clipping its neighborhood to the resident ring produced zero columns, and destructuring the nonexistent first column stopped the render loop before its first world frame.
+- Predictive Resource neighborhoods are now always complete 5×5 mathematical fields, including when their center is outside the visible ring.
+- Off-ring Resources resolve into CPU cache and remain invisible until the toroidal clipmap arrives, turning the former crash case into useful ahead-of-player ecology prefetch.
+- Keeps GPU upload and chunk-validity changes restricted to coordinates actually inside the current resident ring.
 
 ## v0.0.1.5.3.4 complete Resource preload
 
