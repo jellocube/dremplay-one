@@ -2,7 +2,21 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.4**
+Current release: **v0.0.1.6.4.2**
+
+## v0.0.1.6.4.2 Sugar maple and iPhone interface scale
+
+- Replaces the Ironbark family with deterministic sugar maple adult, sapling, and palmate leaf-spray Resources while retaining the same compact mathematical storage positions.
+- Gives sugar maples a broad decurrent crown, branching angles, trunk taper, leaf density, and size range distinct from oak, birch, apple, fir, and spruce.
+- Recruits sugar maples into sheltered mesic forest through the immutable biome equation; they avoid exposed rock, water, snow, steep slopes, and incompatible roots like every other tree.
+- Renames the old Ironbark material slot to sugar maple bark without changing its numeric material identity or saved palette properties.
+- Includes the native-width iPhone viewport correction from v0.0.1.6.4.1 so Safari no longer shrinks the entire GUI into a desktop-width page.
+
+## v0.0.1.6.4.1 iPhone interface scale fix
+
+- Adds the missing device-width viewport contract with `viewport-fit=cover`. Mobile Safari now lays the game out at the phone's real CSS width instead of constructing a desktop-width virtual page and shrinking the entire interface.
+- Restores the intended 44% portrait control field, readable application menu, full-size diamond buttons, eight-direction D-pad, compass, HUD, and touch-accessible editor windows on iPhone.
+- Keeps pinch zoom available for accessibility while using safe-area insets around the dynamic island, home indicator, and browser chrome.
 
 ## v0.0.1.6.4 Full-view portrait controls and live Resources
 
@@ -372,7 +386,7 @@ Current release: **v0.0.1.6.4**
 - Added three water-rendering levels: solid palette water, animated pixel-flow facets, and reflective voxel water. The highest setting adds stepped Fresnel sky reflection, quantized moving surface normals, depth tint, and palette-white sun glints while retaining a deliberately pixelated result.
 - Added an F10 Server Options window for gravity, water simulation state/budget/spread, natural spring behavior, water activation, spring placement, spawn coordinates, respawn, spawn capture, and teleportation. Matching console commands add `spawn`, `waterwake`, `spring`, and `view` controls.
 - Replaced filled tree-crown ellipsoids with compound phyllotactic foliage. Each cluster is a fine terminal twig with alternating, roughly one-voxel leaf blades and forked leaflets, leaving visible air and light between leaves.
-- Added `ironbark_leaf_spray` as a standalone editable and transferable foliage Resource. Leaf voxels in natural and manually placed trees retain this foliage provenance separately from the parent tree’s trunk ID; new pebble/foliage definitions are appended so all earlier runtime Resource IDs keep their established numbers.
+- Added `sugar_maple_leaf_spray` as a standalone editable and transferable foliage Resource. Leaf voxels in natural and manually placed trees retain this foliage provenance separately from the parent tree’s trunk ID; new pebble/foliage definitions are appended so all earlier runtime Resource IDs keep their established numbers.
 - Increased the grass emitter to a jittered 2×2-voxel lattice with denser moisture/slope-aware short and tall grass. Pool and stream beds receive dense, locally varied `stream_pebble` Resource carpets using gravel, native rock, and quartz.
 - Added the title links for [jellocube.me](https://jellocube.me), [Myar](https://jellocube.me/myar), and [jellocube/dremplay-one](https://github.com/jellocube/dremplay-one).
 - Renamed the persistent panel to **AI Loading Monitor** and expanded its immutable conveyor to 17 permanent categories and 136 technical packets. Labels expose the real statistical and predictive work: seeded distributions, multi-octave signal synthesis, landscape classification, Resource growth, cellular water state, tensor assembly, distribution audits, movement prediction, kilometer-field sampling, weather estimation, GPU encoding, and frame-anomaly observation.
@@ -398,7 +412,7 @@ Current release: **v0.0.1.6.4**
 - Moved the live Resource preview to a large persistent left pane and auto-fitted it from the actual occupied voxel bounds.
 - Replaced conservative tree bounds with bounds measured directly from the generated branch and foliage architecture; flowers receive generous unbounded working margins.
 - Natural props are reconstructed into every neighboring chunk touched by their true bounds, removing the invisible chunk box that cut tree crowns and plants at horizontal borders.
-- Every natural Resource already derives its instance seed from world coordinates; manual placement now derives a fresh seed from its coordinates, base genome, and placement serial. Added a New seed control and changed the ironbark base genome away from 1337.
+- Every natural Resource already derives its instance seed from world coordinates; manual placement now derives a fresh seed from its coordinates, base genome, and placement serial. Added a New seed control and changed the sugar maple base genome away from 1337.
 - Replaced projected 2D cloud decks with slowly transforming 3D voxel volumes between 50 and 78 meters altitude. Cells have separate top/side/underside lighting.
 - Cloud options now explicitly select Off, a coarse 2.4 m 3D grid with 12 volume samples, or a fine 0.8 m 3D grid with 36 volume samples. Terrain fog uses the atmosphere without retracing clouds.
 - Replaced one-chunk strip relocation with direction-predicted 12.8 m × 12.8 m sectors. The predictor builds an eight-chunk-deep reserve in the current movement/camera direction and continues at a bounded budget while moving.
@@ -409,8 +423,8 @@ Current release: **v0.0.1.6.4**
 
 - Raised the vertical resident volume to 416 true 10 cm voxels (41.6 m), with major mountain relief reaching at least 30.5 m / 100 ft above the valley datum.
 - Added domain-warped watershed rivers with a nominal 4.8 m / 15.7 ft wet core (measured median 5.9 m in the terrain audit) while retaining small erosion pools up to 2 m deep, ordinary hills, and open fields.
-- Adult ironbark Resources now have a 6.1 m / 20 ft minimum generated height. Field boulders are meter-scale, while existing gravel, stone shards, sand grains, and small pools remain.
-- Added ironbark saplings as a separate procedural growth stage and stable Resource ID. Low-frequency recruitment fields cluster adults and saplings naturally in compatible moist, soil-covered habitat.
+- Adult sugar maple Resources now have a 6.1 m / 20 ft minimum generated height. Field boulders are meter-scale, while existing gravel, stone shards, sand grains, and small pools remain.
+- Added sugar maple saplings as a separate procedural growth stage and stable Resource ID. Low-frequency recruitment fields cluster adults and saplings naturally in compatible moist, soil-covered habitat.
 - Added Adult/Sapling selection to the Resource Editor; the same branching architecture and material system supports both stages without disguising saplings as undersized adults.
 - Procedural Resources are voxelized once per deterministic instance and reused by every intersecting vertical chunk, avoiding repeated full-volume tree evaluation.
 - Empty high chunks remain implicit using an exact per-column Resource ceiling, preventing both clipped tree crowns and throwaway voxel allocations.
@@ -427,7 +441,7 @@ Current release: **v0.0.1.6.4**
 
 - Test zone returns to near-full rendering resolution: 0.45 versus the full world's 0.50, while retaining its compact volume and simplified shader path.
 - The Resource library remains exactly ten named definitions with the same stable registration order and provenance IDs.
-- Ironbark trees now use tapered deterministic branch graphs growing toward golden-angle terminal attraction points, upward tropism, secondary twigs, and separate porous foliage clusters.
+- Sugar maple trees now use tapered deterministic branch graphs growing toward golden-angle terminal attraction points, upward tropism, secondary twigs, and separate porous foliage clusters.
 - Foxglove bells and leaves use golden-angle phyllotaxis; grasses curve along quadratic wind response with centered height distributions.
 - Boulders and chips combine anisotropic superellipsoids, asymmetric cleavage planes, multi-scale roughness, partial burial, and exposed-face patina.
 - Moss grows as overlapping cushion colonies instead of one perturbed ellipsoid.

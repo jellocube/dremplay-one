@@ -4,6 +4,8 @@
 
 Touch play separates unobstructed observation from the thumb field without shrinking the world. In portrait orientation the renderer remains full-height. The upper 56% is the look and aim gesture area; a translucent lower control field explains that the world continues behind the buttons but should not carry essential visual information. The cross D-pad is a continuous radial input with eight-direction feedback, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
 
+The document declares `width=device-width`, an initial scale of one, and `viewport-fit=cover`. This declaration is part of the renderer contract: without it, mobile Safari creates a desktop-width layout viewport and scales every CSS control down after layout, preventing portrait breakpoints and safe-area rules from matching the physical device. Zoom is not disabled.
+
 Select opens a complete touch launcher rather than depending on keyboard shortcuts or an overflowing desktop menu. Every tool window becomes safe-area-aware, full-screen, independently scrollable, and uses iOS-sized controls. Start opens the mathematical heightmap directly. Landscape touch play retains the same controls without shrinking the renderer, and desktop pointer-lock behavior is unchanged.
 
 ## Graph-compiled Resource Builder
@@ -33,6 +35,8 @@ The default playable level is finite and immutable at the macro scale. `heightma
 ## Physical ecology and trails
 
 The biome classifier does not read the painted concept map. It measures the immutable heightfield: elevation, first and second derivatives, local concavity, drainage and water proximity, deposition, soil depth, prevailing-wind exposure and shelter, solar aspect, erosion, temperature, and snow accumulation. Twelve biome weights overlap and normalize at every coordinate, so ecological boundaries alter materials, vegetation probability, and species selection continuously rather than drawing hard bands.
+
+Woody recruitment uses those continuous measurements before selecting a species. Sugar maple occupies sheltered mesic forest with moderate slopes and sufficient moisture; birch and fir bias toward wetter ground, oak toward drier slopes, and spruce or fir toward cool montane terrain. Adult, sapling, and leaf-spray Resources share a species genome but derive immutable per-instance seeds from their world coordinates.
 
 Natural trails are also continuous queries. Animal movement uses sheltered meadow, woodland, water access, meandering route fields, and deterministic branch breaks. Wind traces align to the shared wind vector on exposed coast and alpine ground. Dry washes follow drainage margins but exclude active water. The strongest field removes grass and selects locally plausible dirt, mud, sand, or gravel. No trail vertices or individual trail voxels are stored in the level.
 
