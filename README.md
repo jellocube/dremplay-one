@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.4**
+Current release: **v0.0.1.5.5**
+
+## v0.0.1.5.5 immutable mathematical world
+
+- Replaces destination construction with instant observer travel. Clicking the map immediately publishes the destination’s mathematical height, collision surface, moisture, biome, and far horizon; no terrain or Resource placement must finish before arrival.
+- Invalidates the disposable fine-voxel cache at the new coordinates and refines it afterward. Coarse and fine observations query the same authoritative world and cannot change Resource identities or placement.
+- Adds eight continuously blended biome definitions with stable seeds, transition widths, and ecological affinities: ocean, dune, riparian wetland, coastal meadow, sheltered forest, montane pine, alpine heath, and exposed cliff.
+- Derives biome weights from elevation, water distance, drainage, moisture, slope, curvature, erosion, temperature, wind exposure, and shelter. Borders blend soil, vegetation density, species, and Resource roots rather than colors alone.
+- Adds a shared deterministic wind vector field containing direction, speed, shelter, and turbulence. Ecology and grass lean already consume it; voxel clouds can consume the identical field later.
+- Feeds dominant-biome seeds into tree, shrub, accent, and individual grass-root equations so every natural Resource remains stable across visits and detail levels.
+- Adds a live cardinal-and-degree compass to the upper-right HUD.
 
 ## v0.0.1.5.4 compiled ecology cache
 

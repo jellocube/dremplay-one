@@ -1,5 +1,11 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Immutable world query
+
+The authoritative level is a pure coordinate field. `terrainSample(x,z)`, `worldBiomeField(x,z)`, and the Resource equations return the same terrain, blended biome weights, ecological seed, wind, and Resource roots independently of query order. Fine voxels are a disposable observation cache, not world data.
+
+Fast travel changes the observer coordinates, publishes a bounded mathematical parent immediately, and clears stale fine-cache validity. Collision falls back to the same height equation while detail is refined. Player edits remain sparse overrides above the immutable field.
+
 ## Supplied heightmap world
 
 The default playable level is finite and immutable at the macro scale. `heightmap-world-v2.js` is built directly from the supplied 1254×1254 grayscale map. Principal-axis fitting maps the island to 5 km SW–NE by 3 km cross-axis inside a 6 km ocean atlas. Its 751×751 control lattice is sampled every 8 m and indexed as 3,600 world-aligned 100×100 m regions. Elevation, valleys, water, drainage, and ridge strength are direct bounded lookups with smooth quintic-bilinear interpolation at runtime. The offline bake script is the only terrain-authoring stage; it is not a runtime fallback generator.
