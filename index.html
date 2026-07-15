@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.3.3 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.3.4 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.3.3';
+  const CURRENT_VERSION = '0.0.1.5.3.4';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -279,7 +279,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.3.3 · Infinite Detail Voxel Engine · streamer-integrated ecology</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.3.4 · Infinite Detail Voxel Engine · complete Resource preload</span></div>
 <div id="topright"><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -288,7 +288,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.3.3 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.3.4 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -429,10 +429,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.3</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · streamer-integrated ecology · atomic visibility</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.3.4</h2><p>An Infinite Detail Voxel Engine for mathematical worlds, portable multiresolution streaming, natural-material experiments, and procedural Resource creation.</p><p class="muted">continuous scene definitions · complete Resource preload · atomic visibility</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=45"></script>
+<script src="heightmap-world-v2.js?v=46"></script>
 <script>
 (() => {
 "use strict";
@@ -447,7 +447,7 @@ const LOADED_CHUNKS_XZ = 24;           // 768 voxels loaded in X/Z (~76.8 m), 9x
 const LOADED_CHUNKS_Y = 13;            // 416 isotropic cells: 41.6 m, including 6.4 m underground
 const PREFETCH_MARGIN=14;               // fine-voxel predictive cache grown during play
 const TERRAIN_PLAN_MARGIN=18;            // lightweight mathematical reserve beyond fine voxels
-const BOOT_PREFETCH_MARGIN=0;           // resident field first; predictive cache begins after entry
+const BOOT_PREFETCH_MARGIN=4;           // one complete 12.8 m sector of terrain + Resources on every side
 const MINIMUM_BOOT_PRELOAD_MS=0;        // readiness follows completed work, never an artificial timer
 
 const LOADED_SIZE_X = LOADED_CHUNKS_XZ * CHUNK_SIZE;
@@ -1860,10 +1860,15 @@ function initialLoadProgress(workFraction=1){
 function waitForMinimumPreload(loadToken=initialLoadToken){
   if(loadToken!==initialLoadToken)return;
   const elapsed=performance.now()-bootLoadStarted;
-  // Spend otherwise idle audit frames restoring a small, near-spawn Resource
-  // neighborhood. This does not extend boot time and keeps expensive canopy
-  // rasterization out of the first walking frames.
-  processBootDeferredDecoration();
+  // "Ready" now means complete ecology, not merely terrain. Consume the full
+  // initial ring plus its ahead reserve before enabling play; there is no
+  // post-title Resource debt left to pop into view around spawn.
+  if(bootResourceCursor<bootResourceColumns.length){
+    processBootResourcePreload();const fraction=bootResourceColumns.length?bootResourceCursor/bootResourceColumns.length:1;
+    showLoading(`Preloading biome Resources ${bootResourceCursor}/${bootResourceColumns.length}`,.95+fraction*.04,false);
+    const step=Math.floor(fraction*20);if(step!==bootResourceLogStep){bootResourceLogStep=step;const column=bootResourceColumns[Math.max(0,bootResourceCursor-1)]||[0,0];loadingLog('Ecology resolver',`${bootResourceCursor}/${bootResourceColumns.length} complete columns · ${resourceChunks.size} provenance chunks · coordinate ${column[0]},${column[1]}`);}
+    requestAnimationFrame(()=>waitForMinimumPreload(loadToken));return;
+  }
   if(!verificationStarted){verificationStarted=performance.now();verificationDuration=Math.max(1,activeMinimumBootMs-elapsed);loadingLog('Cache audit',`${chunks.size} generated chunks entering consistency pass`);}
   if(elapsed<activeMinimumBootMs){
     showLoading(testZoneMode?'Auditing Test zone':'Auditing resident ring',initialLoadProgress(1),false);
@@ -1888,7 +1893,7 @@ function beginInitialWorldLoad(useTestZone=false){
   windowMinX=useTestZone?(LOADED_SIZE_X-activeGridSizeX)/2:0;
   windowMinZ=useTestZone?(LOADED_SIZE_Z-activeGridSizeZ)/2:0;
   ringX=0;ringZ=0;
-  verificationStarted=0;verificationDuration=1;lastAuditLog=-1;bootDecorationsDone=0;
+  verificationStarted=0;verificationDuration=1;lastAuditLog=-1;bootResourceColumns.length=0;bootResourceCursor=0;bootResourceLogStep=-1;bootResourceFinalized=false;
   bootLoadStarted=performance.now();
   loadedGrid=new Uint8Array(activeUploadBytes());
   chunkValidityGrid=new Uint8Array((activeGridSizeX/CHUNK_SIZE)*LOADED_CHUNKS_Y*(activeGridSizeZ/CHUNK_SIZE));
@@ -1924,7 +1929,7 @@ function beginInitialWorldLoad(useTestZone=false){
     if(done<jobs.length){requestAnimationFrame(batch);return;}
     assembleTerrainWeatherGrid();loadingLog('Weather relief',`${activeGridSizeX}×${activeGridSizeZ} exact height/moisture texels assembled for orographic clouds`);
     const farCenterX=windowMinX+activeGridSizeX*.5,farCenterZ=windowMinZ+activeGridSizeZ*.5,farStarted=performance.now();buildFarTerrainMap(farCenterX,farCenterZ);loadingLog('Far horizon',`${FAR_MAP_SIZE}×${FAR_MAP_SIZE} atlas lookups assembled by complete 100 m squares · ${(performance.now()-farStarted).toFixed(1)} ms`);
-    persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident surface cache indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${jobs.length} view-dependent surface/shallow/canopy samples cached · deep bedrock remains implicit`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
+    initializeBootResourcePreload(minCX,minCZ,span,bootCenterCX,bootCenterCZ);persistTerrainPlanCache();showLoading(useTestZone?'Test zone indexed':'Resident surface cache indexed',initialLoadProgress(1),false);loadingLog('Ring encoder',`${jobs.length} view-dependent surface/shallow/canopy samples cached · ${bootResourceColumns.length} complete biome columns required before release`);requestAnimationFrame(()=>waitForMinimumPreload(loadToken));
   };
   requestAnimationFrame(batch);
 }
@@ -3553,7 +3558,7 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
-const deferredDecorationJobs=[],deferredDecorationKeys=new Set();let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootDecorationsDone=0,nextResourceCommitAt=0,resourceCommitTask=null;const RESOURCE_COMMIT_RADIUS=2,BOOT_RESOURCE_CLUSTER_LIMIT=DEVICE_PROFILE.tier==='mobile'?2:DEVICE_PROFILE.tier==='high'?4:3;let clipmapProgressFloor=0;
+const deferredDecorationJobs=[],deferredDecorationKeys=new Set(),bootResourceColumns=[];let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootResourceCursor=0,bootResourceLogStep=-1,bootResourceFinalized=false,nextResourceCommitAt=0,resourceCommitTask=null;const RESOURCE_COMMIT_RADIUS=2;let clipmapProgressFloor=0;
 function queueDeferredDecoration(job){const chunk=chunkKey(...job);if(!baseOnlyChunks.has(chunk))return;const key=`${job[0]},${job[2]}`;if(deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push([job[0],job[2]]);deferredDecorationOrderDirty=true;}
 function decorationFocusChunk(){if(hasEnteredWorld&&playerPos)return {cx:Math.floor(playerPos.x/VS/CHUNK_SIZE),cz:Math.floor(playerPos.z/VS/CHUNK_SIZE)};return {cx:Math.floor((windowMinX+activeGridSizeX*.5)/CHUNK_SIZE),cz:Math.floor((windowMinZ+activeGridSizeZ*.5)/CHUNK_SIZE)};}
 function takeNearestDeferredDecoration(){
@@ -3595,9 +3600,20 @@ function decorateResourceNeighborhood(centerCX,centerCZ,uploadNow){
   for(const coords of changed)uploadNow?uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1):copyChunkToLoadedGrid(...coords);
   return changed.length;
 }
-function processBootDeferredDecoration(){
-  if(bootDecorationsDone>=BOOT_RESOURCE_CLUSTER_LIMIT)return false;const job=takeNearestDeferredDecoration();if(!job)return false;
-  const changed=decorateResourceNeighborhood(job[0],job[1],false);if(changed){bootDecorationsDone++;if(bootDecorationsDone===BOOT_RESOURCE_CLUSTER_LIMIT)loadingLog('Biome Resources',`${bootDecorationsDone} near-spawn 5×5 Resource clusters committed atomically · ${changed} final surface/canopy chunks in last cluster`);return true;}return false;
+function initializeBootResourcePreload(minCX,minCZ,span,centerCX,centerCZ){
+  bootResourceColumns.length=0;for(let cx=minCX;cx<minCX+span;cx++)for(let cz=minCZ;cz<minCZ+span;cz++)bootResourceColumns.push([cx,cz]);
+  bootResourceColumns.sort((a,b)=>{const da=(a[0]-centerCX)**2+(a[1]-centerCZ)**2,db=(b[0]-centerCX)**2+(b[1]-centerCZ)**2;return da-db;});bootResourceCursor=0;bootResourceLogStep=-1;bootResourceFinalized=false;
+  loadingLog('Ecology manifest',`${bootResourceColumns.length} columns cover the entire initial ring and ahead reserve · play remains locked until all Resources resolve`);
+}
+function processBootResourcePreload(){
+  const started=performance.now(),budget=DEVICE_PROFILE.tier==='mobile'?5:DEVICE_PROFILE.tier==='high'?11:8,b=residentChunkBounds();let worked=false;
+  while(bootResourceCursor<bootResourceColumns.length&&(!worked||performance.now()-started<budget)){
+    const [cx,cz]=bootResourceColumns[bootResourceCursor++];deferredDecorationKeys.delete(`${cx},${cz}`);
+    for(let cy=b.minCY;cy<=b.maxCY;cy++){const coords=[cx,cy,cz];if(!baseOnlyChunks.has(chunkKey(...coords)))continue;if(decorateBaseOnlyChunk(...coords)&&chunkInsideResident(...coords))copyChunkToLoadedGrid(...coords);}
+    worked=true;
+  }
+  if(bootResourceCursor===bootResourceColumns.length&&!bootResourceFinalized){bootResourceFinalized=true;deferredDecorationJobs.length=0;deferredDecorationKeys.clear();loadingLog('Ecology commit',`${bootResourceColumns.length} complete columns accepted · ${resourceChunks.size} Resource provenance chunks · no initial Resource debt remains`);}
+  return worked;
 }
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}

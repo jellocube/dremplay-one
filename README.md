@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.3.3**
+Current release: **v0.0.1.5.3.4**
+
+## v0.0.1.5.3.4 complete Resource preload
+
+- Fixes Resources appearing slowly after the preload window had already declared the game ready. The old boot contract resolved only three 5×5 Resource clusters and left the rest as deferred work.
+- Makes complete biome coverage a hard readiness requirement. The play button remains disabled until every initial horizontal column has resolved its surface and canopy Resources.
+- Preloads both the full resident voxel ring and its surrounding ahead reserve, so the first movements enter already-decorated CPU cache rather than immediately starting visible ecology work.
+- Uses a frame-budgeted Resource phase with honest column counts and provenance totals in the loading monitor.
+- Clears the initial deferred queue only after all required columns are complete; “Ready to play” now guarantees zero initial Resource debt.
 
 ## v0.0.1.5.3.3 streamer-integrated ecology fix
 
