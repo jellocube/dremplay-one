@@ -5,11 +5,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.5.5 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.5.5.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.5.5';
+  const CURRENT_VERSION = '0.0.1.5.5.1';
   const CURRENT_REVISION = 41;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
@@ -284,7 +284,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.5.5 · Infinite Detail Voxel Engine · immutable mathematical ecology</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.5.5.1 · Infinite Detail Voxel Engine · fine-lighting repair</span></div>
 <div id="topright"><div id="compass" aria-label="Live compass">N · 000°</div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -293,7 +293,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.5.5 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.5.5.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -439,10 +439,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.5.5</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">seeded biome equations · instant mathematical travel · disposable voxel refinement</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.5.5.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">seeded biome equations · stable fine lighting · disposable voxel refinement</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=50"></script>
+<script src="heightmap-world-v2.js?v=51"></script>
 <script>
 (() => {
 "use strict";
@@ -1328,23 +1328,27 @@ uint getFineMaterial(ivec3 fineP){
   bool stoneLike=m==3u||(m>=21u&&m<=27u);
   if(stoneLike){uint xm=getSafeMaterial(parent-ivec3(1,0,0)),xp=getSafeMaterial(parent+ivec3(1,0,0)),ym=getSafeMaterial(parent-ivec3(0,1,0)),yp=getSafeMaterial(parent+ivec3(0,1,0)),zm=getSafeMaterial(parent-ivec3(0,0,1)),zp=getSafeMaterial(parent+ivec3(0,0,1));bool waterNeighbor=xm==10u||xp==10u||ym==10u||yp==10u||zm==10u||zp==10u;float sameSupport=(xm==m?1.0:0.0)+(xp==m?1.0:0.0)+(ym==m?1.0:0.0)+(yp==m?1.0:0.0)+(zm==m?1.0:0.0)+(zp==m?1.0:0.0);if((waterNeighbor||sameSupport<1.5)&&grain<.24)return 0u;}
 
-  // Exposed mineral/soil faces receive one shallow 5 cm erosion layer. The
+  // Exposed bare mineral/soil faces receive one shallow 5 cm erosion layer.
   // parent cell remains solid, so collision, edits, water, and caves retain
   // their exact sparse 10 cm authority and cannot acquire procedural holes.
-  if(m!=10u&&m!=28u&&m!=29u&&m!=30u&&m!=31u&&m!=18u){
+  bool erosionMaterial=stoneLike||m==2u||m==13u||m==14u||m==15u||m==16u;
+  if(erosionMaterial){
     // A shared four-sample field gives neighboring 5 cm cells correlated
-    // microrelief rather than even dither. Nearly half of exposed upper
-    // half-cells recede by exactly 5 cm, making the doubled geometry visible.
+    // microrelief rather than even dither. Snow, moss, grass and living
+    // surfaces never participate: removing their half-cells exposed the dark
+    // parent below as false black lighting seams. Bare erosion remains mild.
     float micro=(grain+materialHash(worldFine+ivec3(1,0,0))+materialHash(worldFine+ivec3(0,0,1))+materialHash(worldFine+ivec3(1,0,1)))*.25;
-    bool chip=(sub.y==1&&getDensity(parent+ivec3(0,1,0))<.5&&micro<.46)
-      ||(sub.x==0&&getDensity(parent-ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(17,3,5))<.10)
-      ||(sub.x==1&&getDensity(parent+ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(7,19,3))<.10)
-      ||(sub.z==0&&getDensity(parent-ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(3,5,23))<.10)
-      ||(sub.z==1&&getDensity(parent+ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(11,7,29))<.10);
+    bool chip=(sub.y==1&&getDensity(parent+ivec3(0,1,0))<.5&&micro<.22)
+      ||(sub.x==0&&getDensity(parent-ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(17,3,5))<.04)
+      ||(sub.x==1&&getDensity(parent+ivec3(1,0,0))<.5&&materialHash(worldFine+ivec3(7,19,3))<.04)
+      ||(sub.z==0&&getDensity(parent-ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(3,5,23))<.04)
+      ||(sub.z==1&&getDensity(parent+ivec3(0,0,1))<.5&&materialHash(worldFine+ivec3(11,7,29))<.04);
     if(chip)return 0u;
   }
   return m;
 }
+
+float getFineDensity(ivec3 p){return inFineBounds(p)&&getFineMaterial(p)!=0u?1.0:0.0;}
 
 float smoothMaterialNoise(vec3 x){
   ivec3 i=ivec3(floor(x));
@@ -1552,7 +1556,17 @@ void main(){
     faceLight=floor(faceLight*8.0+0.5)/8.0*mix(0.18,1.0,daylightAmount());
   }else{
     vec3 grad=vec3(0.0);
-    if(uPerformanceMode==1){
+    float fineOcc=0.0;
+    if(fineHit){
+      // The previous half-cell path shaded a 5 cm hit with its 10 cm parent
+      // density kernel. At chipped edges and thin blades that unrelated normal
+      // could point away from the sun and collapse to black. Sample the actual
+      // fine occupancy, but retain the DDA face as a strong stabilizing prior.
+      float fxm=getFineDensity(materialPos-ivec3(1,0,0)),fxp=getFineDensity(materialPos+ivec3(1,0,0));
+      float fym=getFineDensity(materialPos-ivec3(0,1,0)),fyp=getFineDensity(materialPos+ivec3(0,1,0));
+      float fzm=getFineDensity(materialPos-ivec3(0,0,1)),fzp=getFineDensity(materialPos+ivec3(0,0,1));
+      grad=vec3(fxm-fxp,fym-fyp,fzm-fzp);fineOcc=(fxm+fxp+fym+fyp+fzm+fzp)/6.0;
+    }else if(uPerformanceMode==1){
       // Twelve density reads form a compact spherical kernel: six axial and
       // six diagonal. This preserves rounded slopes at 40% of the prior cost.
       grad+=vec3(
@@ -1583,11 +1597,11 @@ void main(){
       grad+=0.38*normalize(vec3(0.0,1.0,1.0))*(getDensity(mapPos-ivec3(0,2,2))-getDensity(mapPos+ivec3(0,2,2)));
       grad+=0.38*normalize(vec3(0.0,1.0,-1.0))*(getDensity(mapPos-ivec3(0,2,-2))-getDensity(mapPos+ivec3(0,2,-2)));
     }
-    shadeNormal=length(grad)>0.05?normalize(grad+normal*0.04):normal;
+    shadeNormal=length(grad)>0.05?normalize(grad+normal*(fineHit?.72:.08)):normal;
     vec3 lightDir=sunDirection();
     float diffuse=max(dot(shadeNormal,lightDir),0.0);
     if(uPerformanceMode==0){
-      float localOcc=(
+      float localOcc=fineHit?fineOcc:(
         getDensity(mapPos+ivec3(1,0,0))+getDensity(mapPos-ivec3(1,0,0))+
         getDensity(mapPos+ivec3(0,1,0))+getDensity(mapPos-ivec3(0,1,0))+
         getDensity(mapPos+ivec3(0,0,1))+getDensity(mapPos-ivec3(0,0,1))
@@ -1601,6 +1615,7 @@ void main(){
   // opaque cave stone. Keeping a modest material-specific floor prevents the
   // smoothed normal kernel from turning alternating blade voxels near-black.
   if(material==18u)faceLight=max(faceLight,mix(0.28,0.62,daylightAmount()));
+  if(fineHit&&(material==1u||material==12u||material==17u||material==19u||material==30u||material==31u))faceLight=max(faceLight,mix(.20,.46,daylightAmount()));
   vec3 base = materialColor(material, materialPos, fineHit?WORLD_DETAIL:1);
   vec3 lit=base*faceLight;
   if(uLightMode==1 && uPerformanceMode==0){

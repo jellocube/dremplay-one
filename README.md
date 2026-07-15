@@ -2,7 +2,15 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.5.5**
+Current release: **v0.0.1.5.5.1**
+
+## v0.0.1.5.5.1 fine-voxel lighting repair
+
+- Fixes black seams and isolated dark squares on 5 cm half-voxel terrain and vegetation.
+- Stops the erosion microrelief pass from removing snow, grass, moss, alpine grass, leaves, and flowers as though they were bare stone; those missing half-cells exposed dark subsurface materials.
+- Reduces bare-soil and geological chipping to a mild correlated surface treatment instead of removing nearly half of exposed upper subcells.
+- Shades fine hits from their actual 5 cm occupancy kernel rather than the unrelated 10 cm parent density.
+- Anchors fine normals to the ray-hit face and applies a restrained daylight floor to thin living materials, retaining soft form without black lighting collapse.
 
 ## v0.0.1.5.5 immutable mathematical world
 
