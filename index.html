@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.5 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.5.1 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.5';
-  const CURRENT_REVISION = 64;
+  const CURRENT_VERSION = '0.0.1.6.5.1';
+  const CURRENT_REVISION = 65;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -395,7 +395,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.5 · Infinite Detail Voxel Engine · accelerated landscape and Resources</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.5.1 · Infinite Detail Voxel Engine · smooth frame scheduler</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -404,7 +404,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.5 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.5.1 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -564,10 +564,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.5</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">multirate ecology · sparse terrain runs · chunk-sliced Resources</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">60 Hz frame priority · resumable Resources · paced GPU publication</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=64"></script>
+<script src="heightmap-world-v2.js?v=65"></script>
 <script>
 (() => {
 "use strict";
@@ -1613,6 +1613,11 @@ vec3 waterPixelColor(ivec3 p,vec3 faceNormal,vec3 rd,float depthVoxels){
 void main(){
   vec2 uv = (gl_FragCoord.xy / uRes) * 2.0 - 1.0;
   float aspect = uRes.x / uRes.y;
+  // Balanced rendering concentrates the 5 cm octave around the interaction
+  // focus and transitions the outer view to the existing exact 10 cm grid.
+  // This is spatially stable—no alternating pixels or changing frame scale.
+  float fovea=max(abs(uv.x),abs(uv.y));
+  float pixelNearDetail=uPerformanceMode==1?uNearDetail*(1.0-smoothstep(.56,.92,fovea)):uNearDetail;
   vec3 rd = normalize(uCamBasis * vec3(uv.x*aspect*uFovScale, uv.y*uFovScale, 1.0));
   vec3 worldRd=rd;
   vec3 ro = uCamPos;
@@ -1635,13 +1640,13 @@ void main(){
 
   // Stage one: a short, high-resolution traversal. Only the configurable near
   // field pays twice the DDA steps; storage and uploads remain unchanged.
-  if(uNearDetail>.0){
+  if(pixelNearDetail>.0){
     vec3 fineRo=ro*float(WORLD_DETAIL),fineDelta=abs(1.0/rdSafe),fineStep=sign(rdSafe);
     ivec3 finePos=ivec3(floor(fineRo));
     vec3 fineSide=(fineStep*(vec3(finePos)-fineRo)+(fineStep*.5)+.5)*fineDelta;
     float fineDist=0.0;
     for(int i=0;i<MAX_FINE_STEPS;i++){
-      if(fineDist>uNearDetail*float(WORLD_DETAIL)||!inFineBounds(finePos))break;
+      if(fineDist>pixelNearDetail*float(WORLD_DETAIL)||!inFineBounds(finePos))break;
       uint m=getFineMaterial(finePos);ivec3 parent=finePos/WORLD_DETAIL;
       if(m==10u){if(!waterHit){waterHit=true;waterDist=fineDist/float(WORLD_DETAIL);waterMapPos=parent;waterNormal=length(normal)>.1?normal:vec3(0.0,1.0,0.0);}}
       else if(m>0u){hit=true;fineHit=true;material=m;mapPos=parent;materialPos=finePos;dist=fineDist/float(WORLD_DETAIL);break;}
@@ -1652,7 +1657,7 @@ void main(){
 
   // Stage two: exact 10 cm voxels from 20 to 50 feet.
   if(!hit){
-    float coarseStart=min(uNearDetail,uViewDistance),localDist=0.0;vec3 coarseRo=ro+rd*(coarseStart+.001),deltaDist=abs(1.0/rdSafe),stepDir=sign(rdSafe);mapPos=ivec3(floor(coarseRo));normal=vec3(0.0);
+    float coarseStart=min(pixelNearDetail,uViewDistance),localDist=0.0;vec3 coarseRo=ro+rd*(coarseStart+.001),deltaDist=abs(1.0/rdSafe),stepDir=sign(rdSafe);mapPos=ivec3(floor(coarseRo));normal=vec3(0.0);
     vec3 sideDist=(stepDir*(vec3(mapPos)-coarseRo)+(stepDir*.5)+.5)*deltaDist;
     for(int i=0;i<MAX_STEPS;i++){
       if(uPerformanceMode==1&&i>=640)break;
@@ -1824,7 +1829,7 @@ let gravityAcceleration=-10.0, jumpSpeed=4.5, walkSpeed=4.2;
 let editReachMeters=6, carveRadius=7, placeRadius=4;
 let waterFlowEnabled=true, fovDegrees=70, timeOfDay=12;
 const FIXED_VIEW_DISTANCE_METERS=1000;
-let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=300,fogDensity=.008,lightingQuality=1,materialQuality=1,cloudQuality=2,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
+let viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS,fogEnabled=true,fogStartMeters=300,fogDensity=.008,lightingQuality=1,materialQuality=1,cloudQuality=1,waterRenderQuality=2,waterSimulationBudget=220,streamingBudgetMs=2;
 const FEET_TO_METERS=.3048;
 let detailDistanceMeters=clampOption(Number(bootOptions.get('detailFeet'))||20,0,40)*FEET_TO_METERS;
 let nearDistanceMeters=clampOption(Number(bootOptions.get('nearFeet'))||50,20,120)*FEET_TO_METERS;
@@ -2695,7 +2700,7 @@ const surfaceMicroResourceRules=new Map([
 for(const name of resourceDefinitions.keys())registerResourceName(name);
 const GOLDEN_ANGLE=2.399963229728653;
 const resourceArchitectureCache=new Map();
-const resourceVoxelCache=new Map();
+const resourceVoxelCache=new Map(),resourceVoxelCompilationStates=new Map(),resourceVoxelCompilationQueue=[];
 const resourceCeilingCache=new Map();
 function resourceBounds(def){
   const s=Math.max(2,def.scale);
@@ -2765,35 +2770,81 @@ function leafClusterStrokes(def,leaf,index){
   }
   return strokes;
 }
+function createResourceVoxelCompilation(def){
+  const key=resourceVoxelCacheKey(def),b=resourceBounds(def),state={key,def,b,points:[],anchor:null,slices:null,done:false,phase:def.role==='tree'?'tree-init':'volume',ops:0};
+  if(def.role!=='tree'){state.x=-b.x;state.y=b.y0;state.z=-b.z;}
+  resourceVoxelCompilationStates.set(key,state);resourceVoxelCompilationQueue.push(key);return state;
+}
+function requestResourceVoxelCompilation(def,wx=null,wy=null,wz=null){
+  const key=resourceVoxelCacheKey(def),cached=resourceVoxelCache.get(key);if(cached)return true;
+  const state=resourceVoxelCompilationStates.get(key)||createResourceVoxelCompilation(def);
+  if(state.anchor===null&&Number.isFinite(wx)&&Number.isFinite(wy)&&Number.isFinite(wz)){state.anchor={wx,wy,wz};state.slices=new Map();}
+  return false;
+}
+function nextTreeCompilationStroke(state){
+  const {def,architecture}=state;
+  if(state.segmentCursor<architecture.segments.length)return {segment:architecture.segments[state.segmentCursor++],material:def.secondary,overwrite:true};
+  while(state.leafCursor<architecture.leaves.length){
+    if(!state.leafStrokes){state.leafStrokes=leafClusterStrokes(def,architecture.leaves[state.leafCursor],state.leafCursor);state.leafStrokeCursor=0;}
+    if(state.leafStrokeCursor<state.leafStrokes.length){const stroke=state.leafStrokes[state.leafStrokeCursor++];return {segment:stroke,material:stroke.material??(stroke.leaf?def.material:def.secondary),overwrite:false};}
+    state.leafCursor++;state.leafStrokes=null;
+  }
+  return null;
+}
+function beginCompilationStroke(state,stroke){
+  const segment=stroke.segment,radius=Math.max(.55,segment.r),pad=radius+.12;
+  state.activeStroke={...stroke,pad,minX:Math.floor(Math.min(segment.a.x,segment.b.x)-pad),maxX:Math.ceil(Math.max(segment.a.x,segment.b.x)+pad),minY:Math.floor(Math.min(segment.a.y,segment.b.y)-pad),maxY:Math.ceil(Math.max(segment.a.y,segment.b.y)+pad),minZ:Math.floor(Math.min(segment.a.z,segment.b.z)-pad),maxZ:Math.ceil(Math.max(segment.a.z,segment.b.z)+pad)};
+  state.activeStroke.x=state.activeStroke.minX;state.activeStroke.y=state.activeStroke.minY;state.activeStroke.z=state.activeStroke.minZ;
+}
+function appendCompiledResourcePoint(state,x,y,z,material){
+  const point=[x,y,z,material,resourcePartId(state.def,x,y,z,material)];state.points.push(point);
+  if(state.anchor){const {wx,wy,wz}=state.anchor,sliceKey=chunkKey(Math.floor((wx+x)/CHUNK_SIZE),Math.floor((wy+y)/CHUNK_SIZE),Math.floor((wz+z)/CHUNK_SIZE));let slice=state.slices.get(sliceKey);if(!slice){slice=[];state.slices.set(sliceKey,slice);}slice.push(point);}
+}
+function finishResourceVoxelCompilation(state){
+  if(state.anchor)Object.defineProperties(state.points,{_sliceAnchor:{value:`${state.anchor.wx},${state.anchor.wy},${state.anchor.wz}`,writable:true,configurable:true},_chunkSlices:{value:state.slices,writable:true,configurable:true}});
+  resourceVoxelCache.set(state.key,state.points);trimOldestMap(resourceVoxelCache,cacheLimitForDevice(48,80,128));resourceVoxelCompilationStates.delete(state.key);state.done=true;
+}
+function advanceResourceVoxelCompilation(state,deadline=Infinity){
+  let worked=false;
+  while(!state.done&&(!worked||performance.now()<deadline)){
+    if(state.phase==='tree-init'){
+      state.architecture=treeArchitecture(state.def);state.sx=state.b.x*2+1;state.sz=state.b.z*2+1;state.layer=state.sx*state.sz;state.voxels=new Map();state.segmentCursor=0;state.leafCursor=0;state.leafStrokes=null;state.activeStroke=null;state.phase='tree-raster';worked=true;continue;
+    }
+    if(state.phase==='tree-raster'){
+      if(!state.activeStroke){const stroke=nextTreeCompilationStroke(state);if(!stroke){state.emitEntries=state.voxels.entries();state.phase='tree-emit';continue;}beginCompilationStroke(state,stroke);}
+      const active=state.activeStroke;
+      for(let batch=0;batch<256;batch++){
+        const {x,y,z}=active,k=(x+state.b.x)+(z+state.b.z)*state.sx+(y-state.b.y0)*state.layer,inside=x>=-state.b.x&&x<=state.b.x&&z>=-state.b.z&&z<=state.b.z&&y>=state.b.y0&&y<=state.b.y1;
+        if(inside&&pointSegmentDistance(x,y,z,active.segment.a,active.segment.b)<=active.pad&&(active.overwrite||!state.voxels.has(k)))state.voxels.set(k,active.material);
+        active.z++;if(active.z>active.maxZ){active.z=active.minZ;active.x++;if(active.x>active.maxX){active.x=active.minX;active.y++;if(active.y>active.maxY){state.activeStroke=null;break;}}}
+      }
+      worked=true;continue;
+    }
+    if(state.phase==='tree-emit'){
+      for(let batch=0;batch<256;batch++){const next=state.emitEntries.next();if(next.done){finishResourceVoxelCompilation(state);break;}const [packed,material]=next.value,y=Math.floor(packed/state.layer)+state.b.y0,plane=packed-(y-state.b.y0)*state.layer,z=Math.floor(plane/state.sx)-state.b.z,x=plane-Math.floor(plane/state.sx)*state.sx-state.b.x;appendCompiledResourcePoint(state,x,y,z,material);}worked=true;continue;
+    }
+    if(state.phase==='volume'){
+      for(let batch=0;batch<256;batch++){
+        const material=resourceVoxel(state.def,state.x,state.y,state.z);if(material)appendCompiledResourcePoint(state,state.x,state.y,state.z,material);
+        state.z++;if(state.z>state.b.z){state.z=-state.b.z;state.x++;if(state.x>state.b.x){state.x=-state.b.x;state.y++;if(state.y>state.b.y1){finishResourceVoxelCompilation(state);break;}}}
+      }
+      worked=true;
+    }
+  }
+  return state.done;
+}
+function advanceResourceVoxelCompilations(budgetMs){
+  const deadline=performance.now()+Math.max(.1,budgetMs);let worked=false;
+  while(resourceVoxelCompilationQueue.length&&(!worked||performance.now()<deadline)){
+    const key=resourceVoxelCompilationQueue[0],state=resourceVoxelCompilationStates.get(key);if(!state){resourceVoxelCompilationQueue.shift();continue;}
+    advanceResourceVoxelCompilation(state,deadline);worked=true;if(state.done)resourceVoxelCompilationQueue.shift();else break;
+  }
+  return worked;
+}
+function clearResourceVoxelCompilationStates(){resourceVoxelCompilationStates.clear();resourceVoxelCompilationQueue.length=0;}
 function voxelizedResource(def){
   const key=resourceVoxelCacheKey(def),cached=resourceVoxelCache.get(key);if(cached){resourceVoxelCache.delete(key);resourceVoxelCache.set(key,cached);return cached;}
-  const b=resourceBounds(def),points=[];
-  if(def.role==='tree'){
-    // Rasterize the compact branch graph and sparse leaf-spray Resources directly.
-    // Sampling every cell in a 20-foot tree's bounding box would test every
-    // cell against every branch; this produces the identical sparse result in
-    // work proportional to actual woody/leaf volume instead of empty air.
-    const architecture=treeArchitecture(def),sx=b.x*2+1,sz=b.z*2+1,layer=sx*sz,voxels=new Map();
-    const index=(x,y,z)=>(x+b.x)+(z+b.z)*sx+(y-b.y0)*layer;
-    const inside=(x,y,z)=>x>=-b.x&&x<=b.x&&z>=-b.z&&z<=b.z&&y>=b.y0&&y<=b.y1;
-    const rasterStroke=(segment,material,overwrite=true)=>{
-      // Test each cell in the capsule's tight bounding box once. The old
-      // overlapping-sphere walk revisited thick trunk voxels dozens of times
-      // and could turn one newly discovered tree into a visible stream hitch.
-      const radius=Math.max(.55,segment.r),pad=radius+.12,minX=Math.floor(Math.min(segment.a.x,segment.b.x)-pad),maxX=Math.ceil(Math.max(segment.a.x,segment.b.x)+pad),minY=Math.floor(Math.min(segment.a.y,segment.b.y)-pad),maxY=Math.ceil(Math.max(segment.a.y,segment.b.y)+pad),minZ=Math.floor(Math.min(segment.a.z,segment.b.z)-pad),maxZ=Math.ceil(Math.max(segment.a.z,segment.b.z)+pad);
-      for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++){const k=index(x,y,z);if(inside(x,y,z)&&pointSegmentDistance(x,y,z,segment.a,segment.b)<=pad&&(overwrite||!voxels.has(k)))voxels.set(k,material);}
-    };
-    for(const segment of architecture.segments)rasterStroke(segment,def.secondary,true);
-    for(const [leafIndex,leaf] of architecture.leaves.entries())for(const stroke of leafClusterStrokes(def,leaf,leafIndex))rasterStroke(stroke,stroke.material??(stroke.leaf?def.material:def.secondary),false);
-    for(const [packed,material] of voxels){const y=Math.floor(packed/layer)+b.y0,plane=packed-(y-b.y0)*layer,z=Math.floor(plane/sx)-b.z,x=plane-Math.floor(plane/sx)*sx-b.x;points.push([x,y,z,material,resourcePartId(def,x,y,z,material)]);}
-  }else for(let y=b.y0;y<=b.y1;y++)for(let x=-b.x;x<=b.x;x++)for(let z=-b.z;z<=b.z;z++){const material=resourceVoxel(def,x,y,z);if(material)points.push([x,y,z,material,resourcePartId(def,x,y,z,material)]);}
-  resourceVoxelCache.set(key,points);
-  // Natural instances have unique seeds. Bound the memo table while retaining
-  // the most recently used forms for adjacent vertical chunks and previews.
-  // Tree point lists are large nested arrays. A compact LRU keeps the nearby
-  // working set but prevents a long walk from retaining hundreds of crowns.
-  trimOldestMap(resourceVoxelCache,cacheLimitForDevice(24,40,64));
-  return points;
+  const state=resourceVoxelCompilationStates.get(key)||createResourceVoxelCompilation(def);while(!state.done)advanceResourceVoxelCompilation(state,Infinity);return resourceVoxelCache.get(key)||state.points;
 }
 function pointSegmentDistance(px,py,pz,a,b){
   const abx=b.x-a.x,aby=b.y-a.y,abz=b.z-a.z,den=abx*abx+aby*aby+abz*abz||1;
@@ -3091,6 +3142,17 @@ function acceptedResourceRootMask(accepted,baseX,baseZ){
   for(const entry of accepted){const radius=resourceRootRadius(entry.def)+.8,r2=radius*radius,minX=Math.max(0,Math.floor(entry.wx-baseX-radius)),maxX=Math.min(CHUNK_SIZE-1,Math.ceil(entry.wx-baseX+radius)),minZ=Math.max(0,Math.floor(entry.wz-baseZ-radius)),maxZ=Math.min(CHUNK_SIZE-1,Math.ceil(entry.wz-baseZ+radius));for(let lz=minZ;lz<=maxZ;lz++)for(let lx=minX;lx<=maxX;lx++){const dx=baseX+lx-entry.wx,dz=baseZ+lz-entry.wz;if(dx*dx+dz*dz<r2)mask[lx+lz*CHUNK_SIZE]=1;}}
   Object.defineProperties(accepted,{_rootMaskKey:{value:maskKey,writable:true,configurable:true},_rootMask:{value:mask,writable:true,configurable:true}});return mask;
 }
+function requestResourceFamilyCompilation(def,wx,wy,wz){
+  let ready=requestResourceVoxelCompilation(def,wx,wy,wz);
+  for(const [i,name] of (def.components||[]).entries()){
+    const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist),instance={...variedResource(child,childX,childZ,17+i),components:[]};
+    if(!requestResourceVoxelCompilation(instance,childX,wy,childZ))ready=false;
+  }
+  return ready;
+}
+function primeResourceCompilationsForColumn(cx,cz,columns=prepareTerrainColumns(cx,cz)){
+  let ready=true;for(const entry of acceptedResourcesForTargetColumn(cx,cz,columns))if(!requestResourceFamilyCompilation(entry.def,entry.wx,entry.wy,entry.wz))ready=false;return ready;
+}
 function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const key=chunkKey(cx,cy,cz);let metadata=resourceChunks.get(key);
   const tag=(i,rid)=>{if(!rid)return;if(!metadata){metadata=new Map();resourceChunks.set(key,metadata);}metadata.set(i,rid);};
@@ -3313,9 +3375,9 @@ function loadResource(name){
   if(resourceWindow.classList.contains('open')){renderResourceGraph();renderResourcePreview();}refreshResourceTransferId();document.getElementById('resourceStatus').textContent=`Loaded ${d.name.replaceAll('_',' ')} · ${role} identity verified · ${type} graph synchronized`;
 }
 resourceLibrary.addEventListener('change',()=>{loadResource(resourceLibrary.value);const id=registerResourceName(resourceLibrary.value);document.getElementById('resourceStatus').textContent=`Resource ID ${id} · ${resourceLibrary.value.replaceAll('_',' ')} · 5 cm near / 10 cm far LOD`;});
-document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();resourcePartIdentityCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
+document.getElementById('resourceSave').addEventListener('click',()=>{const def=currentResource();resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();clearResourceVoxelCompilationStates();resourceArchitectureCache.clear();resourceCeilingCache.clear();resourcePartIdentityCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;document.getElementById('resourceStatus').textContent=`Saved ${def.name} · runtime ID ${rid} · portable identity refreshed`;renderResourcePreview();refreshResourceTransferId();});
 document.getElementById('resourceCopyId').addEventListener('click',async()=>{refreshResourceTransferId();try{await navigator.clipboard.writeText(resourceTransferIdInput.value);document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}catch{resourceTransferIdInput.select();document.execCommand('copy');document.getElementById('resourceStatus').textContent='Resource identity copied to clipboard.';}});
-document.getElementById('resourceLoadId').addEventListener('click',()=>{try{const def=parseResourceTransferId(resourceTransferIdInput.value);applyResourceAesthetic(def);resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;loadResource(def.name);document.getElementById('resourceStatus').textContent=`Loaded ${def.name} · runtime ID ${rid} · geometry and palette aesthetic verified`;}catch(error){document.getElementById('resourceStatus').textContent=error.message;}});
+document.getElementById('resourceLoadId').addEventListener('click',()=>{try{const def=parseResourceTransferId(resourceTransferIdInput.value);applyResourceAesthetic(def);resourceDefinitions.set(def.name,def);resourceVoxelCache.clear();clearResourceVoxelCompilationStates();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();const rid=registerResourceName(def.name);refreshResourceLibrary();resourceLibrary.value=def.name;loadResource(def.name);document.getElementById('resourceStatus').textContent=`Loaded ${def.name} · runtime ID ${rid} · geometry and palette aesthetic verified`;}catch(error){document.getElementById('resourceStatus').textContent=error.message;}});
 let manualResourceSerial=0;
 document.getElementById('resourcePlace').addEventListener('click',()=>{
   const baseDef=currentResource(),cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);
@@ -3457,7 +3519,7 @@ resource load <hex>   verify and load a Resource identity`);
       const material=getVoxelA(hit.x,hit.y,hit.z),rid=getVoxelResourceId(hit.x,hit.y,hit.z);return say(`voxel ${hit.x},${hit.y},${hit.z}\nmaterial ${material}: ${MATERIAL_NAMES[material]||'unknown'}\nResource ID ${rid}: ${resourceNameById[rid]||'none (terrain or manual voxel)'}`);
     }
     if(parts[1]==='id'){const portable=resourceDefinitions.get(parts[2]||resourceLibrary.value);if(!portable)return say('Usage: resource id <name>');return say(`${portable.name} portable Resource identity\n${resourceTransferId(portable)}`);}
-    if(parts[1]==='load'){try{const loaded=parseResourceTransferId(parts[2]||'');applyResourceAesthetic(loaded);resourceDefinitions.set(loaded.name,loaded);resourceVoxelCache.clear();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();registerResourceName(loaded.name);refreshResourceLibrary();resourceLibrary.value=loaded.name;loadResource(loaded.name);return say(`Loaded ${loaded.name}; checksum, generator schema, and palette aesthetic verified.`);}catch(error){return say(error.message);}}
+    if(parts[1]==='load'){try{const loaded=parseResourceTransferId(parts[2]||'');applyResourceAesthetic(loaded);resourceDefinitions.set(loaded.name,loaded);resourceVoxelCache.clear();clearResourceVoxelCompilationStates();resourceArchitectureCache.clear();resourceCeilingCache.clear();clearNaturalResourcePlanningCaches();registerResourceName(loaded.name);refreshResourceLibrary();resourceLibrary.value=loaded.name;loadResource(loaded.name);return say(`Loaded ${loaded.name}; checksum, generator schema, and palette aesthetic verified.`);}catch(error){return say(error.message);}}
     const def=resourceDefinitions.get(parts[2]);
     if(parts[1]!=='place'||!def)return say('Usage: resource <place|id|load|sample>  (use “resources” to list names)');
     loadResource(def.name);document.getElementById('resourcePlace').click();return say(`placed Resource ${def.name}`);
@@ -3816,7 +3878,7 @@ function collidesAt(px,py,pz){
 }
 
 let lastT = performance.now();
-let frameCount=0, fpsAccum=0, fps=0,lastOverrunReport=0,lagNoticeUntil=0,lastFrameCostMs=0;
+let frameCount=0, fpsAccum=0, fps=0,lastOverrunReport=0,lagNoticeUntil=0,lastFrameCostMs=0,lastFrameWorkMs=0,smoothedFrameGapMs=16.67,idleDeadlineAllowance=0,idleWorldPumpScheduled=false,nextIdlePredictivePollAt=0;
 let lastMovementInputAt=0,movementHeadingX=0,movementHeadingZ=0;
 function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['north','northeast','east','southeast','south','southwest','west','northwest'];return {degrees,name:names[Math.round(degrees/45)%8]};}
 function updateCompass(){const heading=compassHeading(),compass=document.getElementById('compass');document.getElementById('compassDial').style.transform=`rotate(${-heading.degrees}deg)`;compass.setAttribute('aria-label',`Circular compass, facing ${heading.name}, ${Math.round(heading.degrees)} degrees`);}
@@ -3828,6 +3890,31 @@ function updateResourceLookLabel(){
   label.textContent=name;label.classList.toggle('visible',!!name);
 }
 function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08);}
+function backgroundWorkAllowance(requestedMs,moving=false){
+  // V-sync owns the frame. Refinement may spend only measured main-thread
+  // headroom, and a missed refresh suspends optional work for the next frame.
+  if(idleDeadlineAllowance>0)return Math.max(0,Math.min(requestedMs,idleDeadlineAllowance));
+  const targetWork=DEVICE_PROFILE.tier==='mobile'?7.5:10.5;
+  if(smoothedFrameGapMs>18.2||lastFrameWorkMs>targetWork)return 0;
+  const cap=moving?(DEVICE_PROFILE.tier==='mobile'?.45:.75):(DEVICE_PROFILE.tier==='mobile'?1.4:2.4);
+  return Math.max(0,Math.min(requestedMs,cap,(targetWork-lastFrameWorkMs)*.45));
+}
+function pendingWorldBackgroundWork(){return !!farTerrainTask||!!streamTask||!!resourceCommitTask||deferredDecorationJobs.length>0||prefetchJobs.length>0||resourceVoxelCompilationQueue.length>0||(!testZoneMode&&performance.now()>=nextIdlePredictivePollAt);}
+function scheduleWorldIdlePump(){
+  if(idleWorldPumpScheduled||!hasEnteredWorld||!pendingWorldBackgroundWork())return;idleWorldPumpScheduled=true;
+  const run=deadline=>{
+    idleWorldPumpScheduled=false;if(!gl||document.hidden)return;const remaining=typeof deadline?.timeRemaining==='function'?deadline.timeRemaining():1.25;if(remaining<.35){scheduleWorldIdlePump();return;}
+    idleDeadlineAllowance=Math.max(.25,Math.min(streamingBudgetMs,remaining-1));const now=performance.now(),moving=movementInputActive();
+    if(farTerrainTask)processFarTerrainRefresh(idleDeadlineAllowance);
+    else if(streamTask){if(resourceCommitTask)processDeferredDecorations(now,moving);else processStreamTask();}
+    else if(resourceCommitTask||deferredDecorationJobs.length)processDeferredDecorations(now,moving);
+    else if(prefetchJobs.length)processBackgroundPrefetch(now,moving);
+    else if(resourceVoxelCompilationQueue.length)advanceResourceVoxelCompilations(idleDeadlineAllowance);
+    else if(!testZoneMode){nextIdlePredictivePollAt=now+250;processBackgroundPrefetch(now,moving);}
+    idleDeadlineAllowance=0;scheduleWorldIdlePump();
+  };
+  if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:180});else setTimeout(()=>run({timeRemaining:()=>1.25}),0);
+}
 
 function describeActiveFrameWork(){
   if(streamTask){
@@ -3839,9 +3926,9 @@ function describeActiveFrameWork(){
   if(waterQueue.length)return `water simulation queue · ${waterQueue.length} cells remain`;
   return 'raymarch render and simulation · no world load active';
 }
-function reportFrameOverrun(frameMs){
-  lastFrameCostMs=frameMs;
-  const now=performance.now();if(frameMs<42||now-lastOverrunReport<1500||document.hidden)return;
+function reportFrameOverrun(frameGapMs,workMs){
+  lastFrameCostMs=workMs;
+  const frameMs=Math.max(frameGapMs,workMs),now=performance.now();if(frameMs<28||now-lastOverrunReport<1500||document.hidden)return;
   const actualLoad=!!streamTask||!!resourceCommitTask||!!farTerrainTask||waterQueue.length>0||(prefetchJobs.length&&now-lastPrefetchWorkAt<100);
   // Renderer-only slow frames must not rebuild the loading console/conveyor:
   // that DOM work created a periodic hitch of its own. The stats panel reports
@@ -3854,6 +3941,7 @@ function reportFrameOverrun(frameMs){
 function loop(now){
   const frameStarted=performance.now();
   const frameGapMs=now-lastT;
+  smoothedFrameGapMs=smoothedFrameGapMs*.90+Math.min(50,frameGapMs)*.10;
   const dt = Math.min(frameGapMs/1000, 0.05);
   lastT = now;
 
@@ -3866,12 +3954,8 @@ function loop(now){
   // atlas source is pre-baked, and each scheduled unit is a complete 100 m
   // square, so this lookup/packing work normally finishes in a few frames.
   if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(predictedPreviewX,predictedPreviewZ);
-  if(farTerrainTask)processFarTerrainRefresh(moving?8:16);
-  // Ecology is part of streaming, not post-stream idle work. A Resource
-  // transaction may temporarily stage columns while a clipmap task exists;
-  // terrain refinement resumes immediately after the atomic commit.
-  if(streamTask){if(!resourceCommitTask)processStreamTask();processDeferredDecorations(now,moving);}
-  else{processBackgroundPrefetch(now,moving);processDeferredDecorations(now,moving);}
+  // World refinement runs between display callbacks through the idle pump.
+  // This animation callback owns only input, simulation and rendering.
   performIdleMemoryMaintenance(now);
   if (gameControlActive()) {
     updatePlayer(dt);
@@ -3888,8 +3972,9 @@ function loop(now){
   }
 
   render();
-  reportFrameOverrun(Math.max(frameGapMs,performance.now()-frameStarted));
+  lastFrameWorkMs=performance.now()-frameStarted;reportFrameOverrun(frameGapMs,lastFrameWorkMs);
   if(lagNoticeUntil&&performance.now()>=lagNoticeUntil&&!streamTask&&!cacheNoticeActive){lagNoticeUntil=0;hideLoading();}
+  scheduleWorldIdlePump();
 
   frameCount++; fpsAccum += dt;
   if (fpsAccum >= 0.5){
@@ -3978,7 +4063,7 @@ let lastMemoryMaintenanceAt=0;
 function releaseDerivedCaches(aggressive=false){
   const divisor=aggressive?2:1;
   trimOldestMap(terrainColumnPlans,Math.max(32,Math.floor(cacheLimitForDevice(128,256,512)/divisor)));
-  trimOldestMap(resourceVoxelCache,Math.max(12,Math.floor(cacheLimitForDevice(24,40,64)/divisor)));
+  trimOldestMap(resourceVoxelCache,Math.max(24,Math.floor(cacheLimitForDevice(48,80,128)/divisor)));
   trimOldestMap(resourceArchitectureCache,Math.max(16,Math.floor(cacheLimitForDevice(32,48,64)/divisor)));
   trimOldestMap(resourceCeilingCache,Math.max(256,Math.floor(cacheLimitForDevice(512,1024,2048)/divisor)));
   trimOldestMap(naturalSourceResourceCache,Math.max(256,Math.floor(cacheLimitForDevice(1024,2048,4096)/divisor)));
@@ -4038,8 +4123,9 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   // Never force one uninterruptible terrain/Resource chunk into every walking
   // frame. Title/idle time fills the reserve rapidly; motion borrows a slot
   // only after a healthy frame and then observes a cooldown.
-  if(moving&&(now<nextMovingPrefetchAt||lastFrameCostMs>DEVICE_PROFILE.preferredFrameBudgetMs*1.35))return;
-  const started=performance.now(),budget=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2));let worked=false;
+  if(moving&&idleDeadlineAllowance<=0&&now<nextMovingPrefetchAt)return;
+  const requested=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2)),budget=backgroundWorkAllowance(requested,moving);if(budget<=0)return;
+  const started=performance.now();let worked=false;
   while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);queueDeferredDecoration(job);worked=true;lastPrefetchWorkAt=performance.now();}
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
@@ -4169,52 +4255,57 @@ function queueStreamShift(shiftX,shiftZ){
   showLoading('Refining moving voxel clipmap',pending.length?clipmapProgressFloor:1,true);loadingLog('Clipmap shift',`${(Math.abs(shiftX)*VS).toFixed(1)}×${(Math.abs(shiftZ)*VS).toFixed(1)} m toroidal advance committed immediately · ${fresh.length} fine cells refining · mathematical parent remains visible`);
 }
 function processStreamTask(){
-  const task=streamTask,started=performance.now();let worked=false,validityChanged=false;
-  while(task&&task.cursor<task.jobs.length&&(!worked||performance.now()-started<streamingBudgetMs)){
-    const [cx,cy,cz,surfaceCY]=task.jobs[task.cursor++];if(!chunkInsideResident(cx,cy,cz))continue;
-    const columnKey=`${cx},${cz}`;
-    if(!task.resourceColumns.has(columnKey)){
-      // Visibility transaction: generate the exact surface/canopy children,
-      // resolve their deterministic Resource field, upload all of them, and
-      // only then mark any child valid. Blank terrain can never precede plants.
-      task.resourceColumns.add(columnKey);const b=residentChunkBounds(),ready=resourceColumnDetailChunks(cx,cz,b.minCY,b.maxCY);
-      for(const coords of ready){if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);setResidentChunkValidity(...coords,1);}
-      if(!task.weatherDone.has(columnKey)){task.weatherDone.add(columnKey);uploadResidentWeatherColumn(cx,cz);}validityChanged=true;worked=true;continue;
+  const task=streamTask;if(!task)return;const allowance=backgroundWorkAllowance(streamingBudgetMs,movementInputActive());if(allowance<=0)return;
+  if(task.columnStage){
+    const stage=task.columnStage;
+    if(stage.phase==='compile'){
+      if(!primeResourceCompilationsForColumn(stage.cx,stage.cz,prepareTerrainColumns(stage.cx,stage.cz))){advanceResourceVoxelCompilations(allowance);return;}stage.phase='build';
     }
-    if(!generatedChunks.has(chunkKey(cx,cy,cz)))generateChunk(cx,cy,cz,false);
-    uploadRegion(cx*CHUNK_SIZE,cy*CHUNK_SIZE,cz*CHUNK_SIZE,(cx+1)*CHUNK_SIZE-1,(cy+1)*CHUNK_SIZE-1,(cz+1)*CHUNK_SIZE-1);setResidentChunkValidity(cx,cy,cz,1);validityChanged=true;worked=true;
+    if(stage.phase==='build'){
+      const coords=stage.ready[stage.buildCursor++];if(coords){if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);return;}stage.phase='upload';
+    }
+    if(stage.phase==='upload'){
+      const coords=stage.ready[stage.uploadCursor++];if(coords){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);return;}
+      for(const coords of stage.ready)setResidentChunkValidity(...coords,1);uploadChunkValidity();task.resourceColumns.add(stage.columnKey);if(!task.weatherDone.has(stage.columnKey)){task.weatherDone.add(stage.columnKey);uploadResidentWeatherColumn(stage.cx,stage.cz);}task.columnStage=null;task.cursor++;return;
+    }
   }
-  if(validityChanged)uploadChunkValidity();if(!task)return;
+  while(task.cursor<task.jobs.length&&!chunkInsideResident(task.jobs[task.cursor][0],task.jobs[task.cursor][1],task.jobs[task.cursor][2]))task.cursor++;
+  if(task.cursor<task.jobs.length){
+    const [cx,cy,cz]=task.jobs[task.cursor],columnKey=`${cx},${cz}`;
+    if(!task.resourceColumns.has(columnKey)){const b=residentChunkBounds();task.columnStage={cx,cz,columnKey,ready:resourceColumnDetailChunks(cx,cz,b.minCY,b.maxCY),buildCursor:0,uploadCursor:0,phase:'compile'};return;}
+    if(!generatedChunks.has(chunkKey(cx,cy,cz)))generateChunk(cx,cy,cz,false);uploadRegion(cx*CHUNK_SIZE,cy*CHUNK_SIZE,cz*CHUNK_SIZE,(cx+1)*CHUNK_SIZE-1,(cy+1)*CHUNK_SIZE-1,(cz+1)*CHUNK_SIZE-1);setResidentChunkValidity(cx,cy,cz,1);uploadChunkValidity();task.cursor++;
+  }
   const progress=task.jobs.length?task.cursor/task.jobs.length:1;clipmapProgressFloor=Math.max(clipmapProgressFloor,progress);showLoading('Refining moving voxel clipmap',clipmapProgressFloor,true);
   if(task.cursor<task.jobs.length)return;
   streamMs+=performance.now()-task.started;loadingLog('Clipmap ready',`${task.total} independently valid fine chunks transferred in ${streamMs.toFixed(1)} ms · authored chunks remain in the global sparse world store`);streamTask=null;clipmapProgressFloor=1;hideLoading();clipmapProgressFloor=0;evictDistantCleanChunks();
 }
 function processDeferredDecorations(now,moving){
-  // Walking no longer disables ecology. Begin a transaction whenever terrain
-  // streaming yields, then stage exactly one horizontal column per frame in
-  // CPU memory. The visible GPU cache remains untouched until all 25 columns
-  // are complete, keeping the transaction atomic without a long frame stall.
+  // Resource equations compile in resumable batches. Generation and upload
+  // each consume at most one chunk per call; the validity mask publishes the
+  // completed 5×5 neighborhood atomically after every hidden upload is ready.
   if(!resourceCommitTask){
     if(now<nextResourceCommitAt||!deferredDecorationJobs.length)return;const job=takeNearestDeferredDecoration();if(!job)return;
-    const neighborhood=resourceNeighborhoodColumns(job[0],job[1]);if(!neighborhood.columns.length){loadingLog('Resource guard',`rejected empty predictive neighborhood at ${job[0]},${job[1]}`);nextResourceCommitAt=performance.now()+300;return;}resourceCommitTask={center:job,columns:neighborhood.columns,minCY:neighborhood.minCY,maxCY:neighborhood.maxCY,cursor:0,ready:[],started:performance.now()};
+    const neighborhood=resourceNeighborhoodColumns(job[0],job[1]);if(!neighborhood.columns.length){loadingLog('Resource guard',`rejected empty predictive neighborhood at ${job[0]},${job[1]}`);nextResourceCommitAt=performance.now()+300;return;}resourceCommitTask={center:job,columns:neighborhood.columns,minCY:neighborhood.minCY,maxCY:neighborhood.maxCY,cursor:0,ready:[],current:null,phase:'stage',uploadList:[],uploadCursor:0,started:performance.now()};
     for(const [cx,cz] of neighborhood.columns)deferredDecorationKeys.delete(`${cx},${cz}`);
     loadingLog('Resource staging',`${neighborhood.columns.length} biome columns around ${job[0]},${job[1]} · movement remains active · visibility waits for complete transaction`);
   }
-  const task=resourceCommitTask,stageStarted=performance.now(),stageBudget=DEVICE_PROFILE.tier==='mobile'?3.5:DEVICE_PROFILE.tier==='high'?9:6;let staged=0;
-  // Do not depend on the perpetually growing clipmap task to have finished
-  // these children. Materialize the exact surface/canopy set for this column,
-  // decorate it in CPU memory, and retain it for the final atomic GPU commit.
-  while(task.cursor<task.columns.length&&(!staged||performance.now()-stageStarted<stageBudget)){
-    const [cx,cz]=task.columns[task.cursor++];for(const coords of resourceColumnDetailChunks(cx,cz,task.minCY,task.maxCY)){
-      if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);
-      if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);
-      task.ready.push(coords);
-    }staged++;
+  const task=resourceCommitTask,allowance=backgroundWorkAllowance(streamingBudgetMs,moving);if(allowance<=0)return;
+  if(task.phase==='stage'){
+    if(!task.current&&task.cursor<task.columns.length){const [cx,cz]=task.columns[task.cursor];if(!primeResourceCompilationsForColumn(cx,cz,prepareTerrainColumns(cx,cz))){advanceResourceVoxelCompilations(allowance);return;}task.current={cx,cz,chunks:resourceColumnDetailChunks(cx,cz,task.minCY,task.maxCY),cursor:0};}
+    if(task.current){const coords=task.current.chunks[task.current.cursor++];if(coords){if(!generatedChunks.has(chunkKey(...coords)))generateChunk(...coords,false);if(baseOnlyChunks.has(chunkKey(...coords)))decorateBaseOnlyChunk(...coords);task.ready.push(coords);return;}task.current=null;task.cursor++;return;}
+    if(task.cursor<task.columns.length)return;
+    task.uploadList=task.ready.filter(coords=>chunkInsideResident(...coords));
+    // Incoming data is uploaded while invalid, so the shader continues to use
+    // its mathematical parent. One final validity upload reveals the complete
+    // neighborhood without a multi-megabyte commit spike.
+    for(const coords of task.uploadList)setResidentChunkValidity(...coords,0);if(task.uploadList.length)uploadChunkValidity();task.phase='upload';return;
   }
-  if(task.cursor<task.columns.length)return;
-  let uploaded=0;for(const coords of task.ready)if(chunkInsideResident(...coords)){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);setResidentChunkValidity(...coords,1);uploaded++;}if(uploaded)uploadChunkValidity();
-  const elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?60:20);
-  if(uploaded)loadingLog('Resource commit',`${uploaded} complete trunk/canopy/cross-boundary chunks revealed atomically around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms staged inside active streamer`);
+  if(task.phase==='upload'){
+    const coords=task.uploadList[task.uploadCursor++];if(coords){uploadRegion(coords[0]*CHUNK_SIZE,coords[1]*CHUNK_SIZE,coords[2]*CHUNK_SIZE,(coords[0]+1)*CHUNK_SIZE-1,(coords[1]+1)*CHUNK_SIZE-1,(coords[2]+1)*CHUNK_SIZE-1);return;}
+    for(const ready of task.uploadList)setResidentChunkValidity(...ready,1);if(task.uploadList.length)uploadChunkValidity();task.phase='complete';
+  }
+  const uploaded=task.uploadList.length,elapsed=performance.now()-task.started,center=task.center;resourceCommitTask=null;nextResourceCommitAt=performance.now()+(moving?180:40);
+  if(uploaded)loadingLog('Resource commit',`${uploaded} complete trunk/canopy/cross-boundary chunks revealed atomically around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms paced without a burst upload`);
   else loadingLog('Resource prefetch',`25 off-ring biome columns cached around ${center[0]},${center[1]} · ${elapsed.toFixed(1)} ms · visibility deferred until clipmap arrival`);
 }
 function updateLoadedWindow(){

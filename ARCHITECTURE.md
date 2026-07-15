@@ -1,5 +1,15 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## 60 Hz frame ownership
+
+The display frame is not a streaming timeslice. At 60 Hz the renderer owns the 16.67 ms interval; background systems run through browser idle callbacks and may consume only a bounded fraction of measured main-thread headroom. The scheduler tracks CPU work separately from requestAnimationFrame spacing, suspends optional refinement after a missed refresh, and runs no more than one background stage per idle callback. Far-atlas refresh, terrain prefetch, Resource compilation, ecology staging, and GPU publication therefore cannot stack their nominal budgets in the animation callback. A bounded timer fallback retains portability where the idle-callback API is absent.
+
+Resource rasterization is resumable. Tree capsules and volume Resources advance in 256-sample batches, and emission of material plus part provenance advances through the same deadline-aware state machine. World-coordinate anchors partition emitted points into chunk slices during compilation. A newly encountered adult tree is therefore a sequence of sub-millisecond tasks rather than one synchronous graph, leaf-spray, voxel, taxonomy, and slicing burst.
+
+Atomic visibility is decoupled from atomic upload. A 5×5 Resource neighborhood is built one chunk at a time, its GPU children are uploaded while marked invalid, and the renderer continues showing their mathematical parent. After every child is present, one small validity-texture update publishes the complete neighborhood. This retains coherent trunks and crowns without a multi-megabyte, dozens-of-calls commit frame.
+
+Balanced GPU traversal uses a stable focus-weighted detail radius. The central interaction field retains the 5 cm virtual octave; peripheral rays transition continuously to the exact 10 cm resident grid and begin that traversal at the point where fine traversal stopped. The mapping depends only on screen position and never alternates between frames, avoiding the flashes and shimmer associated with dynamic framebuffer resizing. Full Soft quality retains the 5 cm octave across the entire frame.
+
 ## Multirate landscape and Resource compilation
 
 The world equation and its render sampling rate are deliberately separate. Exact terrain height and hydrology remain available at every 10 cm resident column, while ecology-scale quantities—biome weights, strata mixture, snow accumulation, trails, soil mantle, and surface classification—are evaluated on a 40 cm lattice and shared by their fine children. A 32×32 terrain chunk therefore performs at most 81 expensive ecology queries rather than 1,024, a 12.6× reduction in that dominant query stack without changing the mathematical height silhouette. Those queries are keyed in world coordinates, so neighboring chunks share their border samples and each resident ecology coordinate runs the fused stack once while retained by the bounded LRU.

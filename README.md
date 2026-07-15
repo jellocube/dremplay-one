@@ -2,7 +2,18 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.5**
+Current release: **v0.0.1.6.5.1**
+
+## v0.0.1.6.5.1 Smooth 60 Hz frame scheduler
+
+- Gives display refresh first claim on every 16.67 ms frame. Optional terrain, atlas, ecology, and Resource work runs through the browser's idle periods rather than inside the animation callback, receives only measured main-thread headroom, and yields completely after a missed refresh.
+- Replaces whole-Resource synchronous compilation with resumable 256-sample batches. An adult tree can no longer turn one walking frame into an unbounded branch/leaf rasterization job.
+- Compiles Resource chunk slices and semantic part IDs inside the same resumable task, preserving exact deterministic geometry and provenance without a second burst pass.
+- Builds and uploads at most one Resource chunk per scheduler call. Large 5×5 ecology transactions no longer issue dozens of texture uploads in one frame.
+- Uploads completed Resource chunks while their validity bits remain disabled, then reveals the entire neighborhood through one compact validity flip. The mathematical parent remains visible during staging, with no black or missing-world frame.
+- Separates measured CPU work from requestAnimationFrame spacing, fixing the former scheduler signal that treated an ordinary 16.67 ms refresh interval as if it were 16.67 ms of CPU work.
+- Uses the balanced 2.4 m cloud lattice by default, cutting sky-weather samples from 36 to 12 per cloud ray; Fine 0.8 m clouds remain available in Options.
+- Concentrates the balanced 5 cm traversal around the crosshair and transitions the outer view to the existing exact 10 cm grid. This reduces fine ray steps without changing the framebuffer between frames; Full Soft quality retains 5 cm traversal across the complete view.
 
 ## v0.0.1.6.5 Tenfold landscape and Resource pipeline
 
