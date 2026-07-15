@@ -2,7 +2,16 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.4.4.1**
+Current release: **v0.0.1.6.5**
+
+## v0.0.1.6.5 Tenfold landscape and Resource pipeline
+
+- Reduces the expensive biome, strata, snow, trail, and surface-material stack from 1,024 evaluations per terrain chunk to 81 shared landscape samples: a measured **12.6× reduction in those field queries** while the exact 10 cm height surface remains intact. Adjacent chunks reuse the same bounded world-coordinate sample cache, so a shared border runs the fused stack once.
+- Replaces the 32-cell vertical scan in surface chunks with direct occupied-solid and water spans. Empty sky is no longer visited as if it were terrain, and deep bedrock retains its constant-time fill path.
+- Compiles each mathematical Resource projection into its occupied chunk slices. Adult trees are voxelized once; neighboring trunk and canopy chunks consume only their own cells instead of repeatedly scanning the complete tree.
+- Compiles Resource part identity into the cached voxel tuples, removing repeated trunk, branch, leaf, rock, and lichen taxonomy work during streaming.
+- Replaces every grass candidate's linear distance search across nearby props with one compact per-column root occupancy mask. Plants retain the same deterministic exclusion rules without hundreds of repeated square-root calculations.
+- Keeps terrain equations, exact surface heights, Resource seeds, placement, identities, editable voxels, water, and material results authoritative and deterministic. These are cache/query changes, not a simplified world.
 
 ## v0.0.1.6.4.4.1 Mobile loading and gesture repair
 

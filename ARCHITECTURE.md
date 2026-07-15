@@ -1,5 +1,15 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Multirate landscape and Resource compilation
+
+The world equation and its render sampling rate are deliberately separate. Exact terrain height and hydrology remain available at every 10 cm resident column, while ecology-scale quantities—biome weights, strata mixture, snow accumulation, trails, soil mantle, and surface classification—are evaluated on a 40 cm lattice and shared by their fine children. A 32×32 terrain chunk therefore performs at most 81 expensive ecology queries rather than 1,024, a 12.6× reduction in that dominant query stack without changing the mathematical height silhouette. Those queries are keyed in world coordinates, so neighboring chunks share their border samples and each resident ecology coordinate runs the fused stack once while retained by the bounded LRU.
+
+Dense vertical iteration is not a terrain representation. A prepared column exposes its solid top and bounded water interval; surface chunks write those occupied runs directly and do not test their empty sky cells. Fully subterranean chunks retain a constant-time homogeneous-bedrock representation until edits or visibility require detail.
+
+A Resource definition remains the authority, but its temporary voxel observation is compiled in two stages. The first stage evaluates the seeded equation once and records material plus semantic part identity. The second partitions those points by world chunk. A trunk child, crown child, or neighboring overlap then consumes only the relevant slice rather than rescanning the complete adult tree. Surface micro-Resources use a rasterized root-exclusion mask derived from the same accepted prop equations, replacing repeated pairwise distance queries without changing placement.
+
+All four accelerators are disposable caches. Eviction may discard ecology tiles, vertical spans, Resource slices, or root masks; querying the same coordinates and seed reconstructs the same terrain, Resource, material, and provenance.
+
 ## Portrait mobile interface
 
 Touch play separates unobstructed observation from the thumb field without shrinking the world. In portrait orientation the renderer remains full-height. The upper two-thirds is one continuous look and aim gesture area; a thin divider marks the lower thumb field while the world remains visible behind it. Empty overlay space does not capture input. The cross D-pad is a continuous radial input with eight-direction feedback, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.

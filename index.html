@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.4.4.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.5 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.4.4.1';
-  const CURRENT_REVISION = 63;
+  const CURRENT_VERSION = '0.0.1.6.5';
+  const CURRENT_REVISION = 64;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -395,7 +395,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.4.4.1 · Infinite Detail Voxel Engine · mobile loading repair</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.5 · Infinite Detail Voxel Engine · accelerated landscape and Resources</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -404,7 +404,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.4.4.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.5 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -564,10 +564,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.4.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">closable loading monitor · compact Tablet conveyor · quiet Dremplay Navigator telemetry</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.5</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">multirate ecology · sparse terrain runs · chunk-sliced Resources</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=63"></script>
+<script src="heightmap-world-v2.js?v=64"></script>
 <script>
 (() => {
 "use strict";
@@ -897,7 +897,7 @@ function getVoxelA(wx, wy, wz) {
 }
 
 let terrainColumnCacheKey='',terrainColumnCache=null;
-const terrainColumnPlans=new Map();
+const terrainColumnPlans=new Map(),ecologyFieldCache=new Map();
 function prepareTerrainColumns(cx,cz){
   const key=`${cx},${cz}`;if(key===terrainColumnCacheKey)return terrainColumnCache;const retained=terrainColumnPlans.get(key);if(retained){terrainColumnPlans.delete(key);terrainColumnPlans.set(key,retained);terrainColumnCacheKey=key;terrainColumnCache=retained;return retained;}
   const data=new Array(CHUNK_SIZE*CHUNK_SIZE),baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE;let minSurface=Infinity,maxSurface=-Infinity,minSoilBottom=Infinity;
@@ -916,37 +916,31 @@ function prepareTerrainColumns(cx,cz){
     const {a,b,c,d,fx,fz}=tileCorners(x,z),mix=key=>tileMix(a,b,c,d,fx,fz,key);
     return {height:Math.round(mix('height')),rawHeight:Math.round(mix('rawHeight')),valleyMask:mix('valleyMask'),poolMask:mix('poolMask'),poolDepth:Math.round(mix('poolDepth')),riverMask:mix('riverMask'),riverDistance:mix('riverDistance'),continental:mix('continental'),ridges:mix('ridges')};
   };
+  // Ecology, strata, snow and surface classification change at landscape
+  // scale, not every 10 cm. Evaluate their expensive octave stack on a 40 cm
+  // lattice, then share those immutable samples with the sixteen fine columns
+  // they cover. Exact height/hydrology still comes from the fine interpolant.
+  const ecologyStep=4,ecologySize=CHUNK_SIZE/ecologyStep+1,ecologyTile=new Array(ecologySize*ecologySize);
+  const ecologyAt=(x,z)=>{
+    const wx=baseX+x,wz=baseZ+z,fieldKey=`${wx/ecologyStep},${wz/ecologyStep}`,cached=ecologyFieldCache.get(fieldKey);if(cached){ecologyFieldCache.delete(fieldKey);ecologyFieldCache.set(fieldKey,cached);return cached;}
+    const terrain=terrainAt(x,z),h=terrain.height,hx1=terrainHeightAt(x+2,z),hx0=terrainHeightAt(x-2,z),hz1=terrainHeightAt(x,z+2),hz0=terrainHeightAt(x,z-2);
+    const gradientX=(hx1-hx0)*.25,gradientZ=(hz1-hz0)*.25,slope=Math.hypot(gradientX,gradientZ),curvature=(hx1+hx0+hz1+hz0-4*h)*.25;
+    const [qx,qz]=warpedCoords(wx,wz),patchMacro=fbm2(qx*.0064,qz*.0064,4,2,.52,1801),patchMeso=fbm2(qx*.019+17,qz*.019-9,3,2.1,.46,1847),patch=patchMacro*.72+patchMeso*.28,detail=fbm2(qx*.037,qz*.037,3,2.1,.45,1907);
+    const moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38-patch*.12-slope*.045)),biome=worldBiomeField(wx,wz,{terrain,slope,curvature,moisture,gradientX,gradientZ}),trail=worldTrailField(wx,wz,{terrain,biome,slope,curvature,gradientX,gradientZ});
+    const soilHeave=fbm2(qx*.0073-23,qz*.0073+41,5,2,.52,1951)*6+detail*2.2,mantle=Math.max(3,Math.min(30,Math.round(6+moisture*14+Math.max(0,-curvature)*2.4-slope*.28+patch*3.5+soilHeave*.34)));
+    const rockPatch=fbm2(qx*.018+31,qz*.018-7,4,2,.5,2003),stoneField=fbm2(qx*.006-17,qz*.006+43,4,2,.52,2111),exposedRock=slope>12.5||(slope>8.0&&rockPatch>.44)||(h>315&&slope>5.5&&rockPatch>.18),lee=(hx0-hx1)*.08;
+    const snowCoverage=(h-SNOW_LINE)/34+Math.max(-.35,Math.min(.35,lee))+biome.snowAccumulation*.34+biome.wind.shelter*.12-slope*.045-curvature*.06+patch*.14,snowDepth=Math.max(0,Math.min(8,Math.floor(smoothstep(-.15,.65,snowCoverage)*7))),snowy=snowDepth>0&&!exposedRock;
+    const saturatedMud=terrain.poolMask>.10&&moisture>.70&&h<=WATER_LEVEL+2&&patch<.26,sandy=terrain.poolMask>.045&&terrain.poolMask<.52&&h<=WATER_LEVEL+2&&patch>.16;
+    const grassEcology=biome.weights.coastal_meadow+biome.weights.riparian_wetland*.72+biome.weights.alpine_heath*.58+biome.weights.coastal_scrub*.32+biome.weights.open_woodland*.28+biome.weights.sheltered_forest*.18,grassCoverage=moisture*.62+grassEcology*.58-patch*.10-slope*.018-(h-SNOW_LINE)*.003-trail.strength*.92,grassy=!saturatedMud&&!sandy&&!snowy&&!exposedRock&&grassCoverage>.27;
+    let rockMaterial=MAT_STONE;if(stoneField>.42)rockMaterial=MAT_GRANITE;else if(stoneField<-.48)rockMaterial=MAT_SLATE;else if(rockPatch>.55)rockMaterial=MAT_LIMESTONE;if(h>250&&rockPatch>.68)rockMaterial=MAT_QUARTZ;
+    const trailMaterial=trail.dryWash>.38?(stoneField>.1?MAT_SAND:MAT_SLATE):moisture>.68?MAT_MUD:moisture<.35?MAT_DRY_GRASS:MAT_DIRT,surfaceMaterial=snowy?MAT_SNOW:exposedRock?rockMaterial:saturatedMud?MAT_MUD:sandy?MAT_SAND:trail.strength>.42?trailMaterial:grassy?(h>200?MAT_ALPINE_GRASS:moisture>.72?MAT_MOSS:moisture<.38?MAT_DRY_GRASS:MAT_GRASS):(patch>.28?MAT_CLAY:MAT_DIRT);
+    const result={mantle,soilHeave,patch,detail,slope,curvature,moisture,biome,trail,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial};ecologyFieldCache.set(fieldKey,result);trimOldestMap(ecologyFieldCache,cacheLimitForDevice(16384,32768,65536));return result;
+  };
+  for(let ez=0;ez<ecologySize;ez++)for(let ex=0;ex<ecologySize;ex++)ecologyTile[ex+ez*ecologySize]=ecologyAt(ex*ecologyStep,ez*ecologyStep);
   for(let lx=0;lx<CHUNK_SIZE;lx++)for(let lz=0;lz<CHUNK_SIZE;lz++){
     const wx=baseX+lx,wz=baseZ+lz,terrain=terrainAt(lx,lz),h=terrain.height;minSurface=Math.min(minSurface,h);maxSurface=Math.max(maxSurface,h);
-    const hx1=terrainHeightAt(lx+2,lz),hx0=terrainHeightAt(lx-2,lz),hz1=terrainHeightAt(lx,lz+2),hz0=terrainHeightAt(lx,lz-2);
-    const gradientX=(hx1-hx0)*.25,gradientZ=(hz1-hz0)*.25,slope=Math.hypot(gradientX,gradientZ),curvature=(hx1+hx0+hz1+hz0-4*h)*.25;
-    const [qx,qz]=warpedCoords(wx,wz);
-    const patchMacro=fbm2(qx*.0064,qz*.0064,4,2,.52,1801),patchMeso=fbm2(qx*.019+17,qz*.019-9,3,2.1,.46,1847);
-    const patch=patchMacro*.72+patchMeso*.28; // nested ecological patches, never voxel dither
-    const detail=fbm2(qx*.037,qz*.037,3,2.1,.45,1907);
-    const moisture=Math.max(0,Math.min(1,.24+terrain.valleyMask*.52+terrain.poolMask*.38-patch*.12-slope*.045)),biome=worldBiomeField(wx,wz,{terrain,slope,curvature,moisture,gradientX,gradientZ}),trail=worldTrailField(wx,wz,{terrain,biome,slope,curvature,gradientX,gradientZ});
-    // A separate long-wave heave field moves the whole soil/rock boundary up
-    // and down. Mountain mantles thin gradually, rather than vanishing on any
-    // ordinary slope.
-    const soilHeave=fbm2(qx*.0073-23,qz*.0073+41,5,2,.52,1951)*6+detail*2.2;
-    const mantle=Math.max(3,Math.min(30,Math.round(6+moisture*14+Math.max(0,-curvature)*2.4-slope*.28+patch*3.5+soilHeave*.34)));
+    const ecology=ecologyTile[Math.round(lx/ecologyStep)+Math.round(lz/ecologyStep)*ecologySize],{mantle,soilHeave,patch,detail,slope,curvature,moisture,biome,trail,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial}=ecology;
     minSoilBottom=Math.min(minSoilBottom,h-mantle-Math.abs(soilHeave)-12);
-    const rockPatch=fbm2(qx*.018+31,qz*.018-7,4,2,.5,2003);
-    const stoneField=fbm2(qx*.006-17,qz*.006+43,4,2,.52,2111);
-    const exposedRock=slope>12.5||(slope>8.0&&rockPatch>.44)||(h>315&&slope>5.5&&rockPatch>.18);
-    // Snow favors high, sheltered and leeward/concave sites; steep faces shed it.
-    const lee=(hx0-hx1)*.08;
-    const snowCoverage=(h-SNOW_LINE)/34+Math.max(-.35,Math.min(.35,lee))+biome.snowAccumulation*.34+biome.wind.shelter*.12-slope*.045-curvature*.06+patch*.14;
-    const snowDepth=Math.max(0,Math.min(8,Math.floor(smoothstep(-.15,.65,snowCoverage)*7))),snowy=snowDepth>0&&!exposedRock;
-    const saturatedMud=terrain.poolMask>.10&&moisture>.70&&h<=WATER_LEVEL+2&&patch<.26;
-    const sandy=terrain.poolMask>.045&&terrain.poolMask<.52&&h<=WATER_LEVEL+2&&patch>.16;
-    const grassEcology=biome.weights.coastal_meadow+biome.weights.riparian_wetland*.72+biome.weights.alpine_heath*.58+biome.weights.coastal_scrub*.32+biome.weights.open_woodland*.28+biome.weights.sheltered_forest*.18,grassCoverage=moisture*.62+grassEcology*.58-patch*.10-slope*.018-(h-SNOW_LINE)*.003-trail.strength*.92;
-    const grassy=!saturatedMud&&!sandy&&!snowy&&!exposedRock&&grassCoverage>.27;
-    let rockMaterial=MAT_STONE;
-    if(stoneField>.42)rockMaterial=MAT_GRANITE;else if(stoneField<-.48)rockMaterial=MAT_SLATE;else if(rockPatch>.55)rockMaterial=MAT_LIMESTONE;
-    if(h>250&&rockPatch>.68)rockMaterial=MAT_QUARTZ;
-    const trailMaterial=trail.dryWash>.38?(stoneField>.1?MAT_SAND:MAT_SLATE):moisture>.68?MAT_MUD:moisture<.35?MAT_DRY_GRASS:MAT_DIRT;
-    const surfaceMaterial=snowy?MAT_SNOW:exposedRock?rockMaterial:saturatedMud?MAT_MUD:sandy?MAT_SAND:trail.strength>.42?trailMaterial:grassy?(h>200?MAT_ALPINE_GRASS:moisture>.72?MAT_MOSS:moisture<.38?MAT_DRY_GRASS:MAT_GRASS):(patch>.28?MAT_CLAY:MAT_DIRT);
     data[lx+lz*CHUNK_SIZE]={terrain,h,mantle,soilHeave,patch,detail,slope,curvature,moisture,biome,trail,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial};
   }
   // Record the tallest actual object scheduled for this horizontal chunk.
@@ -984,43 +978,47 @@ function generateChunk(cx, cy, cz, includeResources=true) {
 
       const {terrain,h,mantle,soilHeave,patch,detail,slope,curvature,moisture,rockMaterial,stoneField,exposedRock,snowDepth,snowy,saturatedMud,sandy,grassy,surfaceMaterial}=columns[lx+lz*CHUNK_SIZE];
 
-      for (let ly = 0; ly < CHUNK_SIZE; ly++) {
+      // Surface chunks are mostly air. Visit the occupied vertical run and a
+      // shallow water run directly instead of testing all 32 cells in every
+      // column. Deep chunks still take the constant-time fill path above.
+      const solidTop=Math.min(CHUNK_SIZE-1,h-baseY);
+      for (let ly = 0; ly <= solidTop; ly++) {
         const wy = baseY + ly;
         const i = lx + ly * CHUNK_SIZE + lz * CHUNK_SIZE * CHUNK_SIZE;
-        if (wy<=h) {
-          const depth=h-wy;
-          if(snowy&&depth<snowDepth)chunk[i]=MAT_SNOW;
-          else if(exposedRock&&depth<2)chunk[i]=rockMaterial;
-          else if(depth===0)chunk[i]=surfaceMaterial;
-          else {
-            if(depth>mantle+Math.abs(soilHeave)+18){chunk[i]=rockMaterial;continue;}
-            // Three-dimensional domain-warped lenses replace horizontal layer
-            // tests. Both the mantle boundary and the material mixtures wander
-            // vertically, merge, split and reappear across a mountain face.
-            const cellA=hash3(Math.floor((wx+wy*.83)/7),Math.floor(wy/5),Math.floor((wz-wy*.61)/7),2237)*2-1;
-            const cellB=hash3(Math.floor((wx-wy*.47)/11),Math.floor(wy/8),Math.floor((wz+wy*.72)/11),2269)*2-1;
-            const volumeWarp=cellA*3.4+detail*1.3;
-            const warpedDepth=depth-soilHeave-volumeWarp;
-            const lensA=cellB*.78+cellA*.22;
-            const lensB=patch*.48+cellA*.34+cellB*.18;
-            const soilLimit=mantle+lensB*4.0;
-            if(warpedDepth<soilLimit||(!exposedRock&&depth<4)){
-              const rockyLens=warpedDepth>soilLimit*.48&&lensA>.42+moisture*.08;
-              if(rockyLens)chunk[i]=rockMaterial;
-              else if(saturatedMud&&depth<4+lensB*2)chunk[i]=MAT_MUD;
-              else if(sandy&&depth<5+lensA*2)chunk[i]=MAT_SAND;
-              else if(moisture>.70&&lensA<-.38&&warpedDepth<soilLimit*.58)chunk[i]=MAT_PEAT;
-              else if(lensB>.34&&warpedDepth>2)chunk[i]=MAT_CLAY;
-              else chunk[i]=MAT_DIRT;
-            }else if(warpedDepth<soilLimit+7&&lensA<-.48){
-              // Eroded pockets carry the same soil mixture down into fractured
-              // bedrock instead of producing one clean, level cutoff.
-              chunk[i]=lensB>.28?MAT_CLAY:MAT_DIRT;
-            }else chunk[i]=rockMaterial;
-          }
-        } else if (terrain.poolMask>.30 && h<WATER_LEVEL && wy<=Math.min(WATER_LEVEL,h+20)) {
-          chunk[i]=MAT_WATER;
+        const depth=h-wy;
+        if(snowy&&depth<snowDepth)chunk[i]=MAT_SNOW;
+        else if(exposedRock&&depth<2)chunk[i]=rockMaterial;
+        else if(depth===0)chunk[i]=surfaceMaterial;
+        else {
+          if(depth>mantle+Math.abs(soilHeave)+18){chunk[i]=rockMaterial;continue;}
+          // Three-dimensional domain-warped lenses replace horizontal layer
+          // tests. Both the mantle boundary and the material mixtures wander
+          // vertically, merge, split and reappear across a mountain face.
+          const cellA=hash3(Math.floor((wx+wy*.83)/7),Math.floor(wy/5),Math.floor((wz-wy*.61)/7),2237)*2-1;
+          const cellB=hash3(Math.floor((wx-wy*.47)/11),Math.floor(wy/8),Math.floor((wz+wy*.72)/11),2269)*2-1;
+          const volumeWarp=cellA*3.4+detail*1.3;
+          const warpedDepth=depth-soilHeave-volumeWarp;
+          const lensA=cellB*.78+cellA*.22;
+          const lensB=patch*.48+cellA*.34+cellB*.18;
+          const soilLimit=mantle+lensB*4.0;
+          if(warpedDepth<soilLimit||(!exposedRock&&depth<4)){
+            const rockyLens=warpedDepth>soilLimit*.48&&lensA>.42+moisture*.08;
+            if(rockyLens)chunk[i]=rockMaterial;
+            else if(saturatedMud&&depth<4+lensB*2)chunk[i]=MAT_MUD;
+            else if(sandy&&depth<5+lensA*2)chunk[i]=MAT_SAND;
+            else if(moisture>.70&&lensA<-.38&&warpedDepth<soilLimit*.58)chunk[i]=MAT_PEAT;
+            else if(lensB>.34&&warpedDepth>2)chunk[i]=MAT_CLAY;
+            else chunk[i]=MAT_DIRT;
+          }else if(warpedDepth<soilLimit+7&&lensA<-.48){
+            // Eroded pockets carry the same soil mixture down into fractured
+            // bedrock instead of producing one clean, level cutoff.
+            chunk[i]=lensB>.28?MAT_CLAY:MAT_DIRT;
+          }else chunk[i]=rockMaterial;
         }
+      }
+      if(terrain.poolMask>.30&&h<WATER_LEVEL){
+        const waterStart=Math.max(0,h+1-baseY),waterEnd=Math.min(CHUNK_SIZE-1,Math.min(WATER_LEVEL,h+20)-baseY);
+        for(let ly=waterStart;ly<=waterEnd;ly++)chunk[lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE]=MAT_WATER;
       }
     }
   }
@@ -2787,8 +2785,8 @@ function voxelizedResource(def){
     };
     for(const segment of architecture.segments)rasterStroke(segment,def.secondary,true);
     for(const [leafIndex,leaf] of architecture.leaves.entries())for(const stroke of leafClusterStrokes(def,leaf,leafIndex))rasterStroke(stroke,stroke.material??(stroke.leaf?def.material:def.secondary),false);
-    for(const [packed,material] of voxels){const y=Math.floor(packed/layer)+b.y0,plane=packed-(y-b.y0)*layer,z=Math.floor(plane/sx)-b.z,x=plane-Math.floor(plane/sx)*sx-b.x;points.push([x,y,z,material]);}
-  }else for(let y=b.y0;y<=b.y1;y++)for(let x=-b.x;x<=b.x;x++)for(let z=-b.z;z<=b.z;z++){const material=resourceVoxel(def,x,y,z);if(material)points.push([x,y,z,material]);}
+    for(const [packed,material] of voxels){const y=Math.floor(packed/layer)+b.y0,plane=packed-(y-b.y0)*layer,z=Math.floor(plane/sx)-b.z,x=plane-Math.floor(plane/sx)*sx-b.x;points.push([x,y,z,material,resourcePartId(def,x,y,z,material)]);}
+  }else for(let y=b.y0;y<=b.y1;y++)for(let x=-b.x;x<=b.x;x++)for(let z=-b.z;z<=b.z;z++){const material=resourceVoxel(def,x,y,z);if(material)points.push([x,y,z,material,resourcePartId(def,x,y,z,material)]);}
   resourceVoxelCache.set(key,points);
   // Natural instances have unique seeds. Bound the memo table while retaining
   // the most recently used forms for adjacent vertical chunks and previews.
@@ -3072,17 +3070,39 @@ function resourcePartTaxonomy(def,x,y,z,material){
 const resourcePartIdentityCache=new Map();
 function labelResourcePart(def,x,y,z,material){const taxonomy=resourcePartTaxonomy(def,x,y,z,material),stage=(def.builderGraph||[]).find(node=>node.taxonomy===taxonomy),resourceName=def.name.replaceAll('_',' '),part=(stage?.label||taxonomy).trim();return `${resourceName} ${part}`;}
 function resourcePartId(def,x,y,z,material){const taxonomy=resourcePartTaxonomy(def,x,y,z,material),key=`${def.name}|${taxonomy}`,cached=resourcePartIdentityCache.get(key);if(cached)return cached;const stage=(def.builderGraph||[]).find(node=>node.taxonomy===taxonomy),label=`${def.name.replaceAll('_',' ')} ${(stage?.label||taxonomy).trim()}`,rid=registerResourceName(label);resourcePartIdentityCache.set(key,rid);return rid;}
+const EMPTY_RESOURCE_SLICE=Object.freeze([]);
+function resourceVoxelSlice(def,wx,wy,wz,cx,cy,cz){
+  const points=voxelizedResource(def),anchor=`${wx},${wy},${wz}`;
+  // A Resource is mathematical authority; this cache is only its disposable
+  // render projection. Compile the projection into occupied chunk slices once
+  // so adjacent canopy chunks never rescan an entire adult tree.
+  if(points._sliceAnchor!==anchor){
+    const slices=new Map();
+    for(const point of points){const [x,y,z]=point,sliceKey=chunkKey(Math.floor((wx+x)/CHUNK_SIZE),Math.floor((wy+y)/CHUNK_SIZE),Math.floor((wz+z)/CHUNK_SIZE));let slice=slices.get(sliceKey);if(!slice){slice=[];slices.set(sliceKey,slice);}slice.push(point);}
+    Object.defineProperties(points,{_sliceAnchor:{value:anchor,writable:true,configurable:true},_chunkSlices:{value:slices,writable:true,configurable:true}});
+  }
+  return points._chunkSlices.get(chunkKey(cx,cy,cz))||EMPTY_RESOURCE_SLICE;
+}
+function acceptedResourceRootMask(accepted,baseX,baseZ){
+  const maskKey=`${baseX},${baseZ}`;if(accepted._rootMaskKey===maskKey)return accepted._rootMask;
+  // Rasterize exclusion discs once per terrain column. The former inner loop
+  // measured every grass candidate against every tree/rock with Math.hypot.
+  const mask=new Uint8Array(CHUNK_SIZE*CHUNK_SIZE);
+  for(const entry of accepted){const radius=resourceRootRadius(entry.def)+.8,r2=radius*radius,minX=Math.max(0,Math.floor(entry.wx-baseX-radius)),maxX=Math.min(CHUNK_SIZE-1,Math.ceil(entry.wx-baseX+radius)),minZ=Math.max(0,Math.floor(entry.wz-baseZ-radius)),maxZ=Math.min(CHUNK_SIZE-1,Math.ceil(entry.wz-baseZ+radius));for(let lz=minZ;lz<=maxZ;lz++)for(let lx=minX;lx<=maxX;lx++){const dx=baseX+lx-entry.wx,dz=baseZ+lz-entry.wz;if(dx*dx+dz*dz<r2)mask[lx+lz*CHUNK_SIZE]=1;}}
+  Object.defineProperties(accepted,{_rootMaskKey:{value:maskKey,writable:true,configurable:true},_rootMask:{value:mask,writable:true,configurable:true}});return mask;
+}
 function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
   const key=chunkKey(cx,cy,cz);let metadata=resourceChunks.get(key);
   const tag=(i,rid)=>{if(!rid)return;if(!metadata){metadata=new Map();resourceChunks.set(key,metadata);}metadata.set(i,rid);};
   const put=(x,y,z,m,rid,airOnly=false)=>{const lx=x-baseX,ly=y-baseY,lz=z-baseZ;if(lx>=0&&ly>=0&&lz>=0&&lx<32&&ly<32&&lz<32){const i=lx+ly*32+lz*1024;if(airOnly&&chunk[i]!==MAT_AIR)return;chunk[i]=m;tag(i,rid);}};
-  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const plant=def.role==='tree'||def.role==='fungi'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material] of voxelizedResource(def))put(wx+x,wy+y,wz+z,material,resourcePartId(def,x,y,z,material),plant);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
+  const stamp=(def,wx,wy,wz)=>{const bounds=resourceBounds(def);if(wx+bounds.x<baseX||wx-bounds.x>baseX+31||wz+bounds.z<baseZ||wz-bounds.z>baseZ+31||wy+bounds.y1<baseY||wy+bounds.y0>baseY+31)return;const plant=def.role==='tree'||def.role==='fungi'||def.role==='flower'||def.role==='grass'||def.role==='foliage'||def.role==='moss'||def.role==='fern'||def.role==='palm';for(const [x,y,z,material,partId] of resourceVoxelSlice(def,wx,wy,wz,cx,cy,cz))put(wx+x,wy+y,wz+z,material,partId,plant);for(const [i,name] of (def.components||[]).entries()){const child=resourceDefinitions.get(name);if(!child)continue;const angle=hash3(def.seed||0,i,0,3901)*Math.PI*2,dist=Math.max(2,def.scale*.36),childX=Math.round(wx+Math.cos(angle)*dist),childZ=Math.round(wz+Math.sin(angle)*dist);stamp({...variedResource(child,childX,childZ,17+i),components:[]},childX,wy,childZ);}};
   // Main props are emitted from every neighboring origin chunk whose true
   // occupied bounds overlap this chunk. Resolve the candidate set before
   // rasterization: stone wins its footprint first, then trees, shrubs and
   // flowers. A plant can therefore never be rooted in a boulder or another
   // flower merely because two independent biome fields happened to overlap.
   const acceptedResources=acceptedResourcesForTargetColumn(cx,cz,columns);
+  const acceptedRootMask=acceptedResourceRootMask(acceptedResources,baseX,baseZ);
   for(const entry of acceptedResources)stamp(entry.def,entry.wx,entry.wy,entry.wz);
 
   // Surface micro-Resources are reconstructed from a jittered 2×2 voxel lattice.
@@ -3098,7 +3118,7 @@ function stampNaturalResources(chunk,baseX,baseY,baseZ,columns,cx,cy,cz){
     // Micro-Resources inherit the same root exclusion field. Grass and grains
     // remain dense across the biome but leave coherent soil around flowers,
     // trunks, shrubs and boulders instead of sprouting through their geometry.
-    if((col.trail?.strength||0)>.26||acceptedResources.some(entry=>Math.hypot(wx-entry.wx,wz-entry.wz)<resourceRootRadius(entry.def)+.8))continue;
+    if((col.trail?.strength||0)>.26||acceptedRootMask[lx+lz*CHUNK_SIZE])continue;
     const biomeSeed=col.biome?.dominant.seed||WORLD_ECOLOGY_SEED,patch=valueNoise2(wx*.034+17,wz*.034-29,4127^biomeSeed),scatter=hash3(wx,col.h,wz,4133^biomeSeed);
     // Pebbles occupy the first water cell above the generated bed, replacing a
     // thin slice of water rather than floating on its surface. Every pebble
