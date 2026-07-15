@@ -2,7 +2,17 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.4.2**
+Current release: **v0.0.1.6.4.3**
+
+## v0.0.1.6.4.3 Two-thirds touch viewport
+
+- Makes the complete upper two-thirds of the portrait world a continuous drag-to-look surface.
+- Moves the D-pad and action diamond below that boundary while retaining the thin divider and full-height world renderer.
+- Removes the explanatory control-field label so the landscape and controls remain visually clean.
+- Lets pointer input pass through empty portions of the lower overlay while preserving independent touch capture on every control.
+- Makes the mobile AI Loading Monitor genuinely draggable by allowing its title-bar coordinates to override the default dock, and gives its minimize/restore button a full touch target.
+- Preserves a compact minimized monitor that can itself be moved without snapping back to the top edge.
+- Moves Time of day from Options to Server, grouping the shared world clock with gravity, water, springs, and spawning while retaining immediate sky and lighting updates.
 
 ## v0.0.1.6.4.2 Sugar maple and iPhone interface scale
 

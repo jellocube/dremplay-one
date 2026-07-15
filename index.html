@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.4.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.4.3 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.4.2';
-  const CURRENT_REVISION = 60;
+  const CURRENT_VERSION = '0.0.1.6.4.3';
+  const CURRENT_REVISION = 61;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -284,8 +284,7 @@
   #touchControls { display:none; position:absolute; inset:30px 0 0; z-index:9; pointer-events:none; touch-action:none; user-select:none; --gameboy-shell:#c6c1a8; --gameboy-shadow:#77755f; --gameboy-ink:#151525; --gameboy-button:#72245f; }
   body.touch-platform.in-world #touchControls { display:block; }
   #touchLook { position:absolute; right:0; top:0; bottom:0; width:58%; pointer-events:auto; touch-action:none; }
-  #touchDeck { position:absolute; inset:auto 0 0; height:210px; border-top:1px solid #bcdcff99; background:linear-gradient(to bottom,#04081808,#04081842 22%,#040818a6 100%); pointer-events:auto; box-shadow:inset 0 1px #ececec33; touch-action:none; }
-  #touchDeck::before { content:'CONTROL FIELD · WORLD VIEW CONTINUES BEHIND'; position:absolute; left:50%; top:8px; transform:translateX(-50%); width:max-content; max-width:92vw; color:#ecececcc; font:700 8px monospace; letter-spacing:1px; text-align:center; text-shadow:1px 1px #040818; }
+  #touchDeck { position:absolute; inset:auto 0 0; height:210px; border-top:1px solid #bcdcff99; background:linear-gradient(to bottom,#04081808,#04081842 22%,#040818a6 100%); pointer-events:none; box-shadow:inset 0 1px #ececec33; touch-action:none; }
   #touchDeck::after { content:'Dremplay One'; position:absolute; left:50%; bottom:max(6px,env(safe-area-inset-bottom)); transform:translateX(-50%); color:#ececec99; font:italic 700 10px Palatino,Georgia,serif; letter-spacing:1.5px; }
   #touchMove { --move-x:0px; --move-y:0px; position:absolute; left:max(14px,env(safe-area-inset-left)); top:48px; width:148px; height:148px; pointer-events:auto; touch-action:none; }
   .touch-direction { position:absolute; width:47px; height:47px; padding:0; border:0; border-radius:5px; background:linear-gradient(#353544,#151525); color:#aaa; box-shadow:inset 2px 2px #575766,inset -3px -3px #080810,2px 3px 0 #77755f; font:700 17px monospace; pointer-events:auto; touch-action:none; }
@@ -322,8 +321,11 @@
     body.touch-platform.in-world #crosshair { top:40svh; }
     body.touch-platform.in-world #resourceLookLabel { top:calc(40svh + 18px); max-width:86vw; }
     body.touch-platform.in-world #touchControls { inset:30px 0 0; }
-    body.touch-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(56svh - 30px); bottom:auto; }
-    body.touch-platform.in-world #touchDeck { height:44svh; min-height:330px; max-height:400px; padding-bottom:env(safe-area-inset-bottom); }
+    body.touch-platform.in-world #touchLook { left:0; right:0; top:0; width:100%; height:calc(66.667svh - 30px); bottom:auto; }
+    body.touch-platform.in-world #touchDeck { height:33.333svh; padding-bottom:env(safe-area-inset-bottom); }
+    body.touch-platform.in-world #touchMove { top:24px; }
+    body.touch-platform.in-world #touchActions { top:22px; }
+    body.touch-platform.in-world #touchSystem { bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px)); }
     body.touch-platform.in-world #topleft { top:38px; max-width:45vw; font-size:10px; }
     body.touch-platform.in-world #topleft span { font-size:7px; }
     body.touch-platform.in-world #topright { top:34px; }
@@ -342,7 +344,12 @@
     body.touch-platform #resourceDesigner .window-body { max-height:calc(100svh - 78px); }
     body.touch-platform #resourceGraph,body.touch-platform #resourcePreview { max-height:42svh; }
     body.touch-platform .resource-pane.detached { position:static; width:auto; box-shadow:none; }
-    body.touch-platform #loadingOverlay { left:8px !important; right:8px !important; top:38px !important; bottom:auto !important; width:auto !important; max-height:45svh; }
+    body.touch-platform #loadingOverlay:not(.dragged) { left:8px !important; right:8px !important; top:38px !important; bottom:auto !important; width:auto !important; max-height:45svh; }
+    body.touch-platform #loadingOverlay.dragged { position:fixed !important; right:auto !important; bottom:auto !important; width:min(470px,calc(100vw - 16px)) !important; max-height:45svh; }
+    body.touch-platform #loadingOverlay.minimized:not(.dragged) { left:auto !important; right:max(8px,env(safe-area-inset-right)) !important; width:min(310px,calc(100vw - 16px)) !important; }
+    body.touch-platform #loadingOverlay.minimized.dragged { width:min(310px,calc(100vw - 16px)) !important; }
+    body.touch-platform #loadingOverlay .titlebar { cursor:move; touch-action:none; }
+    body.touch-platform #loadingMinimize { width:46px; height:41px; font-size:18px; touch-action:manipulation; }
     body.touch-platform #loadingPanel { max-height:calc(45svh - 42px); }
     #startscreen { overflow:auto; justify-content:flex-start; padding:68px 18px calc(28px + env(safe-area-inset-bottom)); }
     #startscreen h1 { font-size:22px; letter-spacing:3px; }
@@ -381,7 +388,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.4.2 · Infinite Detail Voxel Engine · iPhone scale and sugar maple</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.4.3 · Infinite Detail Voxel Engine · two-thirds touch viewport</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -390,7 +397,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.4.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.4.3 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -509,7 +516,6 @@
     </div></details>
     <details class="option-section"><summary>Gameplay and world</summary><div class="option-section-body">
       <div class="option-row"><label for="optionFov">Field of view</label><input id="optionFov" type="range" min="40" max="110" step="1"><span id="optionFovValue"></span></div>
-      <div class="option-row"><label for="optionTime">Time of day</label><input id="optionTime" type="range" min="1" max="24" step="0.25"><span id="optionTimeValue"></span></div>
     </div></details>
     <div id="optionStatus">Settings are fixed and never adapt between frames.</div>
     <div class="option-actions"><button id="optionApplyReload" class="tool-button">Apply reload settings</button><button id="optionReset" class="tool-button">Balanced defaults</button></div>
@@ -520,6 +526,7 @@
   <div class="titlebar"><span>Server options</span><button class="window-close" aria-label="Close server options">×</button></div>
   <div class="window-body">
     <details class="option-section" open><summary>World physics</summary><div class="option-section-body">
+      <div class="option-row"><label for="serverTime">Time of day</label><input id="serverTime" type="range" min="1" max="24" step="0.25"><span id="serverTimeValue"></span></div>
       <div class="option-row"><label for="serverGravity">Gravity</label><input id="serverGravity" type="range" min="0" max="50" step="0.1"><span id="serverGravityValue"></span></div>
       <div class="option-row"><label for="serverWaterEnabled">Water flow</label><select id="serverWaterEnabled"><option value="1">Running</option><option value="0">Frozen</option></select><span></span></div>
       <div class="option-row"><label for="serverWaterBudget">Water budget</label><input id="serverWaterBudget" type="range" min="0" max="1000" step="25"><span id="serverWaterBudgetValue"></span></div>
@@ -544,15 +551,15 @@
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Portrait mode keeps the full-height world visible. The translucent lower control field marks the part of the view that may be covered by your thumbs, so important aiming information stays above it. Drag the upper view to look. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor.</p><h2>Windows</h2><p>Use the top menu, mobile Select launcher, or displayed key to open tools. Mobile windows fill the usable screen and provide large close controls; desktop title bars remain draggable.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Touch controls</h2><p>Portrait mode keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The persistent monitor classifies active work, estimates progress rate, and exposes the statistical, predictive, simulation, Resource, weather, and GPU operations on one continuous conveyor. Drag its title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, mobile Select launcher, or displayed key to open tools. Mobile windows fill the usable screen and provide large close controls; desktop title bars remain draggable.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">native iPhone viewport · full-view portrait controls · deterministic sugar maple family · transactional Resource identity</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.4.3</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">upper two-thirds touch viewport · lower controls · movable loading monitor · deterministic sugar maple family</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=60"></script>
+<script src="heightmap-world-v2.js?v=61"></script>
 <script>
 (() => {
 "use strict";
@@ -2236,7 +2243,7 @@ function resize(){
   const scale=activeRenderScale();
   const viewportWidth=window.visualViewport?.width||window.innerWidth,viewportHeight=window.visualViewport?.height||window.innerHeight;
   // Portrait controls overlay the lower view instead of reducing the render
-  // surface. The upper 56% remains the unobstructed look/aim region while the
+  // surface. The upper two-thirds remains the unobstructed look/aim region while the
   // world continues behind the translucent thumb field at full resolution.
   const displayHeight=viewportHeight;
   canvas.width = Math.max(1, Math.floor(viewportWidth*dpr*scale));
@@ -3255,18 +3262,18 @@ document.getElementById('resourcePlace').addEventListener('click',()=>{
 refreshResourceLibrary();resourceLibrary.value='field_boulder';
 try{loadResource('field_boulder');document.getElementById('resourceStatus').textContent=`Resource ID ${registerResourceName('field_boulder')} · field boulder`;}catch(error){console.error('Resource Builder initialization deferred',error);document.getElementById('resourceStatus').textContent='Resource Builder will initialize when opened.';}
 
-const optionFov=document.getElementById('optionFov'),optionTime=document.getElementById('optionTime'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics'),optionDetailDistance=document.getElementById('optionDetailDistance'),optionNearDistance=document.getElementById('optionNearDistance'),optionFarDistance=document.getElementById('optionFarDistance'),optionFarVoxel=document.getElementById('optionFarVoxel'),optionBackgroundDistance=document.getElementById('optionBackgroundDistance'),optionBackgroundVoxel=document.getElementById('optionBackgroundVoxel'),optionBackgroundMode=document.getElementById('optionBackgroundMode'),optionBugtesting=document.getElementById('optionBugtesting');
+const optionFov=document.getElementById('optionFov'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics'),optionDetailDistance=document.getElementById('optionDetailDistance'),optionNearDistance=document.getElementById('optionNearDistance'),optionFarDistance=document.getElementById('optionFarDistance'),optionFarVoxel=document.getElementById('optionFarVoxel'),optionBackgroundDistance=document.getElementById('optionBackgroundDistance'),optionBackgroundVoxel=document.getElementById('optionBackgroundVoxel'),optionBackgroundMode=document.getElementById('optionBackgroundMode'),optionBugtesting=document.getElementById('optionBugtesting');
 function currentLodSnapshot(){return {detailFeet:Math.round(detailDistanceMeters/FEET_TO_METERS),nearFeet:Math.round(nearDistanceMeters/FEET_TO_METERS),farFeet:Math.round(farDistanceMeters/FEET_TO_METERS),farVoxelMeters:farPreviewVoxelMeters,backgroundFeet:Math.round(backgroundDistanceMeters/FEET_TO_METERS),backgroundVoxelMeters,backgroundMode};}
 function optionTransferId(control){const bytes=new TextEncoder().encode(JSON.stringify({schema:'DOP1',engine:CURRENT_VERSION,option:control.id,value:control.value,lod:currentLodSnapshot()}));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return `DOP1.${btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}`;}
 function setBugtestingMode(enabled){bugtestingMode=!!enabled;document.getElementById('optionsWindow').classList.toggle('bugtesting',bugtestingMode);optionBugtesting.value=bugtestingMode?'1':'0';document.getElementById('optionBugtestingValue').textContent=bugtestingMode?'On':'Off';}
 for(const row of document.querySelectorAll('#optionsWindow .option-row')){const control=row.querySelector('input,select');if(!control)continue;const button=document.createElement('button');button.type='button';button.className='tool-button option-copy';button.textContent='Copy';button.title=`Copy ${control.id} identity and transfer ID`;button.addEventListener('click',async()=>{const id=optionTransferId(control);try{await navigator.clipboard.writeText(id);}catch{const temp=document.createElement('textarea');temp.value=id;document.body.appendChild(temp);temp.select();document.execCommand('copy');temp.remove();}optionStatus.textContent=`Copied ${control.id} transfer ID · ${id}`;});row.appendChild(button);}
 function syncOptionsWindow(){
   viewDistanceMeters=FIXED_VIEW_DISTANCE_METERS;
-  optionFov.value=String(fovDegrees);optionTime.value=String(timeOfDay||24);
+  optionFov.value=String(fovDegrees);
   optionResolution.value=Number(pendingRenderScale).toFixed(2);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
-  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
+  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=touchPlatformActive()?'Touch':'Desktop';
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky','Vector matte','Combined'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
   optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky','vector matte','combined matte/voxel'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
@@ -3286,16 +3293,16 @@ optionVegetationDetail.addEventListener('change',()=>{pendingVegetationDetail=Nu
 for(const control of [optionDetailDistance,optionNearDistance,optionFarDistance,optionFarVoxel,optionBackgroundDistance,optionBackgroundVoxel,optionBackgroundMode,optionBugtesting,optionViewDistance,optionLightingQuality,optionMaterialQuality,optionCloudQuality,optionWaterQuality,optionFogEnabled,optionFogStart,optionFogDensity,optionStreamBudget])control.addEventListener('input',()=>{markOptionsCustom();applyLiveOptions();});
 optionPlatformMode.addEventListener('change',()=>{applyPlatformMode(optionPlatformMode.value);syncOptionsWindow();});
 optionFov.addEventListener('input',()=>{fovDegrees=Number(optionFov.value);markOptionsCustom();syncOptionsWindow();});
-optionTime.addEventListener('input',()=>{timeOfDay=Number(optionTime.value)%24;syncOptionsWindow();});
 document.getElementById('optionApplyReload').addEventListener('click',()=>{const params=new URLSearchParams(location.search);params.set('resolution',pendingRenderScale.toFixed(2));params.set('vegetation',String(pendingVegetationDetail));params.set('detailFeet',String(Math.round(detailDistanceMeters/FEET_TO_METERS)));params.set('nearFeet',String(Math.round(nearDistanceMeters/FEET_TO_METERS)));params.set('farFeet',String(Math.round(farDistanceMeters/FEET_TO_METERS)));params.set('farVoxel',String(farPreviewVoxelMeters));params.set('backgroundFeet',String(Math.round(backgroundDistanceMeters/FEET_TO_METERS)));params.set('backgroundVoxel',String(backgroundVoxelMeters));params.set('backgroundMode',String(backgroundMode));params.set('bugtesting',bugtestingMode?'1':'0');location.search=params.toString();});
 document.getElementById('optionReset').addEventListener('click',()=>applyOptionsPreset('balanced'));
 optionPreset.value='balanced';
-const serverGravity=document.getElementById('serverGravity'),serverWaterEnabled=document.getElementById('serverWaterEnabled'),serverWaterBudget=document.getElementById('serverWaterBudget'),serverWaterSpread=document.getElementById('serverWaterSpread'),serverNaturalSources=document.getElementById('serverNaturalSources'),serverSpawnX=document.getElementById('serverSpawnX'),serverSpawnY=document.getElementById('serverSpawnY'),serverSpawnZ=document.getElementById('serverSpawnZ'),serverStatus=document.getElementById('serverStatus');
+const serverTime=document.getElementById('serverTime'),serverGravity=document.getElementById('serverGravity'),serverWaterEnabled=document.getElementById('serverWaterEnabled'),serverWaterBudget=document.getElementById('serverWaterBudget'),serverWaterSpread=document.getElementById('serverWaterSpread'),serverNaturalSources=document.getElementById('serverNaturalSources'),serverSpawnX=document.getElementById('serverSpawnX'),serverSpawnY=document.getElementById('serverSpawnY'),serverSpawnZ=document.getElementById('serverSpawnZ'),serverStatus=document.getElementById('serverStatus');
 function syncServerWindow(){
-  serverGravity.value=String(-gravityAcceleration);serverWaterEnabled.value=waterFlowEnabled?'1':'0';serverWaterBudget.value=String(waterSimulationBudget);serverWaterSpread.value=String(waterSpreadStrength);serverNaturalSources.value=naturalWaterSources?'1':'0';
-  document.getElementById('serverGravityValue').textContent=`${(-gravityAcceleration).toFixed(1)}`;document.getElementById('serverWaterBudgetValue').textContent=String(waterSimulationBudget);document.getElementById('serverWaterSpreadValue').textContent=String(waterSpreadStrength);
+  serverTime.value=String(timeOfDay||24);serverGravity.value=String(-gravityAcceleration);serverWaterEnabled.value=waterFlowEnabled?'1':'0';serverWaterBudget.value=String(waterSimulationBudget);serverWaterSpread.value=String(waterSpreadStrength);serverNaturalSources.value=naturalWaterSources?'1':'0';
+  document.getElementById('serverTimeValue').textContent=`${(timeOfDay||24).toFixed(2)}h`;document.getElementById('serverGravityValue').textContent=`${(-gravityAcceleration).toFixed(1)}`;document.getElementById('serverWaterBudgetValue').textContent=String(waterSimulationBudget);document.getElementById('serverWaterSpreadValue').textContent=String(waterSpreadStrength);
   if(spawnPos){serverSpawnX.value=spawnPos.x.toFixed(2);serverSpawnY.value=spawnPos.y.toFixed(2);serverSpawnZ.value=spawnPos.z.toFixed(2);}serverStatus.textContent=`Water queue ${waterQueue.length} cells · ${waterSources.size} placed springs · ${waterMovedLastFrame} transfers last frame`;
 }
+serverTime.addEventListener('input',()=>{timeOfDay=Number(serverTime.value)%24;syncServerWindow();});
 serverGravity.addEventListener('input',()=>{gravityAcceleration=-Number(serverGravity.value);syncServerWindow();});
 serverWaterEnabled.addEventListener('change',()=>{waterFlowEnabled=serverWaterEnabled.value==='1';if(waterFlowEnabled&&playerPos)wakeWaterNear(Math.floor(playerPos.x/VS),Math.floor(playerPos.y/VY),Math.floor(playerPos.z/VS),24);syncServerWindow();});
 serverWaterBudget.addEventListener('input',()=>{waterSimulationBudget=Number(serverWaterBudget.value);syncServerWindow();});serverWaterSpread.addEventListener('input',()=>{waterSpreadStrength=Number(serverWaterSpread.value);syncServerWindow();});serverNaturalSources.addEventListener('change',()=>{naturalWaterSources=serverNaturalSources.value==='1';syncServerWindow();});

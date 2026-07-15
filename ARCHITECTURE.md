@@ -2,7 +2,7 @@
 
 ## Portrait mobile interface
 
-Touch play separates unobstructed observation from the thumb field without shrinking the world. In portrait orientation the renderer remains full-height. The upper 56% is the look and aim gesture area; a translucent lower control field explains that the world continues behind the buttons but should not carry essential visual information. The cross D-pad is a continuous radial input with eight-direction feedback, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
+Touch play separates unobstructed observation from the thumb field without shrinking the world. In portrait orientation the renderer remains full-height. The upper two-thirds is one continuous look and aim gesture area; a thin divider marks the lower thumb field while the world remains visible behind it. Empty overlay space does not capture input. The cross D-pad is a continuous radial input with eight-direction feedback, while action, posture, and editing buttons keep independent pointer capture so movement and interaction may occur together.
 
 The document declares `width=device-width`, an initial scale of one, and `viewport-fit=cover`. This declaration is part of the renderer contract: without it, mobile Safari creates a desktop-width layout viewport and scales every CSS control down after layout, preventing portrait breakpoints and safe-area rules from matching the physical device. Zoom is not disabled.
 
