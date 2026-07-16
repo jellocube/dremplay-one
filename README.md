@@ -2,7 +2,7 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.6.2**
+Current release: **v0.0.1.7**
 
 ## Project overview
 
@@ -11,6 +11,15 @@ Dremplay One is a browser-first Infinite Detail Voxel Engine for explorable, edi
 The project combines a supplied 4.5 × 7.5 km island height field with mathematical biome rules, multiresolution voxel clipmaps, fractal Resource definitions, editable sparse overrides, water simulation, and atmospheric distance projections. It is designed to run directly on the web across laptops, iPads, and modern phones, with desktop, tablet-touch, and Dremplay Navigator interfaces sharing the same world model.
 
 The engine is an independent experimental work informed by public ideas around point and voxel detail streaming, including John Lin's Voxely writing, Euclideon's published patent material, and Atomontage demonstrations. It is not affiliated with those projects. The present build is a working research prototype: its priorities are a stable frame, deterministic ecology, smooth scale transitions, portable acceleration, accessible tools, and a world that remains visually coherent from the horizon down to an individual blade of grass.
+
+## v0.0.1.7 The Tooltips Update
+
+- Adds an accessible, collision-aware tooltip system across Options, Server, Autopilot, the Material Designer, Resource Builder, map, AI Loading Monitor, detailed loading log, and every visible conveyor task. Explanations use plain language and include an italic expected-result example whenever the control has a visible or behavioral outcome.
+- Gives every dropdown choice its own explanation. This includes technical choices such as Sensor Look-Ahead behavior, mathematical material generators, Resource growth models, detail bands, background rendering, water simulation, and platform modes. Dynamic Resource and material choices are hydrated as they are created.
+- Adds Options → Tooltips and explanations with persistent controls for enabling help, hover delay, font size, and five placement strategies: smart pointer, beside subject, inside active window, upper-right screen, and lower-right screen. Every placement is clamped to the visible viewport and flips when its preferred side is blocked.
+- Adds Help → Tooltip History, a movable, scrollable window that records explanations actually viewed during the current session, suppresses rapid duplicates, preserves expected-result examples, and supports Copy history and Clear history.
+- Makes the system keyboard-accessible: focusing a described control opens its help immediately, the active subject receives `aria-describedby`, Escape dismisses the explanation, and native dropdown choices receive friendly accessible labels and fallback descriptions.
+- Refactors the detailed loading console into incremental per-line records. Each line now has its own friendly phase explanation, while appending new events no longer rebuilds the entire log or resets the conveyor.
 
 ## v0.0.1.6.6.2 Autopilot Navigation Laboratory
 

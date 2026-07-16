@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.6.2 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.7 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.6.2';
-  const CURRENT_REVISION = 71;
+  const CURRENT_VERSION = '0.0.1.7';
+  const CURRENT_REVISION = 72;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -209,6 +209,23 @@
   #helpWindow ul { margin:5px 0 10px 18px; color:#ececec; }
   #helpWindow li { margin:3px 0; }
   #helpWindow code { color:#54fc54; background:#24243c; padding:1px 3px; }
+  #technicalTooltip { position:fixed; z-index:5000; width:min(360px,calc(100vw - 20px)); max-height:min(52vh,420px); overflow:auto; padding:9px 11px; border:1px solid #ccb010; background:#0c100cf5; color:#ececec; box-shadow:4px 5px 0 #040818aa,inset 0 0 0 1px #243c24; font-size:var(--tooltip-font-size,13px); line-height:1.45; pointer-events:none; }
+  #technicalTooltip[hidden] { display:none; }
+  #technicalTooltipTitle { display:block; margin:0 0 4px; color:#54fc54; font-family:Palatino,'Book Antiqua',Georgia,serif; letter-spacing:.3px; }
+  #technicalTooltipBody { display:block; color:#ececec; }
+  #technicalTooltipExample { display:block; margin-top:7px; padding-top:6px; border-top:1px solid #444460; color:#bcdcff; }
+  [data-has-tooltip="true"] { text-decoration-color:#bcdcff88; text-decoration-style:dotted; text-underline-offset:3px; }
+  label[data-has-tooltip="true"],summary[data-has-tooltip="true"],#loadingConsole [data-has-tooltip="true"] { text-decoration-line:underline; cursor:help; }
+  #tooltipLogWindow { width:min(650px,calc(100vw - 24px)); }
+  .tooltip-log-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:7px 0; }
+  #tooltipHistoryStatus { flex:1 1 200px; color:#bcdcff; }
+  #tooltipHistoryList { min-height:150px; max-height:52vh; overflow-y:scroll; scrollbar-gutter:stable; border:1px solid #444460; background:#040818; padding:6px; }
+  .tooltip-history-entry { padding:7px 8px; border-bottom:1px solid #243c24; color:#ececec; }
+  .tooltip-history-entry:last-child { border-bottom:0; }
+  .tooltip-history-time { float:right; margin-left:8px; color:#a8a8a8; font-size:9px; }
+  .tooltip-history-entry strong { display:block; color:#54fc54; }
+  .tooltip-history-entry em { display:block; margin-top:4px; color:#bcdcff; }
+  .loading-log-line { min-height:1.45em; }
   .property-row { display:grid; grid-template-columns:1fr auto auto; gap:7px; }
   #materialPropertyId { min-width:0; background:#24243c; border:1px solid #444460; color:#50a4fc; font:inherit; padding:7px; }
   .option-row { display:grid; grid-template-columns:130px 1fr 54px; gap:10px; align-items:center; margin:10px 0; }
@@ -407,6 +424,7 @@
 <canvas id="glcanvas"></canvas>
 <div id="crosshair"></div>
 <div id="resourceLookLabel" aria-live="polite"></div>
+<div id="technicalTooltip" role="tooltip" hidden><strong id="technicalTooltipTitle"></strong><span id="technicalTooltipBody"></span><em id="technicalTooltipExample"></em></div>
 
 <nav id="menubar" aria-label="Application menu">
   <div class="brand">Dremplay One</div>
@@ -430,6 +448,7 @@
   </div></div>
   <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Help</button><div class="menu-popup" role="menu">
     <button class="menu-item" type="button" role="menuitem" data-hotkey="f1" data-window="helpWindow"><span>Manual</span><span class="menu-shortcut">F1</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-window="tooltipLogWindow"><span>Tooltip History</span><span class="menu-shortcut">Log</span></button>
     <button class="menu-item" type="button" role="menuitem" data-hotkey="f2" data-window="aboutWindow"><span>About</span><span class="menu-shortcut">F2</span></button>
   </div></div>
 </nav>
@@ -440,12 +459,12 @@
     <div id="loadingLabel"><span id="loadingText">Initializing terrain pipeline</span><span id="loadingPercent">0.0%</span></div>
     <div id="loadingTrack"><div id="loadingFill"></div></div>
     <div id="loadingIntelligence">AI observer · semantic phase classifier · deterministic statistical fields</div>
-    <div id="cartonConveyor" aria-hidden="true"><div id="cartonBelt"><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div></div></div>
+    <div id="cartonConveyor" role="list" aria-label="Current technical loading tasks"><div id="cartonBelt"><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div><div class="packet-set"><span>Seed intake</span><span>Math.imul</span><span>Quintic fade</span><span>fBm octave</span><span>Domain warp</span></div></div></div>
     <div id="loadingConsole" aria-label="Detailed loading log"></div>
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.6.2 · Infinite Detail Voxel Engine · continuous 3D terrain horizon</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.7 · Infinite Detail Voxel Engine · The Tooltips Update</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -454,7 +473,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.6.2 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.7 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      A bounded 384×416×384 near-field clipmap preserves true 0.1 m isotropic editing while the immutable mathematical atlas supplies every distant level of detail.
@@ -493,6 +512,7 @@
       <button type="button" data-mobile-window="autopilotWindow">Autopilot</button>
       <button type="button" data-mobile-window="serverWindow">Server</button><button type="button" data-mobile-window="optionsWindow">Options</button>
       <button type="button" data-mobile-window="modsWindow">Mods</button><button type="button" data-mobile-window="helpWindow">Help</button>
+      <button type="button" data-mobile-window="tooltipLogWindow">Tooltip History</button>
       <button type="button" data-mobile-window="aboutWindow">About</button><button id="touchResume" type="button">Resume game</button>
     </div>
   </div>
@@ -597,6 +617,12 @@
     <details class="option-section"><summary>Gameplay and world</summary><div class="option-section-body">
       <div class="option-row"><label for="optionFov">Field of view</label><input id="optionFov" type="range" min="40" max="110" step="1"><span id="optionFovValue"></span></div>
     </div></details>
+    <details class="option-section" open><summary>Tooltips and explanations</summary><div class="option-section-body">
+      <div class="option-row"><label for="optionTooltipsEnabled">Tooltips</label><select id="optionTooltipsEnabled"><option value="1">On</option><option value="0">Off</option></select><span id="optionTooltipsEnabledValue">On</span></div>
+      <div class="option-row"><label for="optionTooltipDelay">Hover delay</label><input id="optionTooltipDelay" type="range" min="0" max="1200" step="50" value="350"><span id="optionTooltipDelayValue">350 ms</span></div>
+      <div class="option-row"><label for="optionTooltipFontSize">Tooltip font</label><input id="optionTooltipFontSize" type="range" min="11" max="20" step="1" value="13"><span id="optionTooltipFontSizeValue">13 px</span></div>
+      <div class="option-row"><label for="optionTooltipPlacement">Position</label><select id="optionTooltipPlacement"><option value="pointer">Smart near pointer</option><option value="subject">Beside subject</option><option value="window">Inside active window</option><option value="screen-top">Upper-right screen</option><option value="screen-bottom">Lower-right screen</option></select><span id="optionTooltipPlacementValue">Pointer</span></div>
+    </div></details>
     <div id="optionStatus">Settings are fixed and never adapt between frames.</div>
     <div class="option-actions"><button id="optionApplyReload" class="tool-button">Apply reload settings</button><button id="optionReset" class="tool-button">Balanced defaults</button></div>
   </div>
@@ -629,12 +655,18 @@
   <div class="window-body"><h2>Mod manager</h2><p>No mods loaded.</p><p class="muted">This window is the future home for local content packs, material libraries, world generators, and safe scripted extensions.</p></div>
 </div>
 
+<div id="tooltipLogWindow" class="tool-window simple-window" role="dialog" aria-label="Tooltip History">
+  <div class="titlebar"><span>Tooltip History</span><button class="window-close" aria-label="Close Tooltip History">×</button></div>
+  <div class="window-body"><h2>Explanations you have viewed</h2><p class="muted">Every tooltip you open is kept here for this play session. Repeated hovering does not flood the list.</p><div class="tooltip-log-toolbar"><span id="tooltipHistoryStatus">No tooltips viewed yet.</span><button id="tooltipHistoryCopy" class="tool-button" type="button">Copy history</button><button id="tooltipHistoryClear" class="tool-button" type="button">Clear history</button></div><div id="tooltipHistoryList" tabindex="0" aria-live="polite"></div></div>
+</div>
+
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
   <div class="titlebar"><span>Manual</span><button class="window-close" aria-label="Close manual">×</button></div>
   <div class="window-body"><p class="manual-lead">Dremplay One is an editable mathematical world rendered through distance-dependent voxel detail. Nearby matter resolves finely; distant matter remains a stable, inexpensive projection of the same world.</p>
     <div class="manual-index"><span>Main · session and map</span><span>Tools · creation and inspection</span><span>Settings · display and simulation</span><span>Help · this manual and credits</span></div>
     <h2>Desktop controls</h2><ul><li><code>W A S D</code> move; mouse turns the view.</li><li><code>Shift</code> jumps and <code>Ctrl</code> crawls.</li><li><code>Space</code> alternates game control and the cursor. <code>Esc</code> goes back, cancels, or focuses Main.</li><li>Left mouse carves a ball; right mouse places a ball of the selected material directly at the crosshair.</li></ul>
-    <h2>Application menus and hotkeys</h2><p><b>Main</b> contains Restart, World map, and Quit to title. <b>Tools</b> contains Loader, Console, Materials, Resource Editor, and Autopilot. <b>Settings</b> contains Options, Server, and Mods. <b>Help</b> contains Manual and About.</p><p><code>/</code> Console · <code>M</code> Materials · <code>R</code> Resource Editor · <code>G</code> Map · <code>L</code> Loader · <code>P</code> Autopilot · <code>F10</code> Server · <code>F12</code> Options · <code>F11</code> Mods · <code>F1</code> Manual · <code>F2</code> About</p>
+    <h2>Application menus and hotkeys</h2><p><b>Main</b> contains Restart, World map, and Quit to title. <b>Tools</b> contains Loader, Console, Materials, Resource Editor, and Autopilot. <b>Settings</b> contains Options, Server, and Mods. <b>Help</b> contains Manual, Tooltip History, and About.</p><p><code>/</code> Console · <code>M</code> Materials · <code>R</code> Resource Editor · <code>G</code> Map · <code>L</code> Loader · <code>P</code> Autopilot · <code>F10</code> Server · <code>F12</code> Options · <code>F11</code> Mods · <code>F1</code> Manual · <code>F2</code> About</p>
+    <h2>Accessible technical tooltips</h2><p>Hover a labeled control, dropdown choice, loading task, conveyor item, graph control, or technical readout for a plain-language explanation. Keyboard users can focus controls to read the same help. When useful, the final italic line describes the change you should expect to see. Options → Tooltips and explanations controls the delay, font size, and whether help follows the pointer, sits beside its subject, stays inside a window, or occupies a fixed screen corner. Help → Tooltip History keeps a scrollable session log that can be copied or cleared.</p>
     <h2>Detail distance editor</h2><p>Options → Distance detail laboratory uses one logarithmic track with four ordered stops: <b>D</b> Detail, <b>N</b> Near, <b>F</b> Far, and <b>B</b> Background. Drag a stop or focus it and use arrow keys. The nonlinear track leaves short interaction distances easy to grab while still reaching 1,000 ft. Stops cannot cross, so voxel scales always hand off in a valid order.</p>
     <h2>Compass</h2><p>The circular rose rotates continuously to keep its north mark aligned with the world. Its slight overshoot is a damped floating response, not a change to player heading. Reduced-motion mode removes the rebound.</p>
     <h2>Map and fast travel</h2><p>Open the heightmap with <code>G</code> or Navigator Start. The gold cross marks your position; select land to move there immediately. The mathematical parent surface appears first, and disposable fine voxels refine around it without changing the location's underlying ecology.</p>
@@ -649,13 +681,174 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.6.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">100 × 100 m mathematical regions · continuous 3D one-kilometer terrain · bounded walking cache</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.7 · The Tooltips Update</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Accessible technical explanations · Tooltip History · configurable delay, size, and placement</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=71"></script>
+<script src="heightmap-world-v2.js?v=72"></script>
 <script>
 (() => {
 "use strict";
+
+//////////////////////////////////////////////////////////////////////////
+// ACCESSIBLE TECHNICAL TOOLTIPS
+//////////////////////////////////////////////////////////////////////////
+const technicalTooltip=document.getElementById('technicalTooltip'),technicalTooltipTitle=document.getElementById('technicalTooltipTitle'),technicalTooltipBody=document.getElementById('technicalTooltipBody'),technicalTooltipExample=document.getElementById('technicalTooltipExample');
+const tooltipHistoryList=document.getElementById('tooltipHistoryList'),tooltipHistoryStatus=document.getElementById('tooltipHistoryStatus');
+const TOOLTIP_STORAGE_KEY='dremplay-tooltip-preferences-v1';
+const tooltipDefaults=Object.freeze({enabled:true,delay:350,fontSize:13,placement:'pointer'});
+let tooltipPreferences={...tooltipDefaults},tooltipPointer={x:innerWidth*.5,y:innerHeight*.5},tooltipActiveTarget=null,tooltipShowTimer=0,tooltipHistory=[],tooltipLastHistoryKey='',tooltipLastHistoryAt=0;
+try{const saved=JSON.parse(localStorage.getItem(TOOLTIP_STORAGE_KEY)||'null');if(saved&&typeof saved==='object')tooltipPreferences={...tooltipDefaults,...saved};}catch{}
+const tip=(title,body,example='')=>({title,body,example});
+const TECHNICAL_TOOLTIPS=Object.freeze({
+  loadingWindowTitle:tip('AI Loading Monitor','A live report of work that prepares disposable voxel views from the permanent mathematical world. Closing this window never stops the work.','The landscape keeps loading while the monitor is closed or minimized.'),
+  loadingText:tip('Current loading task','The most important preparation step running right now. The wording changes as terrain, ecology, Resources, weather, and GPU data move through the pipeline.','When this reaches “Ready to play,” the required starting view has been accepted.'),
+  loadingPercent:tip('Loading progress','A fine-grained estimate for the current preparation pass. It measures completed work units, not an artificial timer.','A steady increase means work is being accepted; 100% means the required pass is complete.'),
+  loadingTrack:tip('Progress track','The filled portion compares completed work with the total work currently required. Later background refinements may begin without reopening a finished boot task.','The bar advances from left to right and never dims or pauses the world.'),
+  loadingIntelligence:tip('AI loading observer','A lightweight statistical observer classifies the current engine task and estimates its remaining time from recent progress. EWMA means it smooths several recent measurements so one slow frame does not make the estimate jump.','The estimate should settle as the same kind of work continues.'),
+  cartonConveyor:tip('Technical task conveyor','A continuous, non-resetting view of real engine categories and representative operations. Highlighting shows the active category; motion does not control loading.','Terrain work highlights terrain terms while the belt continues at the same speed.'),
+  loadingConsole:tip('Detailed loading log','A chronological record of preparation, cache, prediction, and rendering events. Hover an individual line for a friendlier explanation of that event.','Use this to identify what the engine was doing during a pause or slow frame.'),
+  materialPreview:tip('Live material preview','Shows the selected material with its palette-bound shades and surface pattern. It recompiles immediately when a material control changes.','Increasing softness should blend stone texture while grass can remain crisp and noisy.'),
+  materialAtlas:tip('Material library image','Each tile is both a preview and a picker. Select a tile to edit that material without opening a separate text list.','Selecting “granite” loads granite’s palette shades and generator settings.'),
+  paletteAtlas:tip('Official palette sampler','A picture of every approved palette color. Hover to read the color name and select a swatch to assign it to the active shade slot.','Choosing a moss green changes only the selected base, light, or dark shade.'),
+  designerNoise:tip('Noise strength','Controls how often the material moves away from its base color into adjacent palette shades. It changes color variation, not geometry.','Low values make calm stone; higher values make visibly mottled grass.'),
+  designerScale:tip('Pattern scale','Controls the physical size of repeated color features. Small values make broad patches; large values make finer grain.','Raising the value turns wide stains into smaller flecks.'),
+  designerBlur:tip('Material softness','Blends neighboring noise samples before selecting a palette shade. This reduces speckling while keeping every final color inside the official palette.','Stone becomes softly clouded; a value near zero keeps sharp grains.'),
+  designerPattern:tip('Surface generator','Chooses the mathematical pattern used to distribute the material’s nearby palette shades. The world material stays the same; only its internal color texture changes.','Mineral veins make directional seams, while granular makes scattered grains.'),
+  materialPropertyId:tip('Material properties ID','A portable hexadecimal record of this material’s palette colors and texture settings. It can be copied, saved, and loaded without a separate asset file.','Loading the ID elsewhere recreates the same material appearance.'),
+  resourceType:tip('Resource kingdom','Sets the broad natural family used by presets and graph-stage suggestions. It does not silently rename an existing Resource.','Mineral offers rock and crystal formations; Vegetation offers branching growth.'),
+  resourcePreset:tip('Formation preset','Loads a useful mathematical starting graph for the selected kingdom. You can change every stage afterward.','Eroded rock begins with a matrix, shell, and optional surface patina.'),
+  resourceGraph:tip('Formation graph','A two-dimensional map of how named procedural stages feed one another. Each node has a stable part identity, preventing a rock from being mistaken for a leaf.','Selecting “lichen patina” exposes only that stage’s length, density, and angle.'),
+  resourcePreview:tip('Interactive Resource preview','A live three-dimensional compilation of the complete mathematical definition. Drag to rotate, Shift-drag to pan, and use the wheel or pinch to zoom.','Changing branch density should visibly rebuild the preview without pressing Save.'),
+  resourceLibrary:tip('Resource library','Chooses a saved procedural object definition. The library stores equations, materials, taxonomy, and seeds—not a frozen voxel model.','Selecting field boulder reconstructs the same boulder definition at the current preview detail.'),
+  resourceShape:tip('Primitive form','Chooses the basic mathematical volume before growth, erosion, and substructure modify it.','Ellipsoid starts rounded and stretched; branch graph starts from connected growth paths.'),
+  resourceGrowthStage:tip('Growth stage','Selects a biological age profile where the Resource supports one. A sapling keeps the same species identity with younger proportions.','A tree becomes shorter and thinner as a sapling, rather than becoming a different tree.'),
+  resourceSeed:tip('Growth seed','A deterministic number that selects one natural variation. The same definition and seed always produce the same individual.','Reusing seed 417293 recreates the same branch arrangement.'),
+  resourceGraphNodes:tip('Formation stages','Lists every named stage in the Resource graph. Selecting a stage changes which local parameters appear below.','Choosing “rock matrix” edits the stone body, not its lichen layer.'),
+  resourceNodeTaxonomy:tip('Part taxonomy','Records what a graph stage actually represents. This identity follows generated voxels so inspection cannot confuse rock, bark, leaf, fruit, or crystal.','A stage marked “rock matrix” is always reported as stone-derived matter.'),
+  resourceNodeLength:tip('Stage length','Scales the selected stage along its direction of growth or formation. It affects only this stage and descendants that depend on it.','Longer branch stages spread foliage farther from the trunk.'),
+  resourceNodeChildren:tip('Children or density','Controls how many child samples the selected stage attempts to form. Space and collision rules may accept fewer.','Increasing leaf density fills a crown without thickening the trunk.'),
+  resourceNodeAngle:tip('Formation angle','Sets how far child stages turn away from their parent direction.','A larger branch angle makes a wider crown; a small angle makes upright growth.'),
+  resourceFractal:tip('Growth model','Chooses the mathematical rule that adds repeated structure. Each model is evaluated deterministically at the detail currently needed.','Space colonization fills an available crown volume; L-system repeats named branching rules.'),
+  resourceComponents:tip('Component Resources','Combines other saved Resource equations into this definition. Components keep their own identity and materials.','A tree can include a separate leaf-spray Resource without turning its trunk into leaves.'),
+  resourceScale:tip('Resource scale','Sets the base physical size of the procedural object before natural variation.','A larger value makes the entire adult tree taller while preserving its proportions.'),
+  resourceSizeVariance:tip('Natural size variation','Controls how widely individuals vary around the base scale. Their deterministic seeds decide the exact result.','A grove gains small, medium, and large trees instead of identical copies.'),
+  resourceSubsurface:tip('Erosion or subsurface strength','Changes how strongly the base volume is carved, weathered, or given internal structure. Its meaning follows the Resource kingdom.','Rock becomes more eroded; bark or roots can gain deeper surface relief.'),
+  resourceRadial:tip('Radial mirrors','Repeats formation around a central axis. Five and seven are useful for the project’s allowed crystal symmetries.','A value of five forms five related arms around the center.'),
+  resourceAngle:tip('Branch angle','Sets the default turning angle used by procedural branches that do not override it in the graph.','Higher values spread branches outward; lower values keep them upright.'),
+  resourceIterations:tip('Growth iterations','Sets how many recursive formation rounds may be evaluated. More rounds add smaller structure and cost more only when visible detail asks for it.','A fern gains additional nested leaflets at close range.'),
+  resourceTropism:tip('Tropism','Adds a directional growth preference. Positive values bend growth upward; negative values bend it downward.','Branches rise toward light with a positive value; roots droop with a negative value.'),
+  resourceInfluence:tip('Influence radius','In space-colonization growth, this is how far a branch tip can notice nearby target points.','A larger radius lets sparse branches reach toward a broader crown area.'),
+  resourceKill:tip('Kill radius','In space-colonization growth, target points this close to a branch are considered reached and removed from further guidance.','A larger value produces simpler, more widely spaced branching.'),
+  resourceTransferId:tip('Resource identity and transfer ID','A portable record of the full procedural Resource: graph, taxonomy, materials, seed, modifiers, and palette aesthetics.','Loading the ID recreates the same object definition and keeps its parts correctly identified.'),
+  autopilotMode:tip('Wandering mode','Chooses which environmental evidence Autopilot favors while ordinary collision and streaming remain active. It is a navigation test, not a camera replay.','Contour survey follows similar elevations; water-edge survey follows safe ground near water.'),
+  autopilotSpeed:tip('Autopilot walking speed','Multiplies the normal walking pace used by the navigation test. Higher speeds stress prediction and streaming more strongly.','At 1.00× it walks at the normal player pace; 1.60× is a harder streaming test.'),
+  autopilotLookahead:tip('Sensor look-ahead','Sets how far ahead Autopilot samples terrain height, water, slope, and clearance before steering. It does not load arbitrary extra world data.','A longer look-ahead notices cliffs sooner but may take wider turns.'),
+  autopilotCamera:tip('Camera steering','Chooses whether the view turns with Autopilot or remains under your control while the body navigates.','Keep current view lets you inspect scenery sideways during a movement test.'),
+  autopilotTelemetry:tip('Autopilot telemetry','A timed diagnostic record of position, distance, frame cost, cache size, Resource coverage, and streaming work.','A stable walk should keep cache memory bounded instead of rising every minute.'),
+  optionPreset:tip('Graphics preset','Applies a coordinated starting group of display and performance values. Choosing a single control afterward changes the preset to Custom.','Performance reduces costly visual work; Quality favors finer presentation.'),
+  optionResolution:tip('Render resolution','Changes the number of screen pixels shaded by the GPU. It does not lower the mathematical world’s detail or change voxel sizes.','Lowering resolution can improve FPS while world geometry remains in the same places.'),
+  optionPlatformMode:tip('Platform interface','Chooses the control and window layout. Auto-detect uses screen and input capabilities; manual choices let you test another layout.','Navigator uses phone portrait controls; PC uses mouse and keyboard.'),
+  optionViewDistance:tip('View distance','The maximum terrain horizon. This build fixes it at one kilometer so quality controls change representation, not world reach.','Mountains may become larger voxels with distance but should remain visible to 1 km.'),
+  optionLightingQuality:tip('Lighting quality','Chooses how much neighboring-surface information is used to soften voxel lighting. It never quantizes the whole screen.','Full soft reduces harsh seams on fine stone; Hard is fastest and more angular.'),
+  optionMaterialQuality:tip('Material quality','Controls how material color variation is evaluated. Every result still uses the official palette.','Stable hashed keeps deterministic mild texture; Solid uses one shade.'),
+  optionCloudQuality:tip('Cloud quality','Chooses whether voxel clouds are hidden, sampled on a coarse grid, or refined on a finer grid.','Fine weather voxels make cloud edges more detailed but cost more GPU time.'),
+  optionWaterQuality:tip('Water shader quality','Controls visible flow facets, transparency, and reflections. The water simulation itself is configured separately under Server.','Reflective voxel water adds the richest surface; Solid is the least expensive.'),
+  distanceGradientTrack:tip('Four-stage detail distance editor','The four handles mark where the renderer changes voxel scale: Detail, Near, Far, and Background. They remain ordered so transitions cannot cross.','Moving Near farther right keeps smaller voxels visible farther away and costs more.'),
+  distanceStopDetail:tip('Detail voxel boundary','The end of the finest close-up voxel band, intended for direct interaction.','At 20 feet, fine grass blades and rounded pebbles remain fully resolved to that distance.'),
+  distanceStopNear:tip('Near-detail boundary','The end of the next coarser band after close-up detail.','At 50 feet, nearby Resources retain clear shapes before entering far detail.'),
+  distanceStopFar:tip('Far-detail boundary','The end of ordinary scene voxels before the landscape moves to large background representation.','At 400 feet, trees and terrain use cheaper shapes beyond this point.'),
+  distanceStopBackground:tip('Background boundary','Marks where the coarsest, impressionistic landscape band begins. The terrain remains a three-dimensional mathematical view.','At 500 feet, mountains transition to large, efficient horizon voxels.'),
+  optionFarVoxel:tip('Far voxel size','Sets the spatial size of voxels used in the far band. Larger values reduce work but look chunkier.','Two-meter far voxels are faster than half-meter voxels at the same distance.'),
+  optionBackgroundVoxel:tip('Background voxel size','Sets the coarsest terrain sample size used near the horizon.','Sixteen-meter voxels form an efficient impressionistic mountain silhouette.'),
+  optionBackgroundMode:tip('Background style','Chooses how distant mathematical terrain is presented. All modes query the same island rather than drawing unrelated mountains.','1 km voxel horizon keeps the world three-dimensional through distant fog.'),
+  optionBugtesting:tip('Bugtesting mode','Shows Copy buttons that package an option value and its related detail settings into a portable diagnostic ID.','Copy a setting ID when reporting a visual or performance problem.'),
+  optionFogEnabled:tip('Atmospheric fog','Adds distance haze so terrain approaches the sky color gradually. It does not remove the one-kilometer horizon.','Turning fog off makes far voxel boundaries more obvious.'),
+  optionFogStart:tip('Fog start distance','Sets how far from the camera atmospheric blending begins.','A larger distance keeps middle-distance colors clearer.'),
+  optionFogDensity:tip('Fog density','Controls how quickly atmospheric blending strengthens after it begins.','Higher density hides distant contrast sooner while preserving geometry.'),
+  optionStreamBudget:tip('Streaming time per frame','Limits how much CPU time background voxel preparation may use during one displayed frame.','A smaller budget protects smooth motion but takes more frames to refine nearby detail.'),
+  optionVegetationDetail:tip('Vegetation geometry','Chooses between cheaper plant silhouettes and complete procedural Resource geometry.','Full Resource geometry shows detailed leaves and branches nearby.'),
+  optionFov:tip('Field of view','Sets the horizontal viewing angle. Wider views show more of the world but make objects appear smaller.','About 70° feels natural on many desktop screens.'),
+  optionTooltipsEnabled:tip('Tooltips on or off','Shows or hides these custom explanations. Keyboard focus uses the same setting. Tooltip History remains available after tooltips are turned off.','Turn this off once the controls are familiar; turn it on whenever you need help.'),
+  optionTooltipDelay:tip('Tooltip hover delay','Sets how long the pointer must rest on a subject before its explanation appears. Keyboard focus remains immediate.','Zero appears immediately; 700 ms avoids help appearing during quick pointer movement.'),
+  optionTooltipFontSize:tip('Tooltip font size','Changes only the explanation text, making technical help easier to read without enlarging every game window.','Increasing this to 17 px makes tooltips more readable on a tablet.'),
+  optionTooltipPlacement:tip('Tooltip position','Chooses whether help follows the pointer, anchors beside the subject, stays inside its tool window, or uses a fixed screen corner. Every mode clamps to the visible screen.','Upper-right screen keeps explanations still while you compare several controls.'),
+  serverTime:tip('Time of day','Sets the world hour and updates sun direction, lighting, and sky color.','18.0h produces evening light; 12.0h places the sun near midday.'),
+  serverGravity:tip('Gravity','Sets downward acceleration in meters per second squared. The default is close to Earth gravity.','10 m/s² makes a 1.5 m player fall and jump with familiar weight.'),
+  serverWaterEnabled:tip('Water flow simulation','Runs or freezes water-state updates. Frozen water remains visible but does not move.','Running water falls when support is removed and spreads into lower cells.'),
+  serverWaterBudget:tip('Water update budget','Limits how many water cells may be processed during one simulation turn.','A larger budget settles floods sooner but uses more CPU time.'),
+  serverWaterSpread:tip('Lateral water spread','Controls how eagerly water tries nearby sideways cells after gravity has been considered.','Higher spread fills shallow basins faster.'),
+  serverNaturalSources:tip('Natural spring behavior','Chooses whether mathematical springs renew their water or have a finite stored amount.','Renewing springs continue feeding a stream after downstream water moves.'),
+  worldMapCanvas:tip('Heightmap and fast travel','Shows the supplied island elevation field and your current location. Selecting land moves you to a location whose terrain and ecology already exist mathematically.','Click a mountain valley to arrive there immediately; fine voxels refine around you afterward.')
+});
+const OPTION_VALUE_TOOLTIPS=Object.freeze({
+  autopilotMode:{trail:tip('Follow natural trails','Favors connected low-impact paths inferred from slope, exposed soil, and dry drainage.','The route should bend along plausible animal or erosion trails.'),contour:tip('Contour survey','Favors movement that stays near the current elevation while avoiding unsafe slopes.','The route should wrap around hills instead of climbing directly.'),coast:tip('Water-edge survey','Follows safe traversable ground near water without entering deep cells.','The route should trace stream banks and shorelines.'),meander:tip('Natural meander','Blends safety with slowly changing seeded headings for broad wandering.','The route should wander smoothly without repeating a short circle.'),regions:tip('Region stress circuit','Deliberately crosses mathematical 100 × 100 m boundaries to test handoffs and memory bounds.','The telemetry should remain bounded while many regions are crossed.'),straight:tip('Straight traversal','Attempts one persistent heading and steers only for safety.','This is a direct stress test for predictive loading ahead.')},
+  autopilotCamera:{'1':tip('Follow travel','Turns the camera toward the smoothed navigation heading.','You see the route Autopilot is evaluating.'),'0':tip('Keep current view','Leaves camera direction under player control while Autopilot moves.','You can inspect sideways while the body follows its route.')},
+  designerPattern:{'0':tip('Solid','Uses the base palette shade without procedural variation.','The material appears calm and uniform.'),'1':tip('Granular','Uses small independent grains of adjacent palette shades.','Sand and grass gain crisp speckled texture.'),'2':tip('Soft fBm','Blends several sizes of smooth fractal noise. fBm means fractional Brownian motion.','Stone gains broad, softly nested color variation.'),'3':tip('Warped strata','Bends layered bands through a second noise field.','Soil and rock gain irregular geological streaks instead of flat stripes.'),'4':tip('Cellular aggregate','Measures distance to seeded cells to form clustered pieces.','Pebbles or mineral grains appear as joined patches.'),'5':tip('Mineral veins','Builds narrow directional seams through the base shade.','Rock gains pale or dark vein-like lines.'),'6':tip('Mixed geology','Combines soft fields, grains, and sparse seams.','Complex stone shows several related structures without leaving the palette.')},
+  resourceFractal:{'none':tip('No growth modifier','Uses only the primitive and graph stages.','A simple boulder keeps its base shape.'),'fBm':tip('Fractal Brownian motion','Adds several nested scales of smooth variation.','Rock gains large bulges with smaller surface changes.'),'ridged':tip('Ridged multifractal','Folds noise into sharp crests and repeated ridges.','Mountain-like or bark-like ridges stand out.'),'cellular':tip('Cellular field','Partitions space around deterministic seed points.','Stone can break into clustered grains or plates.'),'domain warp':tip('Domain warp','Bends one mathematical field through another before sampling it.','Bands and growth lines curve naturally instead of staying straight.'),'L-system':tip('L-system','Repeats symbolic growth rules into branches and terminals.','Ferns and structured plants gain recursive, self-similar form.'),'space colonization':tip('Space colonization','Grows branches toward available target points and removes targets once reached.','Tree crowns fill an irregular volume without evenly spaced placeholder branches.'),'phyllotaxis':tip('Phyllotaxis','Places repeated parts using botanical angular spacing.','Leaves, petals, or scales form efficient spirals.'),'branching':tip('Recursive branching','Splits parent paths into seeded child paths using graph angles and densities.','Trees gain nested limbs from trunk to twig.'),'root network':tip('Root network','Spreads branching paths through or along the ground with downward preference.','Roots fork around obstacles and anchor a trunk.'),'vein network':tip('Vein network','Forms connected lines that distribute from larger paths into smaller ones.','Leaves or minerals gain hierarchical veins.'),'coral growth':tip('Coral growth','Uses repeated attraction and branching with clustered terminals.','A Resource develops dense organic fingers.'),'cluster aggregation':tip('Cluster aggregation','Accumulates seeded particles into an irregular connected mass.','Minerals form natural clumps instead of perfect spheres.')},
+  optionTooltipPlacement:{pointer:tip('Smart near pointer','Places help above and to the right of the pointer, flipping and clamping whenever an edge blocks it.','The tooltip stays close to what you are exploring without leaving the screen.'),subject:tip('Beside subject','Anchors help to the control’s upper-right edge and flips to the other side when needed.','The tooltip remains steady when the pointer moves within one slider.'),window:tip('Inside active window','Places help near the upper-right inside the containing tool window.','Resource explanations stay in the Resource Editor instead of covering the world.'),'screen-top':tip('Upper-right screen','Uses a stable upper-right screen position below the menu bar.','Several controls can be compared without moving the tooltip box.'),'screen-bottom':tip('Lower-right screen','Uses a stable lower-right screen position.','Help stays away from top menus and title bars.')}
+});
+function humanizeTooltipText(text){return String(text||'').replace(/[·_]/g,' ').replace(/\s+/g,' ').trim();}
+function genericTooltipEntry(el){
+  const label=humanizeTooltipText(el.getAttribute('aria-label')||el.closest('label')?.childNodes[0]?.textContent||document.querySelector(`label[for="${CSS.escape(el.id||'')}"]`)?.textContent||el.textContent||el.id||'This control');
+  if(el.tagName==='SELECT')return tip(label,`Choose how ${label.toLowerCase()} behaves. Hovering or selecting each choice shows a more specific explanation.`,`Changing this choice updates the related preview or setting.`);
+  if(el.matches('input[type="range"]'))return tip(label,`Adjust ${label.toLowerCase()} continuously. The value beside the control shows the current setting.`,`Moving the slider should produce an immediate, visible or reported change.`);
+  if(el.tagName==='SUMMARY')return tip(label,`Opens or closes the ${label.toLowerCase()} group without changing any values.`,`Expand it to inspect the controls inside.`);
+  if(el.tagName==='BUTTON')return tip(label,`Runs ${label.toLowerCase()} using the values currently shown in this window.`,`The status or preview should acknowledge the action immediately.`);
+  return tip(label,`Explains the current ${label.toLowerCase()} readout or interactive subject.`,`Use the related controls to see this result update.`);
+}
+function applyTechnicalTooltip(el,entry){if(!el||!entry)return;el._dremplayTooltip=entry;el.dataset.hasTooltip='true';if(el.hasAttribute('title')){el.dataset.originalTitle=el.getAttribute('title');el.removeAttribute('title');}if(el.tagName==='OPTION')el.setAttribute('aria-label',`${entry.title}. ${entry.body}`);}
+function selectedOptionTooltip(select){const option=select.selectedOptions?.[0];return option?option._dremplayTooltip:null;}
+function resolvedTooltipEntry(el){let entry=el?.tagName==='SELECT'?selectedOptionTooltip(el)||el._dremplayTooltip:el?._dremplayTooltip;if(!entry)return null;if(el.matches?.('input[type="range"]'))entry={...entry,example:`${entry.example}${entry.example?' ':''}Current value: ${el.value}.`};return entry;}
+function tooltipOptionEntry(select,option){return OPTION_VALUE_TOOLTIPS[select.id]?.[option.value]||tip(humanizeTooltipText(option.textContent),`Selects “${humanizeTooltipText(option.textContent)}” for ${humanizeTooltipText(document.querySelector(`label[for="${CSS.escape(select.id)}"]`)?.textContent||select.id).toLowerCase()}.`,`The control applies this choice and its related preview or readout updates.`);}
+function hydrateTechnicalTooltips(root=document){
+  for(const [id,entry] of Object.entries(TECHNICAL_TOOLTIPS)){const control=document.getElementById(id);if(!control)continue;applyTechnicalTooltip(control,entry);const label=document.querySelector(`label[for="${CSS.escape(id)}"]`);if(label)applyTechnicalTooltip(label,entry);}
+  const scopes=['#loadingOverlay','#materialDesigner','#resourceDesigner','#autopilotWindow','#optionsWindow','#serverWindow','#mapWindow','#tooltipLogWindow'];
+  root.querySelectorAll(scopes.map(scope=>`${scope} label,${scope} summary,${scope} button,${scope} select,${scope} input,${scope} canvas,${scope} pre,${scope} [aria-live="polite"]`).join(',')).forEach(el=>{if(!el._dremplayTooltip)applyTechnicalTooltip(el,genericTooltipEntry(el));if(el.tagName==='SELECT')for(const option of el.options)applyTechnicalTooltip(option,tooltipOptionEntry(el,option));});
+  document.querySelectorAll('.menu-item,.menu-button').forEach(el=>{if(!el._dremplayTooltip)applyTechnicalTooltip(el,genericTooltipEntry(el));});
+}
+function saveTooltipPreferences(){try{localStorage.setItem(TOOLTIP_STORAGE_KEY,JSON.stringify(tooltipPreferences));}catch{}document.documentElement.style.setProperty('--tooltip-font-size',`${tooltipPreferences.fontSize}px`);}
+function tooltipPlacementLabel(){return {pointer:'Pointer',subject:'Subject',window:'Window','screen-top':'Upper right','screen-bottom':'Lower right'}[tooltipPreferences.placement]||'Pointer';}
+function syncTooltipPreferenceControls(){
+  const enabled=document.getElementById('optionTooltipsEnabled'),delay=document.getElementById('optionTooltipDelay'),font=document.getElementById('optionTooltipFontSize'),placement=document.getElementById('optionTooltipPlacement');if(!enabled)return;
+  enabled.value=tooltipPreferences.enabled?'1':'0';delay.value=String(tooltipPreferences.delay);font.value=String(tooltipPreferences.fontSize);placement.value=tooltipPreferences.placement;
+  document.getElementById('optionTooltipsEnabledValue').textContent=tooltipPreferences.enabled?'On':'Off';document.getElementById('optionTooltipDelayValue').textContent=`${tooltipPreferences.delay} ms`;document.getElementById('optionTooltipFontSizeValue').textContent=`${tooltipPreferences.fontSize} px`;document.getElementById('optionTooltipPlacementValue').textContent=tooltipPlacementLabel();saveTooltipPreferences();
+}
+function positionTechnicalTooltip(target){
+  if(technicalTooltip.hidden)return;const margin=8,gap=14,width=technicalTooltip.offsetWidth,height=technicalTooltip.offsetHeight,rect=target.getBoundingClientRect(),windowHost=target.closest('.tool-window,#loadingOverlay');let x=tooltipPointer.x+gap,y=tooltipPointer.y-height-gap;
+  if(tooltipPreferences.placement==='subject'){x=rect.right+gap;y=rect.top;}
+  else if(tooltipPreferences.placement==='window'&&windowHost){const host=windowHost.getBoundingClientRect();x=host.right-width-10;y=host.top+38;}
+  else if(tooltipPreferences.placement==='screen-top'){x=innerWidth-width-12;y=42;}
+  else if(tooltipPreferences.placement==='screen-bottom'){x=innerWidth-width-12;y=innerHeight-height-12;}
+  if(tooltipPreferences.placement==='pointer'&&x+width>innerWidth-margin)x=tooltipPointer.x-width-gap;if(tooltipPreferences.placement==='pointer'&&y<margin)y=tooltipPointer.y+gap;
+  if(tooltipPreferences.placement==='subject'&&x+width>innerWidth-margin)x=rect.left-width-gap;if(tooltipPreferences.placement==='subject'&&y+height>innerHeight-margin)y=rect.bottom-height;
+  x=Math.max(margin,Math.min(innerWidth-width-margin,x));y=Math.max(margin,Math.min(innerHeight-height-margin,y));technicalTooltip.style.left=`${Math.round(x)}px`;technicalTooltip.style.top=`${Math.round(y)}px`;
+}
+function renderTooltipHistory(){
+  tooltipHistoryList.replaceChildren();const fragment=document.createDocumentFragment();for(const entry of tooltipHistory.slice().reverse()){const row=document.createElement('div');row.className='tooltip-history-entry';const time=document.createElement('span');time.className='tooltip-history-time';time.textContent=entry.time;const title=document.createElement('strong');title.textContent=entry.title;const body=document.createElement('span');body.textContent=entry.body;row.append(time,title,body);if(entry.example){const example=document.createElement('em');example.textContent=`Expected result: ${entry.example}`;row.appendChild(example);}fragment.appendChild(row);}tooltipHistoryList.appendChild(fragment);tooltipHistoryStatus.textContent=tooltipHistory.length?`${tooltipHistory.length} explanation${tooltipHistory.length===1?'':'s'} viewed this session.`:'No tooltips viewed yet.';
+}
+function recordTooltipHistory(entry){const key=`${entry.title}|${entry.body}|${entry.example}`,now=performance.now();if(key===tooltipLastHistoryKey&&now-tooltipLastHistoryAt<2500)return;tooltipLastHistoryKey=key;tooltipLastHistoryAt=now;tooltipHistory.push({...entry,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})});if(tooltipHistory.length>200)tooltipHistory.shift();renderTooltipHistory();}
+function restoreTooltipDescription(target){if(!target)return;if(target._dremplayPriorDescribedBy)target.setAttribute('aria-describedby',target._dremplayPriorDescribedBy);else target.removeAttribute('aria-describedby');delete target._dremplayPriorDescribedBy;}
+function showTechnicalTooltip(target,record=true){
+  clearTimeout(tooltipShowTimer);if(!tooltipPreferences.enabled||!target?.isConnected)return;const entry=resolvedTooltipEntry(target);if(!entry)return;if(tooltipActiveTarget&&tooltipActiveTarget!==target)restoreTooltipDescription(tooltipActiveTarget);if(tooltipActiveTarget!==target)target._dremplayPriorDescribedBy=target.getAttribute('aria-describedby')||'';tooltipActiveTarget=target;technicalTooltipTitle.textContent=entry.title;technicalTooltipBody.textContent=entry.body;technicalTooltipExample.textContent=entry.example?`Expected result: ${entry.example}`:'';technicalTooltipExample.hidden=!entry.example;technicalTooltip.hidden=false;target.setAttribute('aria-describedby','technicalTooltip');positionTechnicalTooltip(target);if(record)recordTooltipHistory(entry);
+}
+function hideTechnicalTooltip(target=tooltipActiveTarget){clearTimeout(tooltipShowTimer);if(target&&target===tooltipActiveTarget)restoreTooltipDescription(target);tooltipActiveTarget=null;technicalTooltip.hidden=true;}
+function scheduleTechnicalTooltip(target,immediate=false){clearTimeout(tooltipShowTimer);if(!tooltipPreferences.enabled)return;const delay=immediate?0:tooltipPreferences.delay;tooltipShowTimer=setTimeout(()=>showTechnicalTooltip(target),delay);}
+document.addEventListener('pointermove',event=>{tooltipPointer={x:event.clientX,y:event.clientY};if(tooltipActiveTarget&&tooltipPreferences.placement==='pointer')positionTechnicalTooltip(tooltipActiveTarget);},{passive:true});
+document.addEventListener('pointerover',event=>{const target=event.target instanceof Element?event.target.closest('[data-has-tooltip="true"]'):null;if(!target||target===tooltipActiveTarget)return;scheduleTechnicalTooltip(target);});
+document.addEventListener('pointerout',event=>{const target=event.target instanceof Element?event.target.closest('[data-has-tooltip="true"]'):null;if(!target)return;const related=event.relatedTarget instanceof Element?event.relatedTarget.closest('[data-has-tooltip="true"]'):null;if(related===target)return;if(target===tooltipActiveTarget)hideTechnicalTooltip(target);else clearTimeout(tooltipShowTimer);});
+document.addEventListener('focusin',event=>{const target=event.target instanceof Element?event.target.closest('[data-has-tooltip="true"]'):null;if(target)scheduleTechnicalTooltip(target,true);});
+document.addEventListener('focusout',event=>{if(event.target===tooltipActiveTarget)hideTechnicalTooltip(event.target);});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!technicalTooltip.hidden)hideTechnicalTooltip();});
+addEventListener('resize',()=>{if(tooltipActiveTarget)positionTechnicalTooltip(tooltipActiveTarget);});
+document.addEventListener('input',event=>{const target=event.target;if(!(target instanceof Element))return;if(target.tagName==='SELECT'){for(const option of target.options)if(!option._dremplayTooltip)applyTechnicalTooltip(option,tooltipOptionEntry(target,option));}if(target===tooltipActiveTarget)showTechnicalTooltip(target,false);});
+document.getElementById('optionTooltipsEnabled').addEventListener('change',event=>{tooltipPreferences.enabled=event.target.value==='1';syncTooltipPreferenceControls();if(!tooltipPreferences.enabled)hideTechnicalTooltip();});
+document.getElementById('optionTooltipDelay').addEventListener('input',event=>{tooltipPreferences.delay=Number(event.target.value);syncTooltipPreferenceControls();});
+document.getElementById('optionTooltipFontSize').addEventListener('input',event=>{tooltipPreferences.fontSize=Number(event.target.value);syncTooltipPreferenceControls();if(tooltipActiveTarget)positionTechnicalTooltip(tooltipActiveTarget);});
+document.getElementById('optionTooltipPlacement').addEventListener('change',event=>{tooltipPreferences.placement=event.target.value;syncTooltipPreferenceControls();if(tooltipActiveTarget)positionTechnicalTooltip(tooltipActiveTarget);});
+document.getElementById('tooltipHistoryClear').addEventListener('click',()=>{tooltipHistory=[];tooltipLastHistoryKey='';renderTooltipHistory();});
+document.getElementById('tooltipHistoryCopy').addEventListener('click',async()=>{const text=tooltipHistory.map(entry=>`${entry.time}\t${entry.title}\n${entry.body}${entry.example?`\nExpected result: ${entry.example}`:''}`).join('\n\n');try{await navigator.clipboard.writeText(text);}catch{const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();document.execCommand('copy');area.remove();}tooltipHistoryStatus.textContent=text?'Tooltip History copied.':'There is no Tooltip History to copy yet.';});
+let tooltipHydrationQueued=false;new MutationObserver(()=>{if(tooltipHydrationQueued)return;tooltipHydrationQueued=true;queueMicrotask(()=>{tooltipHydrationQueued=false;hydrateTechnicalTooltips();});}).observe(document.body,{childList:true,subtree:true});
+hydrateTechnicalTooltips();syncTooltipPreferenceControls();renderTooltipHistory();
 
 //////////////////////////////////////////////////////////////////////////
 // CHUNKED VOXEL WORLD (streaming ready)
@@ -2297,15 +2490,22 @@ const CONVEYOR_PACKETS={
   ready:{label:'AI verdict: ready',gap:18,items:['Task complete','Checks accepted','World coherent','Water stable','Horizon resident','Resources indexed','Ready to play','Monitor observing']}
 };
 const AI_PHASE_COPY={ai:'semantic task classification and telemetry fusion',statistics:'seed-distribution and reproducibility analysis',signal:'multi-octave statistical signal synthesis',inference:'conditional landscape-field classification',terrain:'deterministic terrain-material inference',resources:'seeded biological Resource growth',water:'volume-conserving cellular state transition',assemble:'resident tensor and provenance assembly',audit:'distribution, bounds, and consistency analysis',upload:'typed GPU tensor encoding and atomic commit',prediction:'heading evidence and directional sector scoring',prefetch:'queue-depletion forecast for predicted terrain',far:'kilometer atlas sampling and horizon inference',weather:'orographic voxel-weather estimation',recover:'cache-miss recovery and staged ring transition',frame:'frame-cost telemetry and anomaly observation',ready:'all required checks accepted; passive observation'};
+const CONVEYOR_PHASE_HELP={
+  ai:'Observes task progress and turns raw measurements into a stable loading estimate.',statistics:'Turns coordinates and seeds into repeatable variation; the same place always receives the same result.',signal:'Combines smooth mathematical patterns at several sizes to describe natural variation.',inference:'Classifies landscape conditions such as valley, slope, moisture, erosion, snow, and pools.',terrain:'Queries the permanent landscape equation for height, layers, material, rivers, and exposed rock.',resources:'Evaluates deterministic plant, tree, stone, and fungi definitions only at the detail currently useful.',water:'Moves measured water volume downward first, then sideways, while checking that volume is conserved.',assemble:'Packs prepared terrain, Resource identity, and weather data into the bounded moving view.',audit:'Checks ranges, seams, palette values, water bounds, and identity data before accepting work.',upload:'Encodes prepared arrays in formats the GPU can read and commits complete updates atomically.',prediction:'Uses recent movement and view direction to prioritize complete regions ahead of the player.',prefetch:'Keeps predicted terrain ready before the player reaches the edge of the current detailed cache.',far:'Samples the island height field into an inexpensive three-dimensional one-kilometer horizon.',weather:'Uses elevation, humidity, and wind to form and move voxel clouds.',recover:'Repairs a missing view section by staging a complete replacement before it becomes visible.',frame:'Measures display cost and schedules background work without knowingly stealing the whole frame.',ready:'Reports that required checks passed. Optional background observation may continue.'
+};
+const CONVEYOR_TERM_HELP={
+  'Task token':'A small identity record that lets the monitor associate progress with the correct task.','Semantic phase':'A friendly category inferred from the current technical operation.','Coordinate hash':'A fast repeatable conversion from world coordinates to a seed-like number.','Math.imul':'Exact 32-bit integer multiplication used to make coordinate hashing consistent across browsers.','Value lattice':'A grid of deterministic values that can be blended into a smooth field.','Quintic fade':'A smooth interpolation curve whose flat ends prevent visible corners between noise cells.','Continental field':'A broad elevation signal that defines island-scale high and low areas.','Valley likelihood':'A score estimating whether a point lies inside a drainage valley.','Alluvial mask':'A field estimating where water-carried sediment should collect.','Mountain relief':'The large-scale difference between ridges, slopes, and valley floors.','Instance seed':'The repeatable number that gives one Resource individual its natural variation.','Size distribution':'A bounded rule that produces varied natural sizes without extreme accidents.','Eight-level volume':'Water stored in eight small fill levels so partial cells can flow without full fluid geometry.','Gravity priority':'The rule that water checks downward movement before sideways spreading.','Chunk key':'The compact world-coordinate identity of one editable voxel block.','X-row copy':'A contiguous memory copy used to move a prepared row efficiently.','Seam hash':'A compact comparison used to verify neighboring region edges agree.','Height extrema':'The lowest and highest values found during a bounds check.','R8UI volume':'An eight-bit unsigned integer 3D texture used for compact voxel material IDs.','texImage3D':'The WebGL command that allocates or replaces a complete three-dimensional texture.','Heading EMA':'A smoothed movement direction; EMA means recent headings count more than older ones.','Camera vector':'The direction the view faces, used as evidence for what terrain will matter next.','Frontier deque':'A two-ended work queue holding the next predicted landscape sectors.','12.8 m sector':'A complete square preparation unit used for atomic near-field handoff.','65,536 samples':'A 256 × 256 compact field used to describe distant terrain efficiently.','10 m texel':'One far-field height sample representing roughly ten meters of landscape.','Terrain weather':'A compact elevation and moisture field used by cloud formation.','Orographic lift':'Air rising over hills and mountains, which encourages cloud formation on the windward side.','texSubImage3D':'The WebGL command that replaces only a prepared part of an existing 3D texture.','Broad slab':'A wide complete section committed together so movement does not reveal thin loading strips.','Frame timer':'A measurement of how long the current displayed frame takes.','Raymarch submit':'The GPU draw that traces the voxel view for the current frame.','Task complete':'The required preparation pass has finished.','Checks accepted':'Bounds and consistency tests passed for the prepared view.'
+};
+function conveyorTooltip(phase,label,isCategory=false){const body=isCategory?CONVEYOR_PHASE_HELP[phase]:CONVEYOR_TERM_HELP[label]||`${label} is one named operation inside ${CONVEYOR_PACKETS[phase].label.toLowerCase()}. ${CONVEYOR_PHASE_HELP[phase]}`;return tip(label,body,isCategory?'Items in this category highlight when that kind of work is active.':'The operation contributes to a stable, repeatable view without changing the underlying mathematical world.');}
 let conveyorPhase='',loadingActive=true;
 function buildConveyorTrack(){
   const track=document.createElement('div');track.className='packet-set';
   for(const [phase,config] of Object.entries(CONVEYOR_PACKETS)){
     const group=document.createElement('div');group.className='packet-group';group.style.setProperty('--group-gap',`${config.gap}px`);
-    const category=document.createElement('span');category.className='packet-category';category.dataset.phase=phase;category.textContent=config.label;group.appendChild(category);
+    const category=document.createElement('span');category.className='packet-category';category.dataset.phase=phase;category.textContent=config.label;category.setAttribute('role','listitem');applyTechnicalTooltip(category,conveyorTooltip(phase,config.label,true));group.appendChild(category);
     // Two representative operations per category keep the whole immutable
     // task sequence visible without creating a 30,000 px mobile GPU layer.
-    for(const label of config.items.slice(0,2)){const item=document.createElement('span');item.dataset.phase=phase;item.textContent=label;group.appendChild(item);}
+    for(const label of config.items.slice(0,2)){const item=document.createElement('span');item.dataset.phase=phase;item.textContent=label;item.setAttribute('role','listitem');applyTechnicalTooltip(item,conveyorTooltip(phase,label,false));group.appendChild(item);}
     track.appendChild(group);
   }
   return track;
@@ -2370,22 +2570,23 @@ function updateLoadingIntelligence(phase,pct){
   if(phase!==loadingEstimator.phase||pct<loadingEstimator.progress){loadingEstimator={phase,progress:pct,time:now,rate:0};}
   else if(pct>loadingEstimator.progress){const instant=(pct-loadingEstimator.progress)/elapsed;loadingEstimator.rate=loadingEstimator.rate?loadingEstimator.rate*.72+instant*.28:instant;loadingEstimator.progress=pct;loadingEstimator.time=now;}
   const eta=loadingEstimator.rate>.02&&pct<99.95?` · EWMA ETA ${Math.min(999,(100-pct)/loadingEstimator.rate).toFixed(1)} s`:'';
-  loadingIntelligence.textContent=`AI observer · inference: ${AI_PHASE_COPY[phase]||AI_PHASE_COPY.ai} · estimate ${pct.toFixed(1)}%${eta}`;
+  loadingIntelligence.textContent=`AI observer · inference: ${AI_PHASE_COPY[phase]||AI_PHASE_COPY.ai} · estimate ${pct.toFixed(1)}%${eta}`;applyTechnicalTooltip(loadingIntelligence,tip('AI loading observer',`${CONVEYOR_PHASE_HELP[phase]||CONVEYOR_PHASE_HELP.ai} The percentage is smoothed from recent accepted work; EWMA means newer measurements count more than older ones.`,`The estimate should become steadier as this category continues.`));if(tooltipActiveTarget===loadingIntelligence)showTechnicalTooltip(loadingIntelligence,false);
 }
 let engineReady=false;
 let bootLoadStarted=0;
 let initialLoadToken=0,testZoneMode=false,activeMinimumBootMs=MINIMUM_BOOT_PRELOAD_MS;
-let loadingLogLines=[],loadingLogPaintPending=false,lastLoadingLogPaint=0;
-function paintLoadingLog(){loadingLogPaintPending=false;lastLoadingLogPaint=performance.now();const followTail=loadingConsole.scrollHeight-loadingConsole.clientHeight-loadingConsole.scrollTop<12;loadingConsole.textContent=loadingLogLines.join('\n');if(followTail)loadingConsole.scrollTop=loadingConsole.scrollHeight;}
+let loadingLogLines=[],loadingLogPending=[],loadingLogPaintPending=false,lastLoadingLogPaint=0;
+function loadingLogTooltip(station,detail){const phase=phaseForLoadingTask(`${station} ${detail}`),body=CONVEYOR_PHASE_HELP[phase]||CONVEYOR_PHASE_HELP.ai;return tip(station,`${body} This line records the specific values reported by that step.`,`The detail after the station name shows what was accepted, measured, queued, or committed.`);}
+function paintLoadingLog(){loadingLogPaintPending=false;lastLoadingLogPaint=performance.now();const followTail=loadingConsole.scrollHeight-loadingConsole.clientHeight-loadingConsole.scrollTop<12,fragment=document.createDocumentFragment();for(const entry of loadingLogPending.splice(0)){const row=document.createElement('div');row.className='loading-log-line';row.textContent=entry.text;applyTechnicalTooltip(row,loadingLogTooltip(entry.station,entry.detail));fragment.appendChild(row);}loadingConsole.appendChild(fragment);while(loadingConsole.children.length>300)loadingConsole.firstElementChild.remove();if(followTail)loadingConsole.scrollTop=loadingConsole.scrollHeight;}
 function loadingLog(station,detail){
   const seconds=bootLoadStarted?((performance.now()-bootLoadStarted)/1000).toFixed(1):'0.0';
-  loadingLogLines.push(`${seconds.padStart(5,' ')}s  ${station.padEnd(14,' ')} ${detail}`);loadingLogLines=loadingLogLines.slice(-300);
+  const entry={text:`${seconds.padStart(5,' ')}s  ${station.padEnd(14,' ')} ${detail}`,station,detail};loadingLogLines.push(entry);loadingLogPending.push(entry);loadingLogLines=loadingLogLines.slice(-300);
   if(!loadingLogPaintPending){loadingLogPaintPending=true;const delay=Math.max(0,100-(performance.now()-lastLoadingLogPaint));setTimeout(paintLoadingLog,delay);}
 }
 function showLoading(text,progress=0,streaming=false){
   const phase=phaseForLoadingTask(text);setConveyorPhase(phase);loadingActive=phase!=='ready';
   loadingClose.disabled=false;loadingClose.setAttribute('aria-disabled','false');
-  loadingOverlay.classList.toggle('streaming',streaming);loadingText.textContent=text;
+  loadingOverlay.classList.toggle('streaming',streaming);loadingText.textContent=text;applyTechnicalTooltip(loadingText,tip(text,CONVEYOR_PHASE_HELP[phase]||CONVEYOR_PHASE_HELP.ai,phase==='ready'?'The required view is ready; optional observation can continue.':'The percentage and detailed log show this task advancing.'));if(tooltipActiveTarget===loadingText)showTechnicalTooltip(loadingText,false);
   const pct=Math.max(0,Math.min(1,progress))*100;loadingPercent.textContent=`${pct.toFixed(1)}%`;loadingFill.style.width=`${pct.toFixed(3)}%`;updateLoadingIntelligence(phase,pct);
   loadingWindowTitle.textContent=loadingOverlay.classList.contains('minimized')?`AI ${loadingActive?'Loading':'Ready'} · ${pct.toFixed(0)}%`:'AI Loading Monitor';
 }
@@ -2490,7 +2691,7 @@ function beginInitialWorldLoad(useTestZone=false){
   chunkValidityGrid=new Uint8Array((activeGridSizeX/CHUNK_SIZE)*LOADED_CHUNKS_Y*(activeGridSizeZ/CHUNK_SIZE));
   occupancyGrid=new Uint8Array(activeOccupancyBytes());
   terrainWeatherGrid=new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
-  loadingLogLines=[];loadingLog('Heightmap atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · ${DREMPLAY_EXAMPLE_WORLD.islandWidthMeters/1000}×${DREMPLAY_EXAMPLE_WORLD.islandLengthMeters/1000} km island · ${DREMPLAY_EXAMPLE_WORLD.interpolation} interpolation · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','8,100 immutable 100×100 m squares indexed across the 9 km atlas; runtime terrain generation disabled');
+  loadingLogLines=[];loadingLogPending=[];loadingConsole.replaceChildren();loadingLog('Heightmap atlas',`${DREMPLAY_EXAMPLE_WORLD.name} v${DREMPLAY_EXAMPLE_WORLD.version} · ${DREMPLAY_EXAMPLE_WORLD.islandWidthMeters/1000}×${DREMPLAY_EXAMPLE_WORLD.islandLengthMeters/1000} km island · ${DREMPLAY_EXAMPLE_WORLD.interpolation} interpolation · ${(DREMPLAY_EXAMPLE_WORLD.bytes.byteLength/1048576).toFixed(1)} MiB decoded`);loadingLog('Region directory','8,100 immutable 100×100 m squares indexed across the 9 km atlas; runtime terrain generation disabled');
   const jobs=[];
   const residentMinCX=Math.floor(windowMinX/CHUNK_SIZE),residentMinCZ=Math.floor(windowMinZ/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE);
   const span=useTestZone?TEST_ZONE_CHUNKS_XZ:LOADED_CHUNKS_XZ+BOOT_PREFETCH_MARGIN*2;
@@ -3780,7 +3981,7 @@ function syncOptionsWindow(){
   optionResolution.value=Number(pendingRenderScale).toFixed(2);optionPlatformMode.value=platformMode;optionViewDistance.value=String(viewDistanceMeters);optionLightingQuality.value=String(lightingQuality);optionMaterialQuality.value=String(materialQuality);optionCloudQuality.value=String(cloudQuality);optionWaterQuality.value=String(waterRenderQuality);
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
-  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();
+  document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();syncTooltipPreferenceControls();
   document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','1 km voxel horizon'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;syncDistanceEditor();
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
   optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky voxels','atmospheric projection','one-kilometer voxel horizon'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m exact-parent radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
