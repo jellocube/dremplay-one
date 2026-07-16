@@ -2,7 +2,7 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.5.3**
+Current release: **v0.0.1.6.6**
 
 ## Project overview
 
@@ -11,6 +11,16 @@ Dremplay One is a browser-first Infinite Detail Voxel Engine for explorable, edi
 The project combines a supplied 4.5 × 7.5 km island height field with mathematical biome rules, multiresolution voxel clipmaps, fractal Resource definitions, editable sparse overrides, water simulation, and atmospheric distance projections. It is designed to run directly on the web across laptops, iPads, and modern phones, with desktop, tablet-touch, and Dremplay Navigator interfaces sharing the same world model.
 
 The engine is an independent experimental work informed by public ideas around point and voxel detail streaming, including John Lin's Voxely writing, Euclideon's published patent material, and Atomontage demonstrations. It is not affiliated with those projects. The present build is a working research prototype: its priorities are a stable frame, deterministic ecology, smooth scale transitions, portable acceleration, accessible tools, and a world that remains visually coherent from the horizon down to an individual blade of grass.
+
+## v0.0.1.6.6 Sparse Surface Clipmap
+
+- Replaces the 768 × 416 × 768 live voxel volume with a bounded 384 × 416 × 384 near-field clipmap. The editable GPU voxel cache falls from 234 MiB to 58.5 MiB while preserving the complete 50-foot exact interaction neighborhood and the one-kilometer mathematical landscape.
+- Adds a compact 4 × 4 × 4 occupancy hierarchy. Fine, near, and merged rays cross an empty block in one step instead of testing all 64 cells; authoritative empty sky is skipped by complete 3.2 m chunks.
+- Treats unrefined chunks as a handoff to the immutable heightfield projection. Fast travel and moving clipmap shifts keep terrain visible without sampling the mathematical parent once per empty voxel, then reveal exact terrain and Resources atomically.
+- Bounds the three local traversal tiers to 256 fine, 384 near, and 192 merged iterations and reuses the already-computed far-terrain normal in the atmospheric projection.
+- Shrinks streaming commits to two-chunk (6.4 m) sectors, reduces speculative CPU reserves, and refreshes the full-island horizon only after a meaningful 500 m horizontal or 10 m vertical observer change.
+- Adds real WebGL GPU-time measurement. Optional decoding yields whenever the renderer owns the frame budget; idle scheduling no longer injects a recurring 12 ms fallback task while the GPU is busy.
+- In the browser performance gate, the balanced 640 × 360 renderer improved from roughly 22 FPS / 100 ms GPU to 60 FPS / 5–12 ms GPU after the new sparse traversal became resident. Startup completed in about 1.6 seconds while the test tab was foregrounded.
 
 ## v0.0.1.6.5.3 Fluid Compass and Organized Tools
 

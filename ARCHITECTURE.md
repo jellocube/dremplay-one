@@ -1,12 +1,20 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Sparse surface clipmap
+
+The editable near field is a 384 × 416 × 384 R8UI toroidal cache. It spans 38.4 m horizontally—enough for the complete 50-foot exact interaction tier with margin—while terrain beyond it remains the immutable mathematical height, hydrology, biome, and Resource field. The previous 768 × 416 × 768 volume represented the same source data with four times the resident memory and is retired.
+
+The cache carries two tiny acceleration layers. A chunk-state texture distinguishes exact children, authoritative empty sky, and an unrefined mathematical parent. A second R8UI texture stores one occupancy bit per 4 × 4 × 4 exact block. Rays skip empty exact blocks and whole sky chunks; they never infer world data from those bits. If a mathematical child has not arrived, local traversal hands the ray to the continuous heightfield pass rather than repeatedly evaluating that parent in every empty voxel. Exact terrain and Resources replace the parent atomically.
+
+Only surface, shallow editable matter, and possible canopy chunks are materialized. Deep bedrock remains implicit until editing or visibility requests it. Incoming regions advance by complete 6.4 m sectors, and sparse CPU chunks may be discarded without changing terrain, Resource seeds, provenance, water, or edits. A WebGL disjoint timer query measures the actual GPU frame; nonurgent decoding receives no budget while the renderer exceeds its presentation target.
+
 ## Full-island horizon panorama
 
 The local far atlas covers 2.6 km and renders editable-world continuity to one kilometer. It cannot prove that a blank ray has no mountain elsewhere on the 7.5 km island. A separate 2 KiB panorama therefore stores maximum terrain elevation angle for 512 world azimuths across three bands: 0.7–1.8 km, 1.8–3.2 km, and 3.2–5.5 km. Every value is sampled from the shipped immutable heightmap.
 
-The panorama is a projection cache, never world data. The fragment shader tests local voxels and the one-kilometer atlas first; only a ray which misses both may reveal the panorama's broad near, middle, and far silhouettes. Sixfold cartographic vertical relief makes the long island's physically low mountain angles readable without changing physical elevations. Refresh work is incremental and a complete new panorama replaces the old one atomically after 250 m of observer travel or a meaningful elevation change.
+The panorama is a projection cache, never world data. The fragment shader tests local voxels and the one-kilometer atlas first; only a ray which misses both may reveal the panorama's broad near, middle, and far silhouettes. Sixfold cartographic vertical relief makes the long island's physically low mountain angles readable without changing physical elevations. Refresh work is incremental and a complete new panorama replaces the old one atomically after 500 m of observer travel or 10 m of elevation change.
 
-World refinement is gated by measured JavaScript work, not presentation interval alone. A browser may present a GPU-bound WebGL canvas at 30 Hz while the main thread spends only one millisecond preparing each frame. In that case a paced timer supplies small decoder slices when `requestIdleCallback` is starved. Rendering remains the only work inside `requestAnimationFrame`.
+World refinement is gated by measured JavaScript and WebGL GPU work, not presentation interval alone. A browser may present a GPU-bound WebGL canvas while the main thread spends only one millisecond preparing each frame; the disjoint timer query still identifies the renderer as the limiting system. In that case optional decoding stops until the GPU is back inside budget. Rendering remains the only work inside `requestAnimationFrame`.
 
 ## Atmospheric distance projection
 
