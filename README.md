@@ -2,7 +2,25 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.5.2.1**
+Current release: **v0.0.1.6.5.3**
+
+## Project overview
+
+Dremplay One is a browser-first Infinite Detail Voxel Engine for explorable, editable mathematical worlds. Its authoritative landscape and ecology are deterministic functions: the renderer asks those functions what exists at a location, then materializes only the voxel resolution useful for the current view. This keeps distant terrain broad and inexpensive while allowing nearby surfaces, plants, stones, water, and Resources to resolve into finer structure.
+
+The project combines a supplied 4.5 × 7.5 km island height field with mathematical biome rules, multiresolution voxel clipmaps, fractal Resource definitions, editable sparse overrides, water simulation, and atmospheric distance projections. It is designed to run directly on the web across laptops, iPads, and modern phones, with desktop, tablet-touch, and Dremplay Navigator interfaces sharing the same world model.
+
+The engine is an independent experimental work informed by public ideas around point and voxel detail streaming, including John Lin's Voxely writing, Euclideon's published patent material, and Atomontage demonstrations. It is not affiliated with those projects. The present build is a working research prototype: its priorities are a stable frame, deterministic ecology, smooth scale transitions, portable acceleration, accessible tools, and a world that remains visually coherent from the horizon down to an individual blade of grass.
+
+## v0.0.1.6.5.3 Fluid Compass and Organized Tools
+
+- Moves the circular compass from the half-second statistics timer to the display animation clock. Its dial now takes the shortest route through north and follows heading with a lightly under-damped spring, producing a small waterborne rebound instead of discrete jumps.
+- Respects reduced-motion preferences with a faster, critically damped response while keeping the compass continuous.
+- Reorganizes the top bar into Main, Tools, Settings, and Help menus. Existing keyboard shortcuts remain active, the world map remains available from Main, and menus support focus, arrow, escape, and outside-click behavior.
+- Replaces the four separate detail-distance sliders with one logarithmic four-stop editor. Detail, Near, Far, and Background nodes remain distinct, ordered, keyboard-adjustable, touch-draggable, and readable across the full 0–1,000 ft range.
+- Adds this project overview so the runtime architecture, platform goals, mathematical world model, and research context are clear before the release history.
+- Sorts the console reference into Diagnostics, Player, World, Materials, and Resources. `help <topic>` opens a single functional group without losing the complete `help` index.
+- Expands F1 Manual with grouped menus, the distance editor, compass behavior, crosshair editing, deterministic world/caches, materials and Resource provenance, server simulation, Loader behavior, fast travel, and desktop/touch controls.
 
 ## v0.0.1.6.5.2.1 Full-island background and loading repair
 

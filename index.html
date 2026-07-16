@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.5.2.1 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.5.3 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.5.2.1';
-  const CURRENT_REVISION = 67;
+  const CURRENT_VERSION = '0.0.1.6.5.3';
+  const CURRENT_REVISION = 68;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -179,16 +179,30 @@
   .tool-button { background:#24243c; border:1px solid #54FC54; color:#54FC54; font:inherit; padding:7px 10px; cursor:pointer; }
   .tool-button:hover { background:#243c24; }
   #designerStatus { grid-column:1/-1; color:#50a4fc; min-height:16px; }
-  #menubar { position:absolute; left:0; right:0; top:0; height:30px; z-index:1000; display:flex; align-items:stretch; background:#141024; border-bottom:1px solid #54fc54; user-select:none; }
+  #menubar { position:absolute; left:0; right:0; top:0; height:30px; z-index:1000; display:flex; align-items:stretch; overflow:visible; background:#141024; border-bottom:1px solid #54fc54; user-select:none; }
   #menubar .brand { display:flex; align-items:center; padding:0 12px; color:#50a4fc; letter-spacing:2px; border-right:1px solid #444460; font-size:11px; }
+  .menu-group { position:relative; display:flex; align-items:stretch; }
   .menu-button { border:0; border-right:1px solid #444460; padding:0 12px; background:#141024; color:#54fc54; font-family:inherit; font-size:11px; cursor:pointer; }
   .menu-button:hover, .menu-button.active { background:#243c24; }
+  .menu-button::after { content:' ▾'; color:#bcdcff; font-size:9px; }
+  .menu-popup { position:absolute; z-index:3100; left:0; top:30px; display:none; min-width:210px; padding:4px; border:1px solid #ccb010; background:#101810; box-shadow:4px 5px 0 #040818aa; }
+  .menu-group.open .menu-popup { display:grid; }
+  .menu-item { display:grid; grid-template-columns:1fr auto; gap:18px; width:100%; min-height:30px; padding:6px 9px; border:0; background:transparent; color:#ececec; font:inherit; font-size:11px; text-align:left; cursor:pointer; }
+  .menu-item:hover,.menu-item:focus-visible { color:#fff; background:#243c24; outline:1px solid #ccb010; }
+  .menu-shortcut { color:#bcdcff; }
+  .menu-separator { height:1px; margin:4px 5px; background:#704024; }
   #topleft, #topright { top:42px; }
   .simple-window { left:50%; top:72px; width:min(480px,calc(100vw - 24px)); transform:translateX(-50%); }
   .simple-window.dragged { transform:none; }
   .simple-window .window-body { line-height:1.65; max-height:70vh; overflow:auto; }
   .simple-window h2 { color:#50a4fc; font-size:13px; margin:4px 0 8px; }
   .simple-window p + p { margin-top:8px; }
+  #helpWindow .manual-lead { color:#bcdcff; }
+  #helpWindow .manual-index { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 14px; margin:7px 0 12px; padding:8px; border:1px solid #444460; background:#101810; }
+  #helpWindow .manual-index span { color:#ececec; }
+  #helpWindow ul { margin:5px 0 10px 18px; color:#ececec; }
+  #helpWindow li { margin:3px 0; }
+  #helpWindow code { color:#54fc54; background:#24243c; padding:1px 3px; }
   .property-row { display:grid; grid-template-columns:1fr auto auto; gap:7px; }
   #materialPropertyId { min-width:0; background:#24243c; border:1px solid #444460; color:#50a4fc; font:inherit; padding:7px; }
   .option-row { display:grid; grid-template-columns:130px 1fr 54px; gap:10px; align-items:center; margin:10px 0; }
@@ -199,12 +213,29 @@
   .option-section summary { padding:7px 9px; color:#bcdcff; cursor:pointer; user-select:none; }
   .option-section-body { padding:2px 9px 8px; border-top:1px solid #444460; }
   .option-row select { min-width:0; width:100%; background:#24243c; border:1px solid #444460; color:#ececec; font:inherit; padding:4px; }
+  .distance-editor-row { align-items:start; }
+  .distance-gradient-editor { min-width:0; padding:2px 0 4px; }
+  .distance-gradient-track { position:relative; height:54px; margin:0 4px; border:1px solid #704024; background:#24243c; box-shadow:inset 0 0 0 1px #040818; touch-action:none; cursor:crosshair; }
+  .distance-gradient-track::before { content:''; position:absolute; left:0; right:0; top:8px; height:15px; border-top:1px solid #bcdcff88; border-bottom:1px solid #040818; background:var(--distance-gradient,linear-gradient(to right,#bcdcff,#54fc54 25%,#ccb010 65%,#704024 85%,#444460)); }
+  .distance-gradient-track::after { content:'0 ft                                                         1000 ft'; position:absolute; left:4px; right:4px; bottom:2px; overflow:hidden; color:#a8a8a8; font-size:8px; white-space:pre; pointer-events:none; }
+  .distance-stop { position:absolute; z-index:2; top:1px; width:32px; height:42px; margin-left:-16px; padding:0; border:0; background:transparent; color:#040818; font:700 9px monospace; cursor:ew-resize; touch-action:none; }
+  .distance-stop::before { content:''; position:absolute; left:15px; top:4px; width:2px; height:31px; background:#ececec; box-shadow:0 0 0 1px #040818; }
+  .distance-stop span { position:absolute; left:7px; top:27px; display:grid; place-items:center; width:18px; height:13px; border:1px solid #040818; background:#ececec; }
+  .distance-stop[data-distance="detail"] span { background:#bcdcff; }
+  .distance-stop[data-distance="near"] span { background:#54fc54; }
+  .distance-stop[data-distance="far"] span { background:#ccb010; }
+  .distance-stop[data-distance="background"] span { background:#a8a8a8; }
+  .distance-stop:focus-visible { outline:2px solid #50a4fc; outline-offset:1px; }
+  .distance-gradient-readouts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; margin-top:5px; }
+  .distance-gradient-readouts span { min-width:0; padding:3px 4px; border-left:2px solid #444460; color:#a8a8a8; font-size:8px; line-height:1.35; }
+  .distance-gradient-readouts strong { display:block; overflow:hidden; color:#bcdcff; font-size:9px; text-overflow:ellipsis; }
+  .distance-gradient-readouts output { color:#ececec; }
   #optionMetrics,#optionStatus { white-space:pre-wrap; color:#bcdcff; font-size:10px; line-height:1.55; margin:7px 0; }
   .option-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
   #serverWindow { width:min(540px,calc(100vw - 24px)); }
   #serverStatus { color:#bcdcff; white-space:pre-wrap; font-size:10px; line-height:1.55; margin-top:8px; }
   #compass { position:relative; width:74px; height:74px; margin:0 0 6px auto; border:2px solid var(--gold,#ccb010); border-radius:50%; color:#ececec; background:#141024cc; box-shadow:0 0 0 2px #040818,2px 3px 0 #04081888; overflow:hidden; }
-  #compassDial { position:absolute; inset:5px; border:1px dotted #bcdcff; border-radius:50%; transform-origin:50% 50%; transition:transform .08s linear; }
+  #compassDial { position:absolute; inset:5px; border:1px dotted #bcdcff; border-radius:50%; transform-origin:50% 50%; will-change:transform; }
   #compassDial::before,#compassDial::after { content:''; position:absolute; background:#444460; }
   #compassDial::before { left:50%; top:3px; bottom:3px; width:1px; }
   #compassDial::after { top:50%; left:3px; right:3px; height:1px; }
@@ -318,8 +349,9 @@
   body.navigator-platform #cartonConveyor { display:none; }
   body.tablet-platform.in-world #resourceLookLabel { bottom:226px; }
   @media (max-width:900px){
-    #menubar{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}#menubar::-webkit-scrollbar{display:none}
-    #menubar .brand{display:none}.menu-button{flex:0 0 auto;min-width:74px;padding:0 8px;font-size:9px}
+    #menubar{overflow:visible;scrollbar-width:none}#menubar::-webkit-scrollbar{display:none}
+    #menubar .brand{display:none}.menu-group{flex:1 1 25%;min-width:0}.menu-button{width:100%;min-width:0;padding:0 6px;font-size:10px}.menu-popup{position:fixed;left:6px;right:6px;top:30px;min-width:0}.menu-item{min-height:42px;font-size:13px}
+    .distance-editor-row{grid-template-columns:1fr!important}.distance-editor-row>label{color:#bcdcff}.distance-editor-row>.option-copy{justify-self:start}.distance-gradient-track{height:62px}.distance-stop{height:50px}.distance-stop::before{height:38px}.distance-stop span{top:34px;width:22px;height:16px;left:5px}.distance-gradient-readouts span{font-size:9px}.distance-gradient-readouts strong{font-size:10px}
     #topright{font-size:9px;right:8px}#topleft{left:8px}
   }
   @media (orientation:portrait) and (max-width:600px){
@@ -372,16 +404,27 @@
 
 <nav id="menubar" aria-label="Application menu">
   <div class="brand">Dremplay One</div>
-  <button class="menu-button" data-window="console">[/] Console</button>
-  <button class="menu-button" data-hotkey="m" data-window="materialDesigner">[M] Materials</button>
-  <button class="menu-button" data-hotkey="r" data-window="resourceDesigner">[R] Resource Builder</button>
-  <button class="menu-button" data-hotkey="g" data-window="mapWindow">[G] Map</button>
-  <button class="menu-button" data-hotkey="l" data-window="loadingOverlay">[L] Loading</button>
-  <button class="menu-button" data-hotkey="f10" data-window="serverWindow">[F10] Server</button>
-  <button class="menu-button" data-hotkey="f12" data-window="optionsWindow">[F12] Options</button>
-  <button class="menu-button" data-hotkey="f11" data-window="modsWindow">[F11] Mods</button>
-  <button class="menu-button" data-hotkey="f1" data-window="helpWindow">[F1] Help</button>
-  <button class="menu-button" data-hotkey="f2" data-window="aboutWindow">[F2] About</button>
+  <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Main</button><div class="menu-popup" role="menu">
+    <button class="menu-item" type="button" role="menuitem" data-action="restart"><span>Restart</span><span class="menu-shortcut">Reload</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="g" data-window="mapWindow"><span>World map</span><span class="menu-shortcut">G</span></button>
+    <div class="menu-separator" role="separator"></div>
+    <button class="menu-item" type="button" role="menuitem" data-action="quit"><span>Quit to title</span><span class="menu-shortcut">Esc</span></button>
+  </div></div>
+  <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Tools</button><div class="menu-popup" role="menu">
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="l" data-window="loadingOverlay"><span>Loader</span><span class="menu-shortcut">L</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-window="console"><span>Console</span><span class="menu-shortcut">/</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="m" data-window="materialDesigner"><span>Materials</span><span class="menu-shortcut">M</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="r" data-window="resourceDesigner"><span>Resource Editor</span><span class="menu-shortcut">R</span></button>
+  </div></div>
+  <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Settings</button><div class="menu-popup" role="menu">
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="f12" data-window="optionsWindow"><span>Options</span><span class="menu-shortcut">F12</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="f10" data-window="serverWindow"><span>Server</span><span class="menu-shortcut">F10</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="f11" data-window="modsWindow"><span>Mods</span><span class="menu-shortcut">F11</span></button>
+  </div></div>
+  <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Help</button><div class="menu-popup" role="menu">
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="f1" data-window="helpWindow"><span>Manual</span><span class="menu-shortcut">F1</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="f2" data-window="aboutWindow"><span>About</span><span class="menu-shortcut">F2</span></button>
+  </div></div>
 </nav>
 
 <div id="loadingOverlay" role="status" aria-live="polite">
@@ -395,7 +438,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.5.2.1 · Infinite Detail Voxel Engine · full-island horizon projection</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.5.3 · Infinite Detail Voxel Engine · fluid compass and grouped controls</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -404,7 +447,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.5.2.1 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.5.3 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      768×416×768 resident grid = 76.8 m × 41.6 m × 76.8 m at true 0.1 m isotropic resolution.
@@ -504,11 +547,17 @@
       <div id="optionMetrics"></div>
     </div></details>
     <details class="option-section" open><summary>Distance detail laboratory</summary><div class="option-section-body">
-      <div class="option-row"><label for="optionDetailDistance">Detail voxels</label><input id="optionDetailDistance" type="range" min="0" max="40" step="1" value="20"><span id="optionDetailDistanceValue">20 ft</span></div>
-      <div class="option-row"><label for="optionNearDistance">Near distance</label><input id="optionNearDistance" type="range" min="20" max="120" step="5" value="50"><span id="optionNearDistanceValue">50 ft</span></div>
-      <div class="option-row"><label for="optionFarDistance">Far away</label><input id="optionFarDistance" type="range" min="100" max="500" step="10" value="400"><span id="optionFarDistanceValue">400 ft</span></div>
+      <div class="option-row distance-editor-row"><label id="distanceEditorLabel">Detail distances</label><div id="distanceGradientEditor" class="distance-gradient-editor" aria-labelledby="distanceEditorLabel">
+        <div id="distanceGradientTrack" class="distance-gradient-track">
+          <button id="distanceStopDetail" class="distance-stop" type="button" data-distance="detail" role="slider" aria-label="Detail voxel distance" aria-valuemin="0" aria-valuemax="40" aria-valuenow="20"><span>D</span></button>
+          <button id="distanceStopNear" class="distance-stop" type="button" data-distance="near" role="slider" aria-label="Near distance" aria-valuemin="20" aria-valuemax="120" aria-valuenow="50"><span>N</span></button>
+          <button id="distanceStopFar" class="distance-stop" type="button" data-distance="far" role="slider" aria-label="Far distance" aria-valuemin="100" aria-valuemax="500" aria-valuenow="400"><span>F</span></button>
+          <button id="distanceStopBackground" class="distance-stop" type="button" data-distance="background" role="slider" aria-label="Background distance" aria-valuemin="400" aria-valuemax="1000" aria-valuenow="500"><span>B</span></button>
+        </div>
+        <div class="distance-gradient-readouts"><span><strong>Detail</strong><output id="optionDetailDistanceValue">20 ft</output></span><span><strong>Near</strong><output id="optionNearDistanceValue">50 ft</output></span><span><strong>Far</strong><output id="optionFarDistanceValue">400 ft</output></span><span><strong>Background</strong><output id="optionBackgroundDistanceValue">500 ft</output></span></div>
+        <input id="optionDetailDistance" type="hidden" value="20"><input id="optionNearDistance" type="hidden" value="50"><input id="optionFarDistance" type="hidden" value="400"><input id="optionBackgroundDistance" type="hidden" value="500">
+      </div><span></span></div>
       <div class="option-row"><label for="optionFarVoxel">Far voxel size</label><select id="optionFarVoxel"><option value="0.5">0.5 m</option><option value="1" selected>1 m</option><option value="2">2 m</option><option value="4">4 m</option></select><span id="optionFarVoxelValue">1 m</span></div>
-      <div class="option-row"><label for="optionBackgroundDistance">Background</label><input id="optionBackgroundDistance" type="range" min="400" max="1000" step="25" value="500"><span id="optionBackgroundDistanceValue">500 ft</span></div>
       <div class="option-row"><label for="optionBackgroundVoxel">Background voxel</label><select id="optionBackgroundVoxel"><option value="4">4 m</option><option value="8">8 m</option><option value="16" selected>16 m</option><option value="32">32 m</option><option value="64">64 m</option></select><span id="optionBackgroundVoxelValue">16 m</span></div>
       <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Atmospheric projection</option><option value="2" selected>Projection + voxels</option></select><span id="optionBackgroundModeValue">Projection + voxels</span></div>
       <div class="option-row"><label for="optionBugtesting">Bugtesting mode</label><select id="optionBugtesting"><option value="1" selected>On</option><option value="0">Off</option></select><span id="optionBugtestingValue">On</span></div>
@@ -558,16 +607,28 @@
 </div>
 
 <div id="helpWindow" class="tool-window simple-window" role="dialog" aria-label="Help">
-  <div class="titlebar"><span>Help</span><button class="window-close" aria-label="Close help">×</button></div>
-  <div class="window-body"><h2>Desktop controls</h2><p>WASD move · Shift jump · Ctrl crawl · Space toggles cursor/game control · Mouse look</p><p>LMB carves · RMB places the selected material · / opens the console</p><h2>Device modes</h2><p>Dremplay Navigator is the dedicated phone interface with the upper two-thirds drag viewport and lower thumb controls. Tablet Touch keeps touch movement and actions with the robust window layout. PC Desktop retains mouse, keyboard, pointer lock, and the complete editor layout.</p><h2>Touch controls</h2><p>Navigator keeps the full-height world visible. Drag anywhere in the upper two-thirds to look. The divider marks the lower thumb area without blocking the world behind it. The cross D-pad responds continuously in all eight directions; A/B place and carve, with Jump and Crawl above and below them. Select opens every tool and Start opens the map.</p><h2>Window hotkeys</h2><p>/ Console · M Materials · R Resources · G Map · L Loading Monitor · F10 Server · F12 Options · F11 Mods · F1 Help · F2 About</p><h2>Map and fast travel</h2><p>Open the heightmap with G or the mobile Start button. The gold cross marks your position; tap land to move the observer immediately. Coarse mathematical terrain appears first and disposable fine voxels refine afterward.</p><h2>Pointer control</h2><p>Space toggles cursor control. Escape goes back or cancels; when leaving game control it highlights the first menu item.</p><h2>AI Loading Monitor</h2><p>The monitor classifies active work, estimates progress rate, and exposes statistical, predictive, simulation, Resource, weather, and GPU operations. Its close button always works and it stays closed while background work continues. Open it manually with L, the top menu, or Select → Loading Monitor. Navigator omits the conveyor for a quiet, efficient phone display; Tablet and Desktop use the continuous compact belt. Drag the title bar to move it or use the square button to minimize and restore it.</p><h2>Windows</h2><p>Use the top menu, Navigator Select launcher, or displayed key to open tools. Navigator windows fill the usable phone screen and provide large close controls; Tablet and Desktop retain robust movable layouts.</p><h2>Commands</h2><p>Type <b>help</b> in the console for the complete command reference.</p></div>
+  <div class="titlebar"><span>Manual</span><button class="window-close" aria-label="Close manual">×</button></div>
+  <div class="window-body"><p class="manual-lead">Dremplay One is an editable mathematical world rendered through distance-dependent voxel detail. Nearby matter resolves finely; distant matter remains a stable, inexpensive projection of the same world.</p>
+    <div class="manual-index"><span>Main · session and map</span><span>Tools · creation and inspection</span><span>Settings · display and simulation</span><span>Help · this manual and credits</span></div>
+    <h2>Desktop controls</h2><ul><li><code>W A S D</code> move; mouse turns the view.</li><li><code>Shift</code> jumps and <code>Ctrl</code> crawls.</li><li><code>Space</code> alternates game control and the cursor. <code>Esc</code> goes back, cancels, or focuses Main.</li><li>Left mouse carves a ball; right mouse places a ball of the selected material directly at the crosshair.</li></ul>
+    <h2>Application menus and hotkeys</h2><p><b>Main</b> contains Restart, World map, and Quit to title. <b>Tools</b> contains Loader, Console, Materials, and Resource Editor. <b>Settings</b> contains Options, Server, and Mods. <b>Help</b> contains Manual and About.</p><p><code>/</code> Console · <code>M</code> Materials · <code>R</code> Resource Editor · <code>G</code> Map · <code>L</code> Loader · <code>F10</code> Server · <code>F12</code> Options · <code>F11</code> Mods · <code>F1</code> Manual · <code>F2</code> About</p>
+    <h2>Detail distance editor</h2><p>Options → Distance detail laboratory uses one logarithmic track with four ordered stops: <b>D</b> Detail, <b>N</b> Near, <b>F</b> Far, and <b>B</b> Background. Drag a stop or focus it and use arrow keys. The nonlinear track leaves short interaction distances easy to grab while still reaching 1,000 ft. Stops cannot cross, so voxel scales always hand off in a valid order.</p>
+    <h2>Compass</h2><p>The circular rose rotates continuously to keep its north mark aligned with the world. Its slight overshoot is a damped floating response, not a change to player heading. Reduced-motion mode removes the rebound.</p>
+    <h2>Map and fast travel</h2><p>Open the heightmap with <code>G</code> or Navigator Start. The gold cross marks your position; select land to move there immediately. The mathematical parent surface appears first, and disposable fine voxels refine around it without changing the location's underlying ecology.</p>
+    <h2>Editing, materials, and Resources</h2><p>Carving and placement use the center crosshair. Adjust ball radius with <code>brush</code> and range with <code>reach</code>. The Materials window changes palette-bound surface definitions live. The Resource Editor builds deterministic plants, trees, stones, fungi, and other props; identity/transfer IDs preserve their mathematical graph and palette aesthetic.</p><p>A Resource voxel retains provenance for inspection. Use <code>resource sample</code> at the crosshair to distinguish a named part from ordinary terrain or a manual voxel.</p>
+    <h2>World and server simulation</h2><p>Server contains time of day, gravity, water budgets and sources, spawn coordinates, respawn, and teleport controls. Water simulation continues while windows are open. The world atlas and ecology equations are deterministic; voxel caches are disposable render data, while manual edits are sparse overrides.</p>
+    <h2>AI Loading Monitor</h2><p>The Loader reports active terrain, ecology, Resource, weather, prediction, simulation, cache, and GPU work. Closing it never stops loading and it stays closed until opened manually with <code>L</code>, Tools → Loader, or the touch launcher. Drag its title bar to move it; use the square button to minimize or restore it. Navigator hides the conveyor, while Tablet and Desktop show the continuous task belt.</p>
+    <h2>Phone and tablet controls</h2><p>Dremplay Navigator keeps the full-height portrait world visible: drag the upper two-thirds to look and use the lower thumb field. Its D-pad responds in eight directions; A/B place and carve, with Jump and Crawl above and below. Select opens the mobile tool launcher and Start opens the map. Tablet Touch keeps touch movement with the full movable-window interface.</p>
+    <h2>Console reference</h2><p>Type <code>help</code> for the grouped command index, or <code>help diagnostics</code>, <code>help player</code>, <code>help world</code>, <code>help materials</code>, or <code>help resources</code> for one functional section. Command output remains in the scrollable console log.</p>
+  </div>
 </div>
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.2.1</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Full-island projected horizon · non-starving refinement · stable frame pacing</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.5.3</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Grouped application menus · four-stop detail editor · fluid compass</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=67"></script>
+<script src="heightmap-world-v2.js?v=68"></script>
 <script>
 (() => {
 "use strict";
@@ -2555,10 +2616,13 @@ let designerOpen=false;
 let topWindowZ=2000;
 
 function anyToolOpen(){return !!document.querySelector('.tool-window.open');}
+function closeApplicationMenus(except=null){
+  document.querySelectorAll('.menu-group.open').forEach(group=>{if(group===except)return;group.classList.remove('open');group.querySelector('.menu-button')?.setAttribute('aria-expanded','false');});
+}
 function refreshWindowState(){
   startScreen.style.display=hasEnteredWorld?'none':'flex';
   document.body.classList.toggle('in-world',hasEnteredWorld);
-  document.querySelectorAll('.menu-button').forEach(button=>button.classList.toggle('active',button.dataset.window==='loadingOverlay'?loadingWindowOpen():document.getElementById(button.dataset.window)?.classList.contains('open')));
+  document.querySelectorAll('.menu-group').forEach(group=>{const windowOpen=[...group.querySelectorAll('.menu-item[data-window]')].some(item=>item.dataset.window==='loadingOverlay'?loadingWindowOpen():document.getElementById(item.dataset.window)?.classList.contains('open'));group.querySelector('.menu-button')?.classList.toggle('active',windowOpen||group.classList.contains('open'));});
 }
 
 function bringToFront(win){win.style.zIndex=String(++topWindowZ);}
@@ -2605,6 +2669,7 @@ function setSimpleWindow(win,open){
   refreshWindowState();
 }
 function setWindowById(id,open){
+  closeApplicationMenus();
   if(id==='loadingOverlay')setLoadingWindow(open);else if(id==='console')setConsole(open);else if(id==='materialDesigner')setDesigner(open);else setSimpleWindow(document.getElementById(id),open);
 }
 function windowIsOpen(id){return id==='loadingOverlay'?loadingWindowOpen():document.getElementById(id)?.classList.contains('open');}
@@ -2614,7 +2679,18 @@ function returnToGameControl(){
   consoleOpen=false;designerOpen=false;consoleInput.blur();refreshWindowState();if(!touchPlatformActive())canvas.requestPointerLock();
 }
 document.querySelectorAll('.simple-window .window-close').forEach(button=>button.addEventListener('click',()=>setSimpleWindow(button.closest('.tool-window'),false)));
-document.querySelectorAll('.menu-button').forEach(button=>button.addEventListener('click',()=>setWindowById(button.dataset.window,!windowIsOpen(button.dataset.window))));
+function quitToTitle(){
+  closeApplicationMenus();document.querySelectorAll('.tool-window.open').forEach(win=>win.classList.remove('open'));consoleOpen=false;designerOpen=false;mobileMenuOpen=false;document.getElementById('touchMenuPanel')?.classList.remove('open');clearTouchState();for(const k in keys)keys[k]=false;if(document.pointerLockElement)document.exitPointerLock();hasEnteredWorld=false;refreshWindowState();
+}
+document.querySelectorAll('.menu-button').forEach(button=>{
+  button.addEventListener('click',event=>{event.stopPropagation();const group=button.closest('.menu-group'),open=!group.classList.contains('open');closeApplicationMenus(group);group.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));refreshWindowState();});
+  button.addEventListener('keydown',event=>{const group=button.closest('.menu-group'),roots=[...document.querySelectorAll('.menu-button')],index=roots.indexOf(button);if(event.key==='ArrowDown'){if(!group.classList.contains('open'))button.click();group.querySelector('.menu-item')?.focus();event.preventDefault();}else if(event.key==='ArrowRight'||event.key==='ArrowLeft'){roots[(index+(event.key==='ArrowRight'?1:-1)+roots.length)%roots.length].focus();event.preventDefault();}});
+});
+document.querySelectorAll('.menu-item').forEach(item=>{
+  item.addEventListener('click',event=>{event.stopPropagation();if(item.dataset.window)setWindowById(item.dataset.window,!windowIsOpen(item.dataset.window));else if(item.dataset.action==='restart')location.reload();else if(item.dataset.action==='quit')quitToTitle();});
+  item.addEventListener('keydown',event=>{const group=item.closest('.menu-group'),items=[...group.querySelectorAll('.menu-item')],index=items.indexOf(item);if(event.key==='ArrowDown'||event.key==='ArrowUp'){items[(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();event.preventDefault();}else if(event.key==='ArrowRight'||event.key==='ArrowLeft'){const roots=[...document.querySelectorAll('.menu-button')],root=group.querySelector('.menu-button'),next=roots[(roots.indexOf(root)+(event.key==='ArrowRight'?1:-1)+roots.length)%roots.length];closeApplicationMenus();next.click();next.closest('.menu-group').querySelector('.menu-item')?.focus();event.preventDefault();}});
+});
+document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('#menubar')){closeApplicationMenus();refreshWindowState();}});
 platformToggle.addEventListener('click',()=>{const modes=['auto','navigator','tablet','desktop'];applyPlatformMode(modes[(modes.indexOf(platformMode)+1)%modes.length]);});
 
 const worldMapCanvas=document.getElementById('worldMapCanvas'),mapStatus=document.getElementById('mapStatus');
@@ -3496,6 +3572,31 @@ refreshResourceLibrary();resourceLibrary.value='field_boulder';
 try{loadResource('field_boulder');document.getElementById('resourceStatus').textContent=`Resource ID ${registerResourceName('field_boulder')} · field boulder`;}catch(error){console.error('Resource Builder initialization deferred',error);document.getElementById('resourceStatus').textContent='Resource Builder will initialize when opened.';}
 
 const optionFov=document.getElementById('optionFov'),optionPreset=document.getElementById('optionPreset'),optionResolution=document.getElementById('optionResolution'),optionPlatformMode=document.getElementById('optionPlatformMode'),optionViewDistance=document.getElementById('optionViewDistance'),optionLightingQuality=document.getElementById('optionLightingQuality'),optionMaterialQuality=document.getElementById('optionMaterialQuality'),optionCloudQuality=document.getElementById('optionCloudQuality'),optionWaterQuality=document.getElementById('optionWaterQuality'),optionFogEnabled=document.getElementById('optionFogEnabled'),optionFogStart=document.getElementById('optionFogStart'),optionFogDensity=document.getElementById('optionFogDensity'),optionStreamBudget=document.getElementById('optionStreamBudget'),optionVegetationDetail=document.getElementById('optionVegetationDetail'),optionStatus=document.getElementById('optionStatus'),optionMetrics=document.getElementById('optionMetrics'),optionDetailDistance=document.getElementById('optionDetailDistance'),optionNearDistance=document.getElementById('optionNearDistance'),optionFarDistance=document.getElementById('optionFarDistance'),optionFarVoxel=document.getElementById('optionFarVoxel'),optionBackgroundDistance=document.getElementById('optionBackgroundDistance'),optionBackgroundVoxel=document.getElementById('optionBackgroundVoxel'),optionBackgroundMode=document.getElementById('optionBackgroundMode'),optionBugtesting=document.getElementById('optionBugtesting');
+const distanceGradientTrack=document.getElementById('distanceGradientTrack');
+const DISTANCE_STOP_CONFIG={detail:{input:optionDetailDistance,button:document.getElementById('distanceStopDetail'),min:0,max:40,step:1},near:{input:optionNearDistance,button:document.getElementById('distanceStopNear'),min:20,max:120,step:5},far:{input:optionFarDistance,button:document.getElementById('distanceStopFar'),min:100,max:500,step:10},background:{input:optionBackgroundDistance,button:document.getElementById('distanceStopBackground'),min:400,max:1000,step:25}};
+function distanceToPercent(feet){return Math.log1p(Math.max(0,feet)/20)/Math.log1p(1000/20)*100;}
+function percentToDistance(percent){return 20*Math.expm1(Math.max(0,Math.min(100,percent))/100*Math.log1p(1000/20));}
+function distanceStopValues(){return {detail:Number(optionDetailDistance.value),near:Number(optionNearDistance.value),far:Number(optionFarDistance.value),background:Number(optionBackgroundDistance.value)};}
+function syncDistanceEditor(){
+  const values=distanceStopValues(),positions={};
+  for(const [key,config] of Object.entries(DISTANCE_STOP_CONFIG)){const value=values[key];positions[key]=distanceToPercent(value);config.button.style.left=`${positions[key]}%`;config.button.setAttribute('aria-valuenow',String(value));config.button.setAttribute('aria-valuetext',`${value} feet`);}
+  distanceGradientTrack.style.setProperty('--distance-gradient',`linear-gradient(to right,#bcdcff 0 ${positions.detail}%,#54fc54 ${positions.detail}% ${positions.near}%,#ccb010 ${positions.near}% ${positions.far}%,#704024 ${positions.far}% ${positions.background}%,#444460 ${positions.background}% 100%)`);
+}
+function setDistanceStop(key,rawValue){
+  const config=DISTANCE_STOP_CONFIG[key],values=distanceStopValues();let min=config.min,max=config.max;
+  if(key==='detail')max=Math.min(max,values.near-1);
+  if(key==='near'){min=Math.max(min,values.detail+1);max=Math.min(max,values.far-5);}
+  if(key==='far'){min=Math.max(min,values.near+5);max=Math.min(max,values.background-10);}
+  if(key==='background')min=Math.max(min,values.far+10);
+  let value=Math.round(rawValue/config.step)*config.step;value=Math.max(min,Math.min(max,value));config.input.value=String(value);markOptionsCustom();applyLiveOptions();
+}
+let distanceDragKey='',distanceDragPointer=-1;
+function distancePointerValue(event){const rect=distanceGradientTrack.getBoundingClientRect();return percentToDistance((event.clientX-rect.left)/Math.max(1,rect.width)*100);}
+distanceGradientTrack.addEventListener('pointerdown',event=>{const stop=event.target.closest('.distance-stop');if(stop)distanceDragKey=stop.dataset.distance;else{const pointerPercent=(event.clientX-distanceGradientTrack.getBoundingClientRect().left)/Math.max(1,distanceGradientTrack.clientWidth)*100;distanceDragKey=Object.keys(DISTANCE_STOP_CONFIG).reduce((best,key)=>Math.abs(distanceToPercent(Number(DISTANCE_STOP_CONFIG[key].input.value))-pointerPercent)<Math.abs(distanceToPercent(Number(DISTANCE_STOP_CONFIG[best].input.value))-pointerPercent)?key:best,'detail');setDistanceStop(distanceDragKey,distancePointerValue(event));}distanceDragPointer=event.pointerId;distanceGradientTrack.setPointerCapture(event.pointerId);event.preventDefault();});
+distanceGradientTrack.addEventListener('pointermove',event=>{if(event.pointerId===distanceDragPointer&&distanceDragKey)setDistanceStop(distanceDragKey,distancePointerValue(event));});
+function endDistanceDrag(event){if(event.pointerId!==distanceDragPointer)return;distanceDragKey='';distanceDragPointer=-1;}
+distanceGradientTrack.addEventListener('pointerup',endDistanceDrag);distanceGradientTrack.addEventListener('pointercancel',endDistanceDrag);
+for(const [key,config] of Object.entries(DISTANCE_STOP_CONFIG))config.button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowDown','ArrowRight','ArrowUp','Home','End'].includes(event.key))return;const direction=event.key==='ArrowLeft'||event.key==='ArrowDown'?-1:1,value=event.key==='Home'?config.min:event.key==='End'?config.max:Number(config.input.value)+direction*config.step;setDistanceStop(key,value);event.preventDefault();});
 function currentLodSnapshot(){return {detailFeet:Math.round(detailDistanceMeters/FEET_TO_METERS),nearFeet:Math.round(nearDistanceMeters/FEET_TO_METERS),farFeet:Math.round(farDistanceMeters/FEET_TO_METERS),farVoxelMeters:farPreviewVoxelMeters,backgroundFeet:Math.round(backgroundDistanceMeters/FEET_TO_METERS),backgroundVoxelMeters,backgroundMode};}
 function optionTransferId(control){const bytes=new TextEncoder().encode(JSON.stringify({schema:'DOP1',engine:CURRENT_VERSION,option:control.id,value:control.value,lod:currentLodSnapshot()}));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return `DOP1.${btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}`;}
 function setBugtestingMode(enabled){bugtestingMode=!!enabled;document.getElementById('optionsWindow').classList.toggle('bugtesting',bugtestingMode);optionBugtesting.value=bugtestingMode?'1':'0';document.getElementById('optionBugtestingValue').textContent=bugtestingMode?'On':'Off';}
@@ -3507,7 +3608,7 @@ function syncOptionsWindow(){
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();
-  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','Projection + voxels'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;
+  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','Projection + voxels'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;syncDistanceEditor();
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
   optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky voxels','atmospheric projection','projection + voxels'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
@@ -3544,53 +3645,26 @@ document.getElementById('serverSetSpawn').addEventListener('click',()=>{if(!play
 document.getElementById('serverTeleport').addEventListener('click',()=>{const x=Number(serverSpawnX.value),y=Number(serverSpawnY.value),z=Number(serverSpawnZ.value);if(![x,y,z].every(Number.isFinite)){serverStatus.textContent='Spawn coordinates must be finite numbers.';return;}playerPos={x,y,z};velY=0;grounded=false;serverStatus.textContent=`Player moved to ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)} m.`;});
 document.getElementById('serverWakeWater').addEventListener('click',()=>{if(!playerPos)return;wakeWaterNear(Math.floor(playerPos.x/VS),Math.floor(playerPos.y/VY),Math.floor(playerPos.z/VS),32);syncServerWindow();serverStatus.textContent=`Nearby water activated · ${waterQueue.length} cells queued.`;});
 document.getElementById('serverAddSpring').addEventListener('click',()=>{if(!playerPos)return;const cam=getCamBasis(),hit=raycastVoxels({x:playerPos.x/VS,y:(playerPos.y+currentEyeH)/VY,z:playerPos.z/VS},gridDirection(cam.forward),editReachMeters/VS);if(!hit){serverStatus.textContent='No surface under the crosshair.';return;}setWaterState(hit.px,hit.py,hit.pz,8,true,true);enqueueWater(hit.px,hit.py,hit.pz);uploadRegion(hit.px-1,hit.py-1,hit.pz-1,hit.px+1,hit.py+1,hit.pz+1);syncServerWindow();serverStatus.textContent=`Renewing spring added at voxel ${hit.px}, ${hit.py}, ${hit.pz}.`;});
+const CONSOLE_HELP_SECTIONS=Object.freeze({
+  diagnostics:`[Diagnostics and engine]\nhelp [topic]         show all groups or one functional group\ndevice               show the portable device capability profile\nmemory [clear]       inspect or trim disposable CPU caches\noctaves              list active voxel resolution bands\ndetail <meters>      inspect the octave selected at a distance\nformats              list tagged volume formats and conversions\nview                 report the fixed one-kilometer horizon\nwhere                show current world coordinates`,
+  player:`[Player, editing, and movement]\nrespawn              return to the configured spawn point\nspawn set            make the current position the spawn point\nspawn <x> <y> <z>    set spawn coordinates in meters\nspeed <m/s>           set walking speed (0.5–20)\njump <m/s>            set jump launch speed (0–20)\nreach <m>             set crosshair editing reach (0.5–20)\nbrush <voxels>        set carve/place ball radius (1–12)\nfov <degrees>         set field of view (40–110)`,
+  world:`[World, lighting, and simulation]\ngravity <m/s²>        set downward acceleration (0–50)\ntime <1–24>           set hour, sun direction, lighting, and sky\nlightmode <0|1>       choose hard voxel or smooth Voxlap lighting\nwaterflow <on|off>    run or freeze water simulation\nwaterwake             activate nearby dormant water\nspring                add a renewing spring at the crosshair`,
+  materials:`[Palette and materials]\npalette                         list official palette colors\nmaterials                       list material IDs and selection\ndesigner                        open the live Material Designer\nmaterial <name|id>              inspect a palette texture\nmaterial select <m>             select right-click material\nmaterial sample                 select material at crosshair\nmaterial set <m> <base|light|dark> <palette-id>\nmaterial <noise|scale|blur> <m> <value>\nmaterial pattern <m> <0–6>      choose texture generator\nmaterial id <m>                 show portable properties ID\nmaterial load <hex>             load a properties ID\nmaterial reset <m|all>          restore default colors`,
+  resources:`[Procedural Resources]\nresources             list named procedural Resources\nresource place <name> place a saved Resource at crosshair\nresource sample       inspect material and part provenance\nresource id <name>    show a portable Resource identity\nresource load <hex>   verify and load a Resource identity`
+});
+function consoleHelp(topic=''){
+  const aliases={engine:'diagnostics',debug:'diagnostics',movement:'player',editing:'player',simulation:'world',lighting:'world',material:'materials',palette:'materials',resource:'resources'},key=aliases[topic]||topic;
+  if(key&&CONSOLE_HELP_SECTIONS[key])return `Dremplay One command reference\n${CONSOLE_HELP_SECTIONS[key]}\n\nType “help” for every group.`;
+  if(key)return `Unknown help topic: ${topic}\nTopics: diagnostics, player, world, materials, resources`;
+  return `Dremplay One command reference\nCommands are grouped by function. Use “help <topic>” for one section.\n\n${Object.values(CONSOLE_HELP_SECTIONS).join('\n\n')}`;
+}
 function runConsoleCommand(raw){
   const command=raw.trim().toLowerCase().replace(/\s+/g,' ');
   const [name,arg]=command.split(' ');
   const number=Number(arg);
   if(command)appendConsoleLog(`> ${raw.trim()}`);
   const say=text=>appendConsoleLog(text);
-  if(!command || name==='help')return say(
-`Dremplay One commands
-help                 list commands and descriptions
-octaves              list active voxel resolution bands
-detail <meters>      inspect the octave selected at a distance
-formats              list tagged volume formats and conversions
-device               show the portable device capability profile
-memory [clear]       inspect or trim derived CPU caches
-lightmode <0|1>      hard voxel or smooth Voxlap lighting
-respawn              return to the original spawn point
-spawn set            make the current position the spawn point
-spawn <x> <y> <z>    set the spawn coordinates in meters
-gravity <m/s²>       set downward acceleration (0–50)
-time <1–24>          set hour, sun direction, lighting, and sky
-speed <m/s>          set walking speed (0.5–20)
-jump <m/s>           set jump launch speed (0–20)
-reach <m>            set crosshair editing reach (0.5–20)
-brush <voxels>       set carve/place ball radius (1–12)
-waterflow <on|off>   run or freeze water simulation
-waterwake            activate nearby dormant water
-spring               add a renewing spring at the crosshair
-view                 report the fixed one-kilometer horizon
-fov <degrees>        set field of view (40–110)
-where                show current world coordinates
-palette              list the official palette colors
-materials            list material IDs and selected material
-designer             open the windowed Material Designer
-material <name|id>   inspect a material's palette texture
-material select <m>  use a material for right-click placement
-material sample      select the material under the crosshair
-material set <m> <base|light|dark> <palette-id>
-material <noise|scale|blur> <m> <value>
-material pattern <m> <0–6> choose procedural texture generator
-material id <m>      show a portable properties ID
-material load <hex>  load a material properties ID
-material reset <m|all> restore default material colors
-resources            list named procedural Resources
-resource place <name> place a saved Resource at the crosshair
-resource sample       inspect material and Resource provenance
-resource id <name>    show a portable Resource identity
-resource load <hex>   verify and load a Resource identity`);
+  if(!command || name==='help')return say(consoleHelp(arg||''));
   if(name==='octaves')return say(voxelOctaveReport());
   if(name==='formats')return say(volumeFormatReport());
   if(name==='device')return say(`device profile ${DEVICE_PROFILE.tier}\nlogical processors ${DEVICE_PROFILE.cores}\nreported memory ${DEVICE_PROFILE.memoryGiB} GiB\ntouch points ${DEVICE_PROFILE.touchPoints}\nstreaming work target ${DEVICE_PROFILE.preferredFrameBudgetMs} ms`);
@@ -3693,8 +3767,11 @@ consoleInput.addEventListener('keydown',e=>{
 window.addEventListener('keydown', e => {
   if(e.code==='Slash'){setConsole(!consoleOpen);e.preventDefault();return;}
   const typing=e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement;
+  const openApplicationMenu=document.querySelector('.menu-group.open');
+  if(e.code==='Escape'&&openApplicationMenu){closeApplicationMenus();openApplicationMenu.querySelector('.menu-button')?.focus();refreshWindowState();e.preventDefault();return;}
+  if(e.target.closest?.('#menubar')&&(e.code==='Space'||e.code==='Enter'))return;
   if(hasEnteredWorld&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-    const button=document.querySelector(`.menu-button[data-hotkey="${e.key.toLowerCase()}"]`);
+    const button=document.querySelector(`[data-hotkey="${e.key.toLowerCase()}"]`);
     if(button){setWindowById(button.dataset.window,!windowIsOpen(button.dataset.window));e.preventDefault();return;}
   }
   if(hasEnteredWorld&&!typing&&(e.code==='Escape'||e.code==='Space')){
@@ -3987,7 +4064,15 @@ let lastT = performance.now();
 let frameCount=0, fpsAccum=0, fps=0,lastOverrunReport=0,lagNoticeUntil=0,lastFrameCostMs=0,lastFrameWorkMs=0,smoothedFrameGapMs=16.67,idleDeadlineAllowance=0,idleWorldPumpScheduled=false,nextIdlePredictivePollAt=0;
 let lastMovementInputAt=0,movementHeadingX=0,movementHeadingZ=0;
 function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['north','northeast','east','southeast','south','southwest','west','northwest'];return {degrees,name:names[Math.round(degrees/45)%8]};}
-function updateCompass(){const heading=compassHeading(),compass=document.getElementById('compass');document.getElementById('compassDial').style.transform=`rotate(${-heading.degrees}deg)`;compass.setAttribute('aria-label',`Circular compass, facing ${heading.name}, ${Math.round(heading.degrees)} degrees`);}
+let compassDisplayAngle=0,compassAngularVelocity=0,compassInitialized=false,lastCompassAnnouncement=-1;
+const compassReducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function compassAngleDelta(target,current){return (target-current+540)%360-180;}
+function updateCompass(dt){
+  const heading=compassHeading(),target=-heading.degrees,compass=document.getElementById('compass');
+  if(!compassInitialized){compassDisplayAngle=target;compassAngularVelocity=0;compassInitialized=true;}
+  const spring=compassReducedMotion?115:76,damping=compassReducedMotion?22:10.5,step=Math.min(.033,Math.max(0,dt||0));compassAngularVelocity+=compassAngleDelta(target,compassDisplayAngle)*spring*step;compassAngularVelocity*=Math.exp(-damping*step);compassDisplayAngle+=compassAngularVelocity*step;document.getElementById('compassDial').style.transform=`rotate(${compassDisplayAngle.toFixed(3)}deg)`;
+  const announcement=Math.round(heading.degrees);if(announcement!==lastCompassAnnouncement){lastCompassAnnouncement=announcement;compass.setAttribute('aria-label',`Circular compass, facing ${heading.name}, ${announcement} degrees`);}
+}
 function updateResourceLookLabel(){
   const label=document.getElementById('resourceLookLabel');
   if(!hasEnteredWorld||anyToolOpen()){label.textContent='';label.classList.remove('visible');return;}
@@ -4086,6 +4171,7 @@ function loop(now){
     if(!streamTask)processWaterDirtyUploads(moving?49152:196608);
   }
 
+  updateCompass(dt);
   render();
   lastFrameWorkMs=performance.now()-frameStarted;reportFrameOverrun(frameGapMs,lastFrameWorkMs);
   if(lagNoticeUntil&&performance.now()>=lagNoticeUntil&&!streamTask&&!cacheNoticeActive){lagNoticeUntil=0;hideLoading();}
@@ -4095,7 +4181,7 @@ function loop(now){
   if (fpsAccum >= 0.5){
     fps = frameCount/fpsAccum;
     frameCount = 0; fpsAccum = 0;
-    updateCompass();updateResourceLookLabel();document.getElementById('stats').textContent =
+    updateResourceLookLabel();document.getElementById('stats').textContent =
       `${fps.toFixed(0)} fps · ${resolvedPlatformMode()} · view ${viewDistanceMeters>=1000?'1.00 km':viewDistanceMeters.toFixed(0)+' m'} · lightmode ${lightMode} · ${timeOfDay.toFixed(1)}h${testZoneMode?' · Test zone':''} · ${canvas.width}×${canvas.height}\n`+
       `${chunks.size} allocated / ${generatedChunks.size} known chunks · ${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB voxel CPU · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\n`+
       `${dirtyChunks.size} edited chunks · ${resourceChunks.size} provenance chunks · water ${waterQueue.length}/${waterMovedLastFrame} · ring ${ringX},${ringZ}\n`+
