@@ -6,12 +6,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Dremplay One v0.0.1.6.6 — Infinite Detail Voxel Engine</title>
+<title>Dremplay One v0.0.1.6.6.2 — Infinite Detail Voxel Engine</title>
 <script>
 (() => {
   'use strict';
-  const CURRENT_VERSION = '0.0.1.6.6';
-  const CURRENT_REVISION = 69;
+  const CURRENT_VERSION = '0.0.1.6.6.2';
+  const CURRENT_REVISION = 71;
   const CHECK_INTERVAL_MS = 60000;
   let refreshStarted = false;
 
@@ -110,6 +110,12 @@
   #titleLinks a { color:#bcdcff; font-size:11px; text-decoration:underline; text-underline-offset:3px; }
   .tool-window { display:none; position:absolute; z-index:20; background:#141024; border:1px solid #54FC54; color:#54FC54; font-size:12px; box-shadow:5px 6px 0 #04081888; min-width:280px; }
   .tool-window.open { display:block; }
+  #autopilotWindow { width:min(460px,calc(100vw - 24px)); left:calc(50% - 230px); top:82px; }
+  .autopilot-controls { display:grid; gap:8px; }
+  .autopilot-controls .option-row { grid-template-columns:145px minmax(120px,1fr) 74px; }
+  .autopilot-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; }
+  #autopilotTelemetry { min-height:132px; margin:8px 0 0; padding:9px; overflow:auto; background:#070814; border:1px solid #4c843c; color:#ececec; font:11px/1.55 monospace; white-space:pre-wrap; }
+  #autopilotStatus { color:#bcdcff; min-height:2.8em; }
   .titlebar { height:28px; display:flex; align-items:center; justify-content:space-between; padding-left:9px; background:#243c24; border-bottom:1px solid #54FC54; letter-spacing:1px; font-weight:700; cursor:move; user-select:none; touch-action:none; }
   .window-close { width:30px; height:27px; border:0; border-left:1px solid #54FC54; background:#141024; color:#54FC54; font:inherit; cursor:pointer; }
   .window-close:hover { background:#387434; }
@@ -415,6 +421,7 @@
     <button class="menu-item" type="button" role="menuitem" data-window="console"><span>Console</span><span class="menu-shortcut">/</span></button>
     <button class="menu-item" type="button" role="menuitem" data-hotkey="m" data-window="materialDesigner"><span>Materials</span><span class="menu-shortcut">M</span></button>
     <button class="menu-item" type="button" role="menuitem" data-hotkey="r" data-window="resourceDesigner"><span>Resource Editor</span><span class="menu-shortcut">R</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-hotkey="p" data-window="autopilotWindow"><span>Autopilot</span><span class="menu-shortcut">P</span></button>
   </div></div>
   <div class="menu-group"><button class="menu-button" type="button" aria-haspopup="menu" aria-expanded="false">Settings</button><div class="menu-popup" role="menu">
     <button class="menu-item" type="button" role="menuitem" data-hotkey="f12" data-window="optionsWindow"><span>Options</span><span class="menu-shortcut">F12</span></button>
@@ -438,7 +445,7 @@
   </div>
 </div>
 
-<div id="topleft">Dremplay One<span>v0.0.1.6.6 · Infinite Detail Voxel Engine · bounded surface clipmap</span></div>
+<div id="topleft">Dremplay One<span>v0.0.1.6.6.2 · Infinite Detail Voxel Engine · continuous 3D terrain horizon</span></div>
 <div id="topright"><div id="compass" role="img" aria-label="Circular compass, north"><div id="compassDial"><span class="compass-point compass-n">N</span><span class="compass-point compass-e">E</span><span class="compass-point compass-s">S</span><span class="compass-point compass-w">W</span></div><span id="compassNeedle"></span><span id="compassHub"></span></div><span id="stats"></span></div>
 <div id="hud">
   <div>WASD <span class="dim">move</span> &nbsp; SHIFT <span class="dim">jump</span> &nbsp; CTRL <span class="dim">crawl</span> &nbsp; SPACE <span class="dim">cursor</span></div>
@@ -447,7 +454,7 @@
 
 <div id="startscreen">
   <h1>Dremplay One</h1>
-  <p>Version 0.0.1.6.6 · Infinite Detail Voxel Engine</p>
+  <p>Version 0.0.1.6.6.2 · Infinite Detail Voxel Engine</p>
   <p>A portable first-person <b>microvoxel</b> engine built around mathematical Resources, voxel octaves, tagged volume formats, and predictive multiresolution streaming.
      The stable world currently renders through four octave bands while the new conversion architecture is introduced incrementally.
      A bounded 384×416×384 near-field clipmap preserves true 0.1 m isotropic editing while the immutable mathematical atlas supplies every distant level of detail.
@@ -483,6 +490,7 @@
       <button type="button" data-mobile-window="console">Console</button><button type="button" data-mobile-window="materialDesigner">Materials</button>
       <button type="button" data-mobile-window="resourceDesigner">Resource Builder</button><button type="button" data-mobile-window="mapWindow">Map</button>
       <button type="button" data-mobile-window="loadingOverlay">Loading Monitor</button>
+      <button type="button" data-mobile-window="autopilotWindow">Autopilot</button>
       <button type="button" data-mobile-window="serverWindow">Server</button><button type="button" data-mobile-window="optionsWindow">Options</button>
       <button type="button" data-mobile-window="modsWindow">Mods</button><button type="button" data-mobile-window="helpWindow">Help</button>
       <button type="button" data-mobile-window="aboutWindow">About</button><button id="touchResume" type="button">Resume game</button>
@@ -532,6 +540,21 @@
   <div class="window-body"><canvas id="worldMapCanvas" width="640" height="640" aria-label="Heightmap and fast travel map"></canvas><div id="mapStatus">Gold cross: current location. Click land to travel immediately. The destination already exists mathematically; fine voxels refine afterward without changing it.</div></div>
 </div>
 
+<div id="autopilotWindow" class="tool-window simple-window" role="dialog" aria-label="Autopilot navigation and rendering test">
+  <div class="titlebar"><span>Autopilot · navigation laboratory</span><button class="window-close" aria-label="Close Autopilot">×</button></div>
+  <div class="window-body">
+    <p id="autopilotStatus">Stopped. Autopilot uses ordinary collision, gravity, clipmap streaming, and Resource rendering.</p>
+    <div class="autopilot-controls">
+      <div class="option-row"><label for="autopilotMode">Wandering mode</label><select id="autopilotMode"><option value="trail">Follow natural trails</option><option value="contour">Contour survey</option><option value="coast">Water-edge survey</option><option value="meander">Natural meander</option><option value="regions">Region stress circuit</option><option value="straight">Straight traversal</option></select><span id="autopilotModeValue">Trails</span></div>
+      <div class="option-row"><label for="autopilotSpeed">Walking speed</label><input id="autopilotSpeed" type="range" min="0.35" max="1.6" step="0.05" value="1"><span id="autopilotSpeedValue">1.00×</span></div>
+      <div class="option-row"><label for="autopilotLookahead">Sensor look-ahead</label><input id="autopilotLookahead" type="range" min="2" max="20" step="1" value="8"><span id="autopilotLookaheadValue">8 m</span></div>
+      <div class="option-row"><label for="autopilotCamera">Camera steering</label><select id="autopilotCamera"><option value="1">Follow travel</option><option value="0">Keep current view</option></select><span></span></div>
+    </div>
+    <div class="autopilot-actions"><button id="autopilotStart" class="tool-button" type="button">Start</button><button id="autopilotPause" class="tool-button" type="button">Pause</button><button id="autopilotStop" class="tool-button" type="button">Stop</button><button id="autopilotReset" class="tool-button" type="button">Reset report</button><button id="autopilotCopy" class="tool-button" type="button">Copy report</button></div>
+    <pre id="autopilotTelemetry" aria-live="polite">No navigation samples yet.</pre>
+  </div>
+</div>
+
 <div id="optionsWindow" class="tool-window simple-window" role="dialog" aria-label="Options">
   <div class="titlebar"><span>Options</span><button class="window-close" aria-label="Close options">×</button></div>
   <div class="window-body">
@@ -559,7 +582,7 @@
       </div><span></span></div>
       <div class="option-row"><label for="optionFarVoxel">Far voxel size</label><select id="optionFarVoxel"><option value="0.5">0.5 m</option><option value="1" selected>1 m</option><option value="2">2 m</option><option value="4">4 m</option></select><span id="optionFarVoxelValue">1 m</span></div>
       <div class="option-row"><label for="optionBackgroundVoxel">Background voxel</label><select id="optionBackgroundVoxel"><option value="4">4 m</option><option value="8">8 m</option><option value="16" selected>16 m</option><option value="32">32 m</option><option value="64">64 m</option></select><span id="optionBackgroundVoxelValue">16 m</span></div>
-      <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Atmospheric projection</option><option value="2" selected>Projection + voxels</option></select><span id="optionBackgroundModeValue">Projection + voxels</span></div>
+      <div class="option-row"><label for="optionBackgroundMode">Background style</label><select id="optionBackgroundMode"><option value="0">Chunky voxels</option><option value="1">Atmospheric projection</option><option value="2" selected>1 km voxel horizon</option></select><span id="optionBackgroundModeValue">1 km voxel horizon</span></div>
       <div class="option-row"><label for="optionBugtesting">Bugtesting mode</label><select id="optionBugtesting"><option value="1" selected>On</option><option value="0">Off</option></select><span id="optionBugtestingValue">On</span></div>
     </div></details>
     <details class="option-section"><summary>Fog and atmosphere</summary><div class="option-section-body">
@@ -611,10 +634,11 @@
   <div class="window-body"><p class="manual-lead">Dremplay One is an editable mathematical world rendered through distance-dependent voxel detail. Nearby matter resolves finely; distant matter remains a stable, inexpensive projection of the same world.</p>
     <div class="manual-index"><span>Main · session and map</span><span>Tools · creation and inspection</span><span>Settings · display and simulation</span><span>Help · this manual and credits</span></div>
     <h2>Desktop controls</h2><ul><li><code>W A S D</code> move; mouse turns the view.</li><li><code>Shift</code> jumps and <code>Ctrl</code> crawls.</li><li><code>Space</code> alternates game control and the cursor. <code>Esc</code> goes back, cancels, or focuses Main.</li><li>Left mouse carves a ball; right mouse places a ball of the selected material directly at the crosshair.</li></ul>
-    <h2>Application menus and hotkeys</h2><p><b>Main</b> contains Restart, World map, and Quit to title. <b>Tools</b> contains Loader, Console, Materials, and Resource Editor. <b>Settings</b> contains Options, Server, and Mods. <b>Help</b> contains Manual and About.</p><p><code>/</code> Console · <code>M</code> Materials · <code>R</code> Resource Editor · <code>G</code> Map · <code>L</code> Loader · <code>F10</code> Server · <code>F12</code> Options · <code>F11</code> Mods · <code>F1</code> Manual · <code>F2</code> About</p>
+    <h2>Application menus and hotkeys</h2><p><b>Main</b> contains Restart, World map, and Quit to title. <b>Tools</b> contains Loader, Console, Materials, Resource Editor, and Autopilot. <b>Settings</b> contains Options, Server, and Mods. <b>Help</b> contains Manual and About.</p><p><code>/</code> Console · <code>M</code> Materials · <code>R</code> Resource Editor · <code>G</code> Map · <code>L</code> Loader · <code>P</code> Autopilot · <code>F10</code> Server · <code>F12</code> Options · <code>F11</code> Mods · <code>F1</code> Manual · <code>F2</code> About</p>
     <h2>Detail distance editor</h2><p>Options → Distance detail laboratory uses one logarithmic track with four ordered stops: <b>D</b> Detail, <b>N</b> Near, <b>F</b> Far, and <b>B</b> Background. Drag a stop or focus it and use arrow keys. The nonlinear track leaves short interaction distances easy to grab while still reaching 1,000 ft. Stops cannot cross, so voxel scales always hand off in a valid order.</p>
     <h2>Compass</h2><p>The circular rose rotates continuously to keep its north mark aligned with the world. Its slight overshoot is a damped floating response, not a change to player heading. Reduced-motion mode removes the rebound.</p>
     <h2>Map and fast travel</h2><p>Open the heightmap with <code>G</code> or Navigator Start. The gold cross marks your position; select land to move there immediately. The mathematical parent surface appears first, and disposable fine voxels refine around it without changing the location's underlying ecology.</p>
+    <h2>Autopilot and navigation tests</h2><p>Open Autopilot with <code>P</code> or Tools → Autopilot. It drives the same collision, terrain-query, ecology, and streaming systems as the player. Trail-following, contour, water-edge, meander, regional circuit, and straight-traverse modes exercise different parts of the world. The camera may follow or remain independent. Live telemetry records distance, frame time, GPU time, cache size, Resource provenance, and streaming work; Copy report exports tab-separated samples for diagnosis. This sensor/evaluator/steering separation is also the foundation for future bot navigation.</p>
     <h2>Editing, materials, and Resources</h2><p>Carving and placement use the center crosshair. Adjust ball radius with <code>brush</code> and range with <code>reach</code>. The Materials window changes palette-bound surface definitions live. The Resource Editor builds deterministic plants, trees, stones, fungi, and other props; identity/transfer IDs preserve their mathematical graph and palette aesthetic.</p><p>A Resource voxel retains provenance for inspection. Use <code>resource sample</code> at the crosshair to distinguish a named part from ordinary terrain or a manual voxel.</p>
     <h2>World and server simulation</h2><p>Server contains time of day, gravity, water budgets and sources, spawn coordinates, respawn, and teleport controls. Water simulation continues while windows are open. The world atlas and ecology equations are deterministic; voxel caches are disposable render data, while manual edits are sparse overrides.</p>
     <h2>AI Loading Monitor</h2><p>The Loader reports active terrain, ecology, Resource, weather, prediction, simulation, cache, and GPU work. Closing it never stops loading and it stays closed until opened manually with <code>L</code>, Tools → Loader, or the touch launcher. Drag its title bar to move it; use the square button to minimize or restore it. Navigator hides the conveyor, while Tablet and Desktop show the continuous task belt.</p>
@@ -625,10 +649,10 @@
 
 <div id="aboutWindow" class="tool-window simple-window" role="dialog" aria-label="About">
   <div class="titlebar"><span>About</span><button class="window-close" aria-label="Close about">×</button></div>
-  <div class="window-body"><h2>Dremplay One v0.0.1.6.6</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">Bounded surface clipmap · cached distance field · measured frame budgets</p></div>
+  <div class="window-body"><h2>Dremplay One v0.0.1.6.6.2</h2><p>An Infinite Detail Voxel Engine for immutable mathematical worlds, portable multiresolution queries, natural-material experiments, and procedural Resource definitions.</p><p class="muted">100 × 100 m mathematical regions · continuous 3D one-kilometer terrain · bounded walking cache</p></div>
 </div>
 
-<script src="heightmap-world-v2.js?v=69"></script>
+<script src="heightmap-world-v2.js?v=71"></script>
 <script>
 (() => {
 "use strict";
@@ -645,7 +669,7 @@ const CHUNK_SIZE = 32;                 // voxels per chunk (good balance for upl
 // of the former 234 MiB. Distant terrain comes from the immutable atlas below.
 const LOADED_CHUNKS_XZ = 12;
 const LOADED_CHUNKS_Y = 13;            // 416 isotropic cells: 41.6 m, including 6.4 m underground
-const PREFETCH_MARGIN=8;                // bounded sparse CPU bricks ahead of the observer
+const PREFETCH_MARGIN=4;                // 12.8 m exact reserve; the mathematical parent covers everything beyond it
 const TERRAIN_PLAN_MARGIN=12;            // lightweight mathematical reserve beyond fine voxels
 const BOOT_PREFETCH_MARGIN=0;           // launcher materializes only the resident cache; prediction begins after release
 const BOOT_RESOURCE_RADIUS=4;            // 9×9 columns = 28.8 m Resource-complete neighborhood around spawn
@@ -1140,7 +1164,7 @@ let terrainWeatherGrid = new Uint16Array(activeGridSizeX*activeGridSizeZ*2);
 // into world-aligned 100×100 m regions; the central 7×7 neighborhood guarantees
 // 300 m of preview coverage in every direction while exposed edge regions load.
 const FAR_MAP_SIZE=260,FAR_CELL_VOXELS=100,FAR_SPAN_VOXELS=FAR_MAP_SIZE*FAR_CELL_VOXELS,FAR_REGION_VOXELS=1000,FAR_REGION_CELLS=10,FAR_REQUIRED_RADIUS=3,MINIMUM_PREVIEW_RADIUS_METERS=300;
-let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null;
+let farTerrainGrid=new Uint8Array(FAR_MAP_SIZE*FAR_MAP_SIZE*4),farTerrainOriginX=0,farTerrainOriginZ=0,farTerrainTask=null,lastRequestedMathematicalRegion='';
 // A tiny full-island panorama complements the one-kilometer editable view.
 // Each azimuth stores the maximum elevation angle in three real distance
 // bands. It is derived from the immutable heightmap, so distant mountains are
@@ -1208,6 +1232,18 @@ function assembleMathematicalTerrainWeatherGrid(step=8){
   terrainWeatherGrid.fill(0);for(let z=0;z<activeGridSizeZ;z+=step)for(let x=0;x<activeGridSizeX;x+=step){const t=terrainSample(windowMinX+x,windowMinZ+z),biome=worldBiomeField(windowMinX+x,windowMinZ+z,{terrain:t}),height=Math.max(0,Math.min(65535,t.height)),moisture=Math.round(biome.moisture*65535);for(let dz=0;dz<step&&z+dz<activeGridSizeZ;dz++)for(let dx=0;dx<step&&x+dx<activeGridSizeX;dx++){const i=((x+dx)+(z+dz)*activeGridSizeX)*2;terrainWeatherGrid[i]=height;terrainWeatherGrid[i+1]=moisture;}}
 }
 function alignedFarOrigin(center){return Math.floor((center-FAR_SPAN_VOXELS*.5)/FAR_REGION_VOXELS)*FAR_REGION_VOXELS;}
+function mathematicalRegionCoordinate(value){return Math.floor(value/FAR_REGION_VOXELS);}
+function mathematicalRegionPreviewTarget(playerX,playerZ,moving){
+  let regionX=mathematicalRegionCoordinate(playerX),regionZ=mathematicalRegionCoordinate(playerZ);
+  if(moving){
+    const localX=mod(playerX,FAR_REGION_VOXELS),localZ=mod(playerZ,FAR_REGION_VOXELS);
+    if(movementHeadingX>.25&&localX>FAR_REGION_VOXELS*.65)regionX++;
+    else if(movementHeadingX<-.25&&localX<FAR_REGION_VOXELS*.35)regionX--;
+    if(movementHeadingZ>.25&&localZ>FAR_REGION_VOXELS*.65)regionZ++;
+    else if(movementHeadingZ<-.25&&localZ<FAR_REGION_VOXELS*.35)regionZ--;
+  }
+  return {regionX,regionZ,centerX:regionX*FAR_REGION_VOXELS+FAR_REGION_VOXELS*.5,centerZ:regionZ*FAR_REGION_VOXELS+FAR_REGION_VOXELS*.5};
+}
 function farPreviewCoverageMeters(centerX,centerZ,originX=farTerrainOriginX,originZ=farTerrainOriginZ){return Math.min(centerX-originX,centerZ-originZ,originX+FAR_SPAN_VOXELS-centerX,originZ+FAR_SPAN_VOXELS-centerZ)*VS;}
 function fillFarTerrainCell(grid,originX,originZ,x,row){
     const wx=originX+(x+.5)*FAR_CELL_VOXELS,wz=originZ+(row+.5)*FAR_CELL_VOXELS,t=terrainSample(wx,wz);
@@ -1251,7 +1287,7 @@ function queueFarTerrainRefresh(centerX,centerZ){
     if(oldX>=0&&oldX<FAR_MAP_SIZE&&oldZ>=0&&oldZ<FAR_MAP_SIZE){const source=(oldX+oldZ*FAR_MAP_SIZE)*4;grid[target]=farTerrainGrid[source];grid[target+1]=farTerrainGrid[source+1];grid[target+2]=farTerrainGrid[source+2];grid[target+3]=farTerrainGrid[source+3];}
     else tileKeys.add(`${Math.floor(x/FAR_REGION_CELLS)},${Math.floor(z/FAR_REGION_CELLS)}`);
   }
-  const playerCellX=(centerX-originX)/FAR_CELL_VOXELS,playerCellZ=(centerZ-originZ)/FAR_CELL_VOXELS,tiles=[...tileKeys].map(key=>{const [tx,tz]=key.split(',').map(Number),x0=tx*FAR_REGION_CELLS,z0=tz*FAR_REGION_CELLS,w=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-x0),h=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-z0);return {tx,tz,x0,z0,w,h,cursor:0,distance:Math.hypot(x0+w*.5-playerCellX,z0+h*.5-playerCellZ)};}).sort((a,b)=>a.distance-b.distance);
+  const playerCellX=(centerX-originX)/FAR_CELL_VOXELS,playerCellZ=(centerZ-originZ)/FAR_CELL_VOXELS,tiles=[...tileKeys].map(key=>{const [tx,tz]=key.split(',').map(Number),x0=tx*FAR_REGION_CELLS,z0=tz*FAR_REGION_CELLS,w=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-x0),h=Math.min(FAR_REGION_CELLS,FAR_MAP_SIZE-z0),regionX=mathematicalRegionCoordinate(originX+x0*FAR_CELL_VOXELS),regionZ=mathematicalRegionCoordinate(originZ+z0*FAR_CELL_VOXELS);return {tx,tz,x0,z0,w,h,regionX,regionZ,cursor:0,distance:Math.hypot(x0+w*.5-playerCellX,z0+h*.5-playerCellZ)};}).sort((a,b)=>a.distance-b.distance);
   farTerrainTask={originX,originZ,grid,tiles,tileIndex:0,started:performance.now(),reusedCells:FAR_MAP_SIZE*FAR_MAP_SIZE-tiles.reduce((n,t)=>n+t.w*t.h,0)};
   loadingLog('Regional preview',`${tiles.length} exposed 100×100 m squares queued · ${farTerrainTask.reusedCells} control cells reused · guaranteed radius ${FAR_REQUIRED_RADIUS*100} m`);
 }
@@ -1446,13 +1482,11 @@ vec4 farVoxelTerrainAt(vec2 worldXZ,float dist){
   // continuous elevation/hydrography field on the virtual 1/2/4/8 m lattice;
   // the separate max hierarchy remains conservative traversal acceleration.
   vec4 voxel=farTerrainAt(center);if(voxel.x<0.0)return voxel;
-  // Projection mode observes the same immutable height field continuously.
-  // Combined mode eases from visible far voxels into that projection; it does
-  // not wait until 300 m and then change representation in one obvious step.
-  if(dist>=uPreviewLod.x&&uBackgroundMode>0){
-    vec4 matte=farTerrainAt(worldXZ);if(uBackgroundMode==1)return matte;
-    float projectionMix=smoothstep(uPreviewLod.x,uPreviewLod.y,dist);voxel=mix(voxel,matte,projectionMix);
-  }
+  // Pure projection mode observes the same immutable height field
+  // continuously. Voxel-horizon mode deliberately keeps quantized geometry
+  // through the complete one-kilometer view; atmosphere shades that geometry
+  // but never dissolves it into a flat matte.
+  if(dist>=uPreviewLod.x&&uBackgroundMode==1)return farTerrainAt(worldXZ);
   return voxel;
 }
 vec2 terrainWeatherAt(vec2 worldXZ){
@@ -1733,12 +1767,11 @@ bool traceFarTerrain(vec3 ro,vec3 rd,float startT,out vec3 hitP,out vec4 surface
   // If an exact resident/merged ray found no matter, the compact regional
   // preview is the continuity fallback from 50 ft onward. It no longer leaves
   // a blank 50–250 ft band while an exact sector is still being prepared.
-  // This fallback must begin *inside* the resident ring. Starting at the DDA
-  // exit made a ray which was already below the coarse height field report
-  // the ring boundary itself as a hit, producing the apparent brown world
-  // edge. Exact voxels still win whenever they are present; this trace only
-  // supplies continuous terrain behind a missing or late detail sector.
-  float t=min(max(uLodDistances.y,1.0),uViewDistance),stepLen=160.0;
+  // Continue from the exact ray's actual exit. Restarting this trace at the
+  // Near LOD made the first coarse height sample sit behind the camera ray and
+  // turn into a false vertical wall. The far atlas is the same 3D terrain
+  // function at a coarser query octave, not a separate painted horizon.
+  float t=min(max(max(startT,uLodDistances.y),1.0),uViewDistance),stepLen=160.0;
   vec3 startP=ro+rd*t;vec4 startData=farVoxelTerrainAt(startP.xz,t);if(startData.x<0.0)return false;
   float startDelta=startP.y-startData.x;
   if(startDelta<=0.0){
@@ -1831,7 +1864,7 @@ vec3 shadeFarTerrain(vec3 p,vec4 surface,vec3 rd,float dist){
   float height=surface.x,moisture=surface.y,pool=surface.z,ridges=surface.w,rock=smoothstep(.58,.88,ridges)*smoothstep(90.0,250.0,height),snowAmount=smoothstep(255.0,310.0,height);
   vec3 base=mix(mix(earth,mix(grass,dry,clamp((height-150.0)/170.0,0.0,1.0)),moisture),stone,rock);base=mix(base,snow,snowAmount);base=mix(base,water,smoothstep(.24,.48,pool));
   float diffuse=max(dot(normal,sunDirection()),0.0),light=.28+.72*sqrt(diffuse)*daylightAmount();vec3 lit=floor(base*light*16.0+.5)/16.0;
-  float projectionMix=uBackgroundMode==1?smoothstep(uPreviewLod.x*.86,uPreviewLod.x,dist):(uBackgroundMode==2?smoothstep(uPreviewLod.x,uPreviewLod.y,dist):0.0);
+  float projectionMix=uBackgroundMode==1?smoothstep(uPreviewLod.x*.86,uPreviewLod.x,dist):0.0;
   vec3 shaded=mix(lit,shadeAtmosphericProjection(p,surface,normal,rd,dist),projectionMix);
   float meters=dist*.1,adaptiveDensity=min(uFogDensity,3.8/max(50.0,uViewDistance*.1)),fog=uFogEnabled==0?0.0:1.0-exp(-max(0.0,meters-max(uFogStart,300.0))*adaptiveDensity);return mix(shaded,skyColor(rd,false),clamp(fog,0.0,1.0));
 }
@@ -1884,7 +1917,10 @@ void main(){
     for(int i=0;i<MAX_FINE_STEPS;i++){
       if(fineDist>pixelNearDetail*float(WORLD_DETAIL)||!inFineBounds(finePos))break;
       ivec3 parent=finePos/WORLD_DETAIL;uint parentState=chunkState(parent);
-      if(parentState!=1u){
+      // Only state 2 is proven empty sky. State 0 is the immutable
+      // mathematical parent and must remain visible until its exact child is
+      // resident; skipping it created voids and narrow paths under the player.
+      if(parentState==2u){
         fineDist=jumpOutOfEmptyChunk(fineRo,rd,rdSafe,fineDist,finePos,float(32*WORLD_DETAIL));
         vec3 jumped=fineRo+rd*fineDist;finePos=ivec3(floor(jumped));
         fineSide=vec3(fineDist)+(fineStep*(vec3(finePos)-jumped)+(fineStep*.5)+.5)*fineDelta;
@@ -1912,7 +1948,7 @@ void main(){
       if(uPerformanceMode==1&&i>=288)break;
       dist=coarseStart+localDist;if(dist>min(uLodDistances.y,uViewDistance)||!inBounds(mapPos))break;
       uint coarseState=chunkState(mapPos);
-      if(coarseState!=1u){
+      if(coarseState==2u){
         localDist=jumpOutOfEmptyChunk(coarseRo,rd,rdSafe,localDist,mapPos,32.0);
         vec3 jumped=coarseRo+rd*localDist;mapPos=ivec3(floor(jumped));
         sideDist=vec3(localDist)+(stepDir*(vec3(mapPos)-jumped)+(stepDir*.5)+.5)*deltaDist;
@@ -1924,7 +1960,7 @@ void main(){
         sideDist=vec3(localDist)+(stepDir*(vec3(mapPos)-jumped)+(stepDir*.5)+.5)*deltaDist;
         continue;
       }
-      uint m=residentTextureMaterial(mapPos);
+      uint m=coarseState==0u?mathematicalProxyMaterial(mapPos):residentTextureMaterial(mapPos);
       if(m==10u){if(!waterHit){waterHit=true;waterDist=dist;waterMapPos=mapPos;waterNormal=length(normal)>.1?normal:vec3(0.0,1.0,0.0);}}
       else if(m>0u){hit=true;material=m;materialPos=mapPos;break;}
       if(sideDist.x<sideDist.y){if(sideDist.x<sideDist.z){localDist=sideDist.x;sideDist.x+=deltaDist.x;mapPos.x+=int(stepDir.x);normal=vec3(-stepDir.x,0.0,0.0);}else{localDist=sideDist.z;sideDist.z+=deltaDist.z;mapPos.z+=int(stepDir.z);normal=vec3(0.0,0.0,-stepDir.z);}}
@@ -1942,7 +1978,7 @@ void main(){
       dist=mergedStart+localDist*2.0;if(dist>min(uLodDistances.z,uViewDistance)||!inMergedBounds(mergedPos))break;
       ivec3 mergedBase=mergedPos*2;
       uint mergedState0=chunkState(mergedBase),mergedState1=chunkState(min(mergedBase+ivec3(1),uGrid-ivec3(1)));
-      if(mergedState0!=1u&&mergedState1!=1u){
+      if(mergedState0==2u&&mergedState1==2u){
         localDist=jumpOutOfEmptyChunk(mergedRo,rd,rdSafe,localDist,mergedPos,16.0);
         vec3 jumped=mergedRo+rd*localDist;mergedPos=ivec3(floor(jumped));
         mergedSide=vec3(localDist)+(mergedStep*(vec3(mergedPos)-jumped)+(mergedStep*.5)+.5)*mergedDelta;
@@ -1967,7 +2003,7 @@ void main(){
   }
 
   if (!hit){
-    vec3 worldCam=uCamPos+vec3(uWorldOrigin),farP=vec3(0.0);vec4 farSurface=vec4(0.0);float farDist=0.0;bool farHit=traceFarTerrain(worldCam,worldRd,dist,farP,farSurface,farDist);vec3 sky=skyColor(worldRd,true),backdrop=farHit?shadeFarTerrain(farP,farSurface,worldRd,farDist):shadeFullIslandHorizon(worldRd,sky);
+    vec3 worldCam=uCamPos+vec3(uWorldOrigin),farP=vec3(0.0);vec4 farSurface=vec4(0.0);float farDist=0.0;bool farHit=traceFarTerrain(worldCam,worldRd,dist,farP,farSurface,farDist);vec3 sky=skyColor(worldRd,true),backdrop=farHit?shadeFarTerrain(farP,farSurface,worldRd,farDist):sky;
     if(waterHit){
       float waterAlpha=mix(0.62,0.36,clamp(abs(worldRd.y),0.0,1.0));
       vec3 waterCol=waterPixelColor(waterMapPos,waterNormal,worldRd,18.0);
@@ -2401,7 +2437,7 @@ function finishInitialWorld(loadToken=initialLoadToken){
   gl.activeTexture(gl.TEXTURE0);
   const sx=Math.floor(activeGridSizeX/2),sz=Math.floor(activeGridSizeZ/2),gh=groundHeightAt(windowMinX+sx,windowMinZ+sz);
   playerPos={x:(windowMinX+sx+0.5)*VS,y:(gh+1)*VY+0.02,z:(windowMinZ+sz+0.5)*VS};spawnPos={...playerPos};
-  const horizonStarted=performance.now(),horizonBytes=buildHorizonProjection(playerPos.x/VS,(playerPos.y+EYE_H)/VY,playerPos.z/VS);loadingLog('Full-island horizon',`${HORIZON_BINS} azimuths · three depth layers · ${(horizonBytes/1024).toFixed(1)} KiB · ${(performance.now()-horizonStarted).toFixed(1)} ms`);
+  loadingLog('3D horizon',`the regional height/material atlas remains a spatial terrain field to 1 km; no flat azimuth panorama is generated`);
   const previewCoverage=farPreviewCoverageMeters(playerPos.x/VS,playerPos.z/VS);
   if(previewCoverage<MINIMUM_PREVIEW_RADIUS_METERS){engineReady=false;startBtn.disabled=true;startBtn.textContent='300 m voxel ring unavailable';loadingLog('Coverage gate',`${previewCoverage.toFixed(1)} m available; ${MINIMUM_PREVIEW_RADIUS_METERS} m required in every direction`);showLoading('Voxel coverage verification failed',1,false);return;}
   loadingLog('Coverage gate',`${previewCoverage.toFixed(0)} m resident mathematical-voxel coverage in every direction · required ${MINIMUM_PREVIEW_RADIUS_METERS} m · accepted`);
@@ -2793,7 +2829,7 @@ consoleEl.querySelector('.window-close').addEventListener('click',()=>setConsole
 designerEl.querySelector('.window-close').addEventListener('click',()=>setDesigner(false));
 function setSimpleWindow(win,open){
   win.classList.toggle('open',open);for(const k in keys)keys[k]=false;clearTouchState();
-  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(win);if(win.id==='optionsWindow')syncOptionsWindow();if(win.id==='serverWindow')syncServerWindow();if(win.id==='mapWindow')renderWorldMap();if(win.id==='resourceDesigner')requestAnimationFrame(()=>{try{loadResource(document.getElementById('resourceLibrary').value||'field_boulder');}catch(error){console.error('Resource Builder preview failed',error);document.getElementById('resourceStatus').textContent=`Preview unavailable: ${error.message}`;}});}
+  if(open){if(document.pointerLockElement)document.exitPointerLock();bringToFront(win);if(win.id==='optionsWindow')syncOptionsWindow();if(win.id==='serverWindow')syncServerWindow();if(win.id==='mapWindow')renderWorldMap();if(win.id==='autopilotWindow'){syncAutopilotControls();paintAutopilotTelemetry();}if(win.id==='resourceDesigner')requestAnimationFrame(()=>{try{loadResource(document.getElementById('resourceLibrary').value||'field_boulder');}catch(error){console.error('Resource Builder preview failed',error);document.getElementById('resourceStatus').textContent=`Preview unavailable: ${error.message}`;}});}
   refreshWindowState();
 }
 function setWindowById(id,open){
@@ -2808,7 +2844,7 @@ function returnToGameControl(){
 }
 document.querySelectorAll('.simple-window .window-close').forEach(button=>button.addEventListener('click',()=>setSimpleWindow(button.closest('.tool-window'),false)));
 function quitToTitle(){
-  closeApplicationMenus();document.querySelectorAll('.tool-window.open').forEach(win=>win.classList.remove('open'));consoleOpen=false;designerOpen=false;mobileMenuOpen=false;document.getElementById('touchMenuPanel')?.classList.remove('open');clearTouchState();for(const k in keys)keys[k]=false;if(document.pointerLockElement)document.exitPointerLock();hasEnteredWorld=false;refreshWindowState();
+  closeApplicationMenus();document.querySelectorAll('.tool-window.open').forEach(win=>win.classList.remove('open'));consoleOpen=false;designerOpen=false;mobileMenuOpen=false;autopilotState.active=false;autopilotState.paused=false;document.getElementById('touchMenuPanel')?.classList.remove('open');clearTouchState();for(const k in keys)keys[k]=false;if(document.pointerLockElement)document.exitPointerLock();hasEnteredWorld=false;refreshWindowState();
 }
 document.querySelectorAll('.menu-button').forEach(button=>{
   button.addEventListener('click',event=>{event.stopPropagation();const group=button.closest('.menu-group'),open=!group.classList.contains('open');closeApplicationMenus(group);group.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));refreshWindowState();});
@@ -2820,6 +2856,15 @@ document.querySelectorAll('.menu-item').forEach(item=>{
 });
 document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('#menubar')){closeApplicationMenus();refreshWindowState();}});
 platformToggle.addEventListener('click',()=>{const modes=['auto','navigator','tablet','desktop'];applyPlatformMode(modes[(modes.indexOf(platformMode)+1)%modes.length]);});
+
+const autopilotMode=document.getElementById('autopilotMode'),autopilotSpeed=document.getElementById('autopilotSpeed'),autopilotLookahead=document.getElementById('autopilotLookahead'),autopilotCamera=document.getElementById('autopilotCamera');
+function syncAutopilotControls(){autopilotState.mode=autopilotMode.value;autopilotState.speed=Number(autopilotSpeed.value);autopilotState.lookahead=Number(autopilotLookahead.value);autopilotState.camera=autopilotCamera.value==='1';document.getElementById('autopilotModeValue').textContent=AUTOPILOT_MODE_LABELS[autopilotState.mode];document.getElementById('autopilotSpeedValue').textContent=`${autopilotState.speed.toFixed(2)}×`;document.getElementById('autopilotLookaheadValue').textContent=`${autopilotState.lookahead.toFixed(0)} m`;paintAutopilotTelemetry();}
+for(const control of [autopilotMode,autopilotSpeed,autopilotLookahead,autopilotCamera])control.addEventListener('input',syncAutopilotControls);
+document.getElementById('autopilotStart').addEventListener('click',startAutopilot);
+document.getElementById('autopilotPause').addEventListener('click',()=>{if(!autopilotState.active)return;if(autopilotState.paused){autopilotState.pausedTotal+=performance.now()-autopilotState.pausedAt;autopilotState.paused=false;}else{autopilotState.paused=true;autopilotState.pausedAt=performance.now();}paintAutopilotTelemetry();});
+document.getElementById('autopilotStop').addEventListener('click',()=>{autopilotState.active=false;autopilotState.paused=false;paintAutopilotTelemetry();});
+document.getElementById('autopilotReset').addEventListener('click',resetAutopilotReport);
+document.getElementById('autopilotCopy').addEventListener('click',async()=>{const header='Dremplay One Autopilot rendering report',rows=autopilotState.samples.map(sample=>[sample.seconds.toFixed(1),sample.x.toFixed(2),sample.z.toFixed(2),sample.fps.toFixed(1),sample.frameMs.toFixed(2),Number.isFinite(sample.gpuMs)?sample.gpuMs.toFixed(2):'',sample.chunks,sample.known,sample.chunkMiB.toFixed(2),sample.provenance,sample.streamMs.toFixed(2)].join('\t')),report=`${header}\n${autopilotReportText()}\n\nseconds\tx_m\tz_m\tfps\tcpu_ms\tgpu_ms\tchunks\tknown\tvoxel_mib\tprovenance\tstream_ms\n${rows.join('\n')}`;try{await navigator.clipboard.writeText(report);document.getElementById('autopilotStatus').textContent=`Copied ${autopilotState.samples.length} navigation samples to the clipboard.`;}catch{document.getElementById('autopilotStatus').textContent='Clipboard unavailable; the complete report remains visible below.';}});
 
 const worldMapCanvas=document.getElementById('worldMapCanvas'),mapStatus=document.getElementById('mapStatus');
 let worldMapBase=null,lastMapMarkerX=NaN,lastMapMarkerZ=NaN;
@@ -3736,9 +3781,9 @@ function syncOptionsWindow(){
   optionDetailDistance.value=String(Math.round(detailDistanceMeters/FEET_TO_METERS));optionNearDistance.value=String(Math.round(nearDistanceMeters/FEET_TO_METERS));optionFarDistance.value=String(Math.round(farDistanceMeters/FEET_TO_METERS));optionFarVoxel.value=String(farPreviewVoxelMeters);optionBackgroundDistance.value=String(Math.round(backgroundDistanceMeters/FEET_TO_METERS));optionBackgroundVoxel.value=String(backgroundVoxelMeters);optionBackgroundMode.value=String(backgroundMode);setBugtestingMode(bugtestingMode);
   optionFogEnabled.value=fogEnabled?'1':'0';optionFogStart.value=String(fogStartMeters);optionFogDensity.value=String(fogDensity);optionStreamBudget.value=String(streamingBudgetMs);optionVegetationDetail.value=String(pendingVegetationDetail);
   document.getElementById('optionFovValue').textContent=`${fovDegrees.toFixed(0)}°`;document.getElementById('optionPlatformValue').textContent=platformModeLabel();
-  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','Projection + voxels'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;syncDistanceEditor();
+  document.getElementById('optionResolutionValue').textContent=`${Math.round(pendingRenderScale/FULL_RENDER_SCALE*100)}%`;document.getElementById('optionViewDistanceValue').textContent='1.00 km';document.getElementById('optionDetailDistanceValue').textContent=`${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionNearDistanceValue').textContent=`${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarDistanceValue').textContent=`${Math.round(farDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionFarVoxelValue').textContent=`${farPreviewVoxelMeters} m`;document.getElementById('optionBackgroundDistanceValue').textContent=`${Math.round(backgroundDistanceMeters/FEET_TO_METERS)} ft`;document.getElementById('optionBackgroundVoxelValue').textContent=`${backgroundVoxelMeters} m`;document.getElementById('optionBackgroundModeValue').textContent=['Chunky voxels','Atmospheric projection','1 km voxel horizon'][backgroundMode];document.getElementById('optionFogStartValue').textContent=`${fogStartMeters.toFixed(0)} m`;document.getElementById('optionFogDensityValue').textContent=fogDensity.toFixed(3);document.getElementById('optionStreamBudgetValue').textContent=`${streamingBudgetMs.toFixed(1)} ms`;syncDistanceEditor();
   const dpr=Math.min(window.devicePixelRatio||1,1.5),rw=Math.max(1,Math.floor(window.innerWidth*dpr*pendingRenderScale)),rh=Math.max(1,Math.floor(window.innerHeight*dpr*pendingRenderScale)),reload=pendingRenderScale!==renderScaleSetting||pendingVegetationDetail!==vegetationDetail;
-  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky voxels','atmospheric projection','projection + voxels'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m voxel radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
+  optionMetrics.textContent=`Pending framebuffer ${rw}×${rh} · ${Math.round(Math.pow(pendingRenderScale/FULL_RENDER_SCALE,2)*100)}% standard fragments\nDetail 5 cm to ${Math.round(detailDistanceMeters/FEET_TO_METERS)} ft · near 10 cm to ${Math.round(nearDistanceMeters/FEET_TO_METERS)} ft · far 20 cm to ${Math.round(farDistanceMeters/FEET_TO_METERS)} ft\nBackground ${farPreviewVoxelMeters} m → ${backgroundVoxelMeters} m ${['chunky voxels','atmospheric projection','one-kilometer voxel horizon'][backgroundMode]} · 1.00 km view\n8,100 pre-baked 100×100 m regions · supplied 4.5×7.5 km heightmap island · 300 m exact-parent radius guaranteed\nResident voxels ${activeGridSizeX}×${LOADED_SIZE_Y}×${activeGridSizeZ} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB GPU\nCurrent renderer ${canvas.width}×${canvas.height} · ${fps.toFixed(0)} fps`;
   optionStatus.textContent=reload?'Resolution or vegetation changed. Apply reload settings when ready.':'Settings are fixed and never adapt between frames.';
 }
 function markOptionsCustom(){optionPreset.value='custom';}
@@ -4194,6 +4239,52 @@ let lastMovementInputAt=0,movementHeadingX=0,movementHeadingZ=0;
 function compassHeading(){const degrees=(yaw*180/Math.PI%360+360)%360,names=['north','northeast','east','southeast','south','southwest','west','northwest'];return {degrees,name:names[Math.round(degrees/45)%8]};}
 let compassDisplayAngle=0,compassAngularVelocity=0,compassInitialized=false,lastCompassAnnouncement=-1,lastCompassPaintAngle=Infinity;
 const compassReducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const AUTOPILOT_MODE_LABELS=Object.freeze({trail:'natural trails',contour:'contour survey',coast:'water-edge survey',meander:'natural meander',regions:'region stress circuit',straight:'straight traversal'});
+const autopilotState={active:false,paused:false,mode:'trail',speed:1,lookahead:8,camera:true,heading:0,initialHeading:0,startedAt:0,pausedAt:0,pausedTotal:0,distance:0,lastX:0,lastZ:0,lastDecisionAt:0,lastSampleAt:0,stuckSeconds:0,recoveryUntil:0,recoveryHeading:0,samples:[],minFps:Infinity,sumFps:0,peakChunks:0,peakKnown:0,peakProvenance:0,peakGpu:0};
+function wrappedAngleDelta(target,current){return (target-current+Math.PI*3)%(Math.PI*2)-Math.PI;}
+function resetAutopilotReport(){autopilotState.samples.length=0;autopilotState.distance=0;autopilotState.minFps=Infinity;autopilotState.sumFps=0;autopilotState.peakChunks=0;autopilotState.peakKnown=0;autopilotState.peakProvenance=0;autopilotState.peakGpu=0;autopilotState.startedAt=performance.now();autopilotState.pausedTotal=0;autopilotState.lastSampleAt=0;if(playerPos){autopilotState.lastX=playerPos.x;autopilotState.lastZ=playerPos.z;}paintAutopilotTelemetry();}
+function autopilotElapsed(now=performance.now()){if(!autopilotState.startedAt)return 0;return Math.max(0,(now-autopilotState.startedAt-autopilotState.pausedTotal-(autopilotState.paused&&autopilotState.pausedAt?now-autopilotState.pausedAt:0))/1000);}
+function autopilotSensor(angle,lookaheadMeters,includeTrail=false){
+  const sin=Math.sin(angle),cos=Math.cos(angle),distanceVoxels=lookaheadMeters/VS,wx=playerPos.x/VS+sin*distanceVoxels,wz=playerPos.z/VS+cos*distanceVoxels,terrain=terrainSample(wx,wz),current=terrainSample(playerPos.x/VS,playerPos.z/VS),trail=includeTrail?worldTrailField(wx,wz,{terrain}):null,heightDelta=(terrain.height-current.height)*VY;
+  // The world field predicts slopes and water; these two short physical probes
+  // add trunks, boulders, authored voxels, and other resolved obstacles without
+  // confusing the voxel cache with the navigation authority.
+  const blocked=collidesAt(playerPos.x+sin*.75,playerPos.y,playerPos.z+cos*.75)&&collidesAt(playerPos.x+sin*1.45,playerPos.y,playerPos.z+cos*1.45);
+  return {angle,terrain,trail,heightDelta,blocked,land:terrain.height>WATER_LEVEL-4};
+}
+function chooseAutopilotHeading(now){
+  const elapsed=autopilotElapsed(now),mode=autopilotState.mode;
+  let preferred=autopilotState.heading;
+  if(now<autopilotState.recoveryUntil)preferred=autopilotState.recoveryHeading;
+  else if(mode==='straight')preferred=autopilotState.initialHeading;
+  else if(mode==='regions')preferred=autopilotState.initialHeading+Math.floor(autopilotState.distance/28)%4*Math.PI*.5;
+  else if(mode==='meander')preferred=autopilotState.initialHeading+Math.sin(elapsed*.19)*.72+Math.sin(elapsed*.071+1.7)*.34;
+  const offsets=[0,.20,-.20,.42,-.42,.70,-.70,1.02,-1.02,1.42,-1.42,Math.PI],base=(mode==='trail'||mode==='contour'||mode==='coast')?autopilotState.heading:preferred,currentHeight=terrainSample(playerPos.x/VS,playerPos.z/VS).height;let best=base,bestScore=-Infinity;
+  for(const offset of offsets){const sensor=autopilotSensor(base+offset,autopilotState.lookahead,mode==='trail'),turn=Math.abs(wrappedAngleDelta(sensor.angle,autopilotState.heading)),climb=Math.abs(sensor.heightDelta),headingError=Math.abs(wrappedAngleDelta(sensor.angle,preferred)),safe=(sensor.land?0:-26)-(sensor.blocked?72:0)-Math.max(0,climb-1.4)*3.2;
+    let score=safe-headingError*.65-turn*.22;
+    if(mode==='trail')score+=(sensor.trail?.strength||0)*9-climb*.7;
+    else if(mode==='contour')score-=Math.abs(sensor.terrain.height-currentHeight)*.18+climb*1.2;
+    else if(mode==='coast'){const edgeMeters=Math.abs((sensor.terrain.riverDistance||180)*VS-12);score-=edgeMeters*.20+climb*.8;}
+    if(score>bestScore){bestScore=score;best=sensor.angle;}
+  }
+  return best;
+}
+function autopilotMovementVector(dt){
+  if(!autopilotState.active||autopilotState.paused||!hasEnteredWorld)return null;
+  const moved=Math.hypot(playerPos.x-autopilotState.lastX,playerPos.z-autopilotState.lastZ);autopilotState.distance+=moved;autopilotState.stuckSeconds=moved<.002?autopilotState.stuckSeconds+dt:Math.max(0,autopilotState.stuckSeconds-dt*2);autopilotState.lastX=playerPos.x;autopilotState.lastZ=playerPos.z;
+  const now=performance.now();if(now-autopilotState.lastDecisionAt>350){autopilotState.lastDecisionAt=now;if(autopilotState.stuckSeconds>1.0){const side=Math.sin(playerPos.x*3.1+playerPos.z*5.7)>0?1:-1;autopilotState.recoveryHeading=autopilotState.heading+side*Math.PI*.62;autopilotState.recoveryUntil=now+2400;autopilotState.stuckSeconds=0;}const next=chooseAutopilotHeading(now);autopilotState.heading+=wrappedAngleDelta(next,autopilotState.heading)*.72;}
+  if(autopilotState.camera)yaw+=wrappedAngleDelta(autopilotState.heading,yaw)*Math.min(1,dt*2.8);
+  return {x:Math.sin(autopilotState.heading),z:Math.cos(autopilotState.heading)};
+}
+function autopilotReportText(){
+  const s=autopilotState,samples=s.samples.length,elapsed=autopilotElapsed(),average=samples?s.sumFps/samples:0,last=s.samples[samples-1];
+  return `State        ${s.active?(s.paused?'paused':'navigating'):'stopped'}\nMode         ${AUTOPILOT_MODE_LABELS[s.mode]}\nElapsed      ${elapsed.toFixed(1)} s\nDistance     ${s.distance.toFixed(1)} m\nPosition     ${playerPos?(playerPos.x.toFixed(1)+', '+playerPos.z.toFixed(1)+' m'):'—'}\nFPS          ${last?last.fps.toFixed(0):'—'} current · ${isFinite(s.minFps)?s.minFps.toFixed(0):'—'} min · ${average.toFixed(1)} avg\nVoxel CPU    ${last?last.chunkMiB.toFixed(1):'—'} MiB · ${s.peakChunks} peak chunks\nKnown cache  ${last?last.known:'—'} current · ${s.peakKnown} peak\nProvenance   ${last?last.provenance:'—'} current · ${s.peakProvenance} peak\nGPU          ${last&&isFinite(last.gpuMs)?last.gpuMs.toFixed(1)+' ms':'measuring'} · ${(activeUploadBytes()/1048576).toFixed(1)} MiB resident\nStream       ${last?last.streamMs.toFixed(1):'—'} ms last interval\nSamples      ${samples}`;
+}
+function paintAutopilotTelemetry(){const output=document.getElementById('autopilotTelemetry'),status=document.getElementById('autopilotStatus');if(output)output.textContent=autopilotReportText();if(status)status.textContent=autopilotState.active?`${autopilotState.paused?'Paused':'Navigating'} · ${AUTOPILOT_MODE_LABELS[autopilotState.mode]} · ordinary player physics and renderer active.`:'Stopped. Autopilot uses ordinary collision, gravity, clipmap streaming, and Resource rendering.';}
+function sampleAutopilotTelemetry(now){
+  if(!autopilotState.active||autopilotState.paused||now-autopilotState.lastSampleAt<1000)return;autopilotState.lastSampleAt=now;const sample={seconds:autopilotElapsed(now),x:playerPos.x,z:playerPos.z,fps,frameMs:lastFrameWorkMs,gpuMs:lastGpuFrameMs,chunks:chunks.size,known:generatedChunks.size,chunkMiB:chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576,provenance:resourceChunks.size,streamMs};autopilotState.samples.push(sample);if(autopilotState.samples.length>900){const removed=autopilotState.samples.shift();autopilotState.sumFps-=removed.fps;}autopilotState.minFps=Math.min(autopilotState.minFps,fps);autopilotState.sumFps+=fps;autopilotState.peakChunks=Math.max(autopilotState.peakChunks,chunks.size);autopilotState.peakKnown=Math.max(autopilotState.peakKnown,generatedChunks.size);autopilotState.peakProvenance=Math.max(autopilotState.peakProvenance,resourceChunks.size);if(isFinite(lastGpuFrameMs))autopilotState.peakGpu=Math.max(autopilotState.peakGpu,lastGpuFrameMs);paintAutopilotTelemetry();
+}
+function startAutopilot(){if(!hasEnteredWorld){document.getElementById('autopilotStatus').textContent='Enter the world before starting Autopilot.';return;}if(!autopilotState.active)resetAutopilotReport();autopilotState.active=true;autopilotState.paused=false;autopilotState.mode=document.getElementById('autopilotMode').value;autopilotState.speed=Number(document.getElementById('autopilotSpeed').value);autopilotState.lookahead=Number(document.getElementById('autopilotLookahead').value);autopilotState.camera=document.getElementById('autopilotCamera').value==='1';autopilotState.heading=yaw;autopilotState.initialHeading=yaw;autopilotState.recoveryUntil=0;autopilotState.lastX=playerPos.x;autopilotState.lastZ=playerPos.z;autopilotState.lastDecisionAt=0;paintAutopilotTelemetry();}
 function compassAngleDelta(target,current){return (target-current+540)%360-180;}
 function updateCompass(dt){
   const heading=compassHeading(),target=-heading.degrees,compass=document.getElementById('compass');
@@ -4209,7 +4300,7 @@ function updateResourceLookLabel(){
   const name=hit?resourceNameById[getVoxelResourceId(hit.x,hit.y,hit.z)]||'':'';
   label.textContent=name;label.classList.toggle('visible',!!name);
 }
-function movementInputActive(){return gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08);}
+function movementInputActive(){return (autopilotState.active&&!autopilotState.paused&&hasEnteredWorld)||(gameControlActive()&&!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||Math.hypot(touchMoveX,touchMoveY)>.08));}
 function backgroundWorkAllowance(requestedMs,moving=false){
   // V-sync owns the frame. Refinement may spend only measured main-thread
   // headroom. A GPU-limited 30 Hz presentation still has CPU headroom, so rAF
@@ -4276,16 +4367,21 @@ function loop(now){
   // Regional preview has priority over dense editable matter. The old gate
   // paused its refresh for the full lifetime of every sector task, exactly
   // when the preview was needed to conceal that sector's latency.
-  const playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS,previewLead=moving?1500:0,predictedPreviewX=playerVX+movementHeadingX*previewLead,predictedPreviewZ=playerVZ+movementHeadingZ*previewLead,desiredFarX=alignedFarOrigin(predictedPreviewX),desiredFarZ=alignedFarOrigin(predictedPreviewZ);
-  // Begin the next atlas handoff about 150 m before the player arrives. The
-  // atlas source is pre-baked, and each scheduled unit is a complete 100 m
-  // square, so this lookup/packing work normally finishes in a few frames.
-  if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ))queueFarTerrainRefresh(predictedPreviewX,predictedPreviewZ);
-  maintainHorizonProjection(playerVX,(playerPos.y+currentEyeH)/VY,playerVZ);
+  const playerVX=playerPos.x/VS,playerVZ=playerPos.z/VS,previewTarget=mathematicalRegionPreviewTarget(playerVX,playerVZ,moving),desiredFarX=alignedFarOrigin(previewTarget.centerX),desiredFarZ=alignedFarOrigin(previewTarget.centerZ),requestedRegionKey=`${previewTarget.regionX},${previewTarget.regionZ}`;
+  // The parent streamer advances in complete world-aligned 100 × 100 m
+  // regions. A 30/70-percent directional threshold requests the adjoining
+  // square early without letting small heading changes jerk the atlas between
+  // strip-like previews. The exact microvoxel child remains a bounded cache.
+  if(!farTerrainTask&&(desiredFarX!==farTerrainOriginX||desiredFarZ!==farTerrainOriginZ)){
+    if(requestedRegionKey!==lastRequestedMathematicalRegion){loadingLog('Mathematical region',`preparing 100×100 m region ${requestedRegionKey} · one-kilometer voxel horizon remains resident`);lastRequestedMathematicalRegion=requestedRegionKey;}
+    queueFarTerrainRefresh(previewTarget.centerX,previewTarget.centerZ);
+  }
+  // The live far atlas is already a spatial 3D field. The legacy azimuth
+  // panorama is deliberately not rebuilt or composited during play.
   // World refinement runs between display callbacks through the idle pump.
   // This animation callback owns only input, simulation and rendering.
   performIdleMemoryMaintenance(now);
-  if (gameControlActive()) {
+  if (gameControlActive() || (autopilotState.active&&!autopilotState.paused&&hasEnteredWorld)) {
     updatePlayer(dt);
     updateLoadedWindow();
     if (mouseDown >= 0 && now >= nextEditAt) { doAction(mouseDown); nextEditAt = now + 140; }
@@ -4301,6 +4397,7 @@ function loop(now){
 
   updateCompass(dt);
   render();
+  sampleAutopilotTelemetry(now);
   lastFrameWorkMs=performance.now()-frameStarted;reportFrameOverrun(frameGapMs,lastFrameWorkMs);
   if(lagNoticeUntil&&performance.now()>=lagNoticeUntil&&!streamTask&&!cacheNoticeActive){lagNoticeUntil=0;hideLoading();}
   scheduleWorldIdlePump();
@@ -4324,7 +4421,8 @@ function loop(now){
 function updatePlayer(dt){
   const cam = getCamBasis();
   const crawling=!!(keys['ControlLeft']||keys['ControlRight']||touchCrawl);
-  const speed = walkSpeed*(crawling?.34:1);
+  const autopilotVector=autopilotMovementVector(dt);
+  const speed = walkSpeed*(crawling?.34:1)*(autopilotVector?autopilotState.speed:1);
   currentEyeH+=( (crawling?CRAWL_EYE_H:EYE_H)-currentEyeH)*Math.min(1,dt*12);
 
   let mx=0, mz=0;
@@ -4338,6 +4436,7 @@ function updatePlayer(dt){
   if (keys['KeyD']) { mx+=rdx; mz+=rdz; }
   if (keys['KeyA']) { mx-=rdx; mz-=rdz; }
   if(touchPlatformActive()){mx+=rdx*touchMoveX-fdx*touchMoveY;mz+=rdz*touchMoveX-fdz*touchMoveY;}
+  if(autopilotVector){mx+=autopilotVector.x;mz+=autopilotVector.z;}
   const mlen = Math.hypot(mx,mz);
   if (mlen>0){ mx/=mlen; mz/=mlen; }
   const headingBlend=1-Math.exp(-dt*5.5),targetHeadingX=mlen>0?mx:0,targetHeadingZ=mlen>0?mz:0;
@@ -4401,16 +4500,19 @@ function releaseDerivedCaches(aggressive=false){
 }
 function memoryReport(){return `device tier ${DEVICE_PROFILE.tier}\nallocated voxel chunks ${chunks.size} (${(chunks.size*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE/1048576).toFixed(1)} MiB)\nknown generated chunks ${generatedChunks.size}\nterrain column plans ${terrainColumnPlans.size}\nResource voxel/architecture caches ${resourceVoxelCache.size}/${resourceArchitectureCache.size}\nResource ceiling plans ${resourceCeilingCache.size}\nfluid cells/sources ${waterLevels.size}/${waterSources.size}\ndirty authored chunks ${dirtyChunks.size}`;}
 function performIdleMemoryMaintenance(now){
-  if(now-lastMemoryMaintenanceAt<5000||streamTask||resourceCommitTask||farTerrainTask||prefetchJobs.length||now-lastMovementInputAt<2500)return;
+  // Walking is exactly when the moving cache needs collection. Prefetch work
+  // and recent input are no longer treated as reasons to retain old sectors;
+  // only an active atomic transfer may defer this bounded sweep.
+  if(now-lastMemoryMaintenanceAt<2500||streamTask||resourceCommitTask||farTerrainTask)return;
   lastMemoryMaintenanceAt=now;const released=evictDistantCleanChunks();releaseDerivedCaches(false);
-  if(released)loadingLog('Idle recycler',`${released} obsolete records retired · ${generatedChunks.size} generated records remain`);
+  if(released)loadingLog('Walking recycler',`${released} obsolete records retired · ${generatedChunks.size} generated records remain`);
 }
 function predictedSectorDirection(){
   let x=movementHeadingX,z=movementHeadingZ,mag=Math.hypot(x,z);if(mag<.18){const cam=getCamBasis();x=cam.forward.x;z=cam.forward.z;mag=Math.hypot(x,z)||1;}
   const threshold=mag*.38;let dx=Math.abs(x)>=threshold?Math.sign(x):0,dz=Math.abs(z)>=threshold?Math.sign(z):0;if(!dx&&!dz)Math.abs(x)>Math.abs(z)?dx=Math.sign(x):dz=Math.sign(z);
   const vertical=dz<0?'north':dz>0?'south':'',horizontal=dx<0?'west':dx>0?'east':'',label=vertical&&horizontal?`${vertical}-${horizontal}`:vertical||horizontal;return {dx,dz,label};
 }
-function predictiveDepthChunks(){const horizon=DEVICE_PROFILE.tier==='mobile'?8:DEVICE_PROFILE.tier==='high'?14:10;return Math.max(8,Math.min(PREFETCH_MARGIN,Math.ceil(walkSpeed*horizon/(CHUNK_SIZE*VS))));}
+function predictiveDepthChunks(){const horizon=DEVICE_PROFILE.tier==='mobile'?6:DEVICE_PROFILE.tier==='high'?10:8;return Math.max(2,Math.min(PREFETCH_MARGIN,Math.ceil(walkSpeed*horizon/(CHUNK_SIZE*VS))));}
 function mathematicalSurfaceSpan(cx,cz,minCY,maxCY){
   const baseX=cx*CHUNK_SIZE,baseZ=cz*CHUNK_SIZE;let minHeight=Infinity,maxHeight=-Infinity;
   for(let lx=0;lx<CHUNK_SIZE;lx+=4)for(let lz=0;lz<CHUNK_SIZE;lz+=4){const height=terrainSample(baseX+lx,baseZ+lz).height;minHeight=Math.min(minHeight,height);maxHeight=Math.max(maxHeight,height);}
@@ -4426,14 +4528,13 @@ function rebuildPrefetchQueue(){
   if(prediction.dx)for(let d=1;d<=depth;d++){const cx=prediction.dx>0?maxCX+d:minCX-d;for(let cz=minCZ;cz<=maxCZ;cz++)addCell(cx,cz,d+Math.abs(cz-(minCZ+maxCZ)/2)*.015);}
   if(prediction.dz)for(let d=1;d<=depth;d++){const cz=prediction.dz>0?maxCZ+d:minCZ-d;for(let cx=minCX;cx<=maxCX;cx++)addCell(cx,cz,d+Math.abs(cx-(minCX+maxCX)/2)*.015);}
   if(prediction.dx&&prediction.dz)for(let depthX=1;depthX<=depth;depthX++)for(let depthZ=1;depthZ<=depth;depthZ++)addCell(prediction.dx>0?maxCX+depthX:minCX-depthX,prediction.dz>0?maxCZ+depthZ:minCZ-depthZ,Math.max(depthX,depthZ));
-  // Voxels are a view cache, not world data. Predict only the mathematical
-  // surface, two editable shallow layers (about 20 ft), and three possible
-  // canopy layers. Deep bedrock remains one implicit SDF until requested.
+  // Voxels are a view cache, not world data. The directional reserve contains
+  // only mathematical surface children. Subsurface and Resource geometry stay
+  // implicit until the resident clipmap actually approaches the column.
   const candidates=[];
   for(const cell of cells.values()){
-    const span=mathematicalSurfaceSpan(cell.cx,cell.cz,minCY,minCY+LOADED_CHUNKS_Y-1),surfaceCY=span.centerCY,desired=[];
+    const span=mathematicalSurfaceSpan(cell.cx,cell.cz,minCY,minCY+LOADED_CHUNKS_Y-1),desired=[];
     for(let cy=span.minCY;cy<=span.maxCY;cy++)desired.push([cy,0]);
-    desired.push([span.minCY-1,10],[span.minCY-2,20],[span.maxCY+1,100],[span.maxCY+2,110],[span.maxCY+3,120]);
     for(const [cy,tier] of desired)if(cy>=minCY&&cy<minCY+LOADED_CHUNKS_Y){const job=[cell.cx,cy,cell.cz];if(!generatedChunks.has(chunkKey(...job)))candidates.push({job,priority:tier*1000+cell.distance});}
   }
   // pop() consumes the smallest priority: every visible surface across the
@@ -4455,12 +4556,19 @@ function processBackgroundPrefetch(now=performance.now(),moving=false){
   if(moving&&idleDeadlineAllowance<=0&&now<nextMovingPrefetchAt)return;
   const requested=moving?Math.min(profileBudget,Math.max(.45,streamingBudgetMs*.5)):Math.min(profileBudget*4,Math.max(2,streamingBudgetMs*2)),budget=backgroundWorkAllowance(requested,moving);if(budget<=0)return;
   const started=performance.now();let worked=false;
-  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);queueDeferredDecoration(job);worked=true;lastPrefetchWorkAt=performance.now();}
+  while(prefetchJobs.length&&(!worked||performance.now()-started<budget)){const job=prefetchJobs.pop();generateChunk(...job,false);worked=true;lastPrefetchWorkAt=performance.now();}
   if(moving&&worked)nextMovingPrefetchAt=performance.now()+180;
   if(cacheNoticeActive){if(prefetchJobs.length)showLoading(`Precomputing ${prefetchSectorLabel} landscape sectors`,1-prefetchJobs.length/cacheNoticeTotal,true);else{showLoading('Predictive sector ready',1,true);if(!cacheNoticeHideAt){cacheNoticeHideAt=performance.now()+700;loadingLog('Sector cache',`${prefetchSectorLabel} landscape accepted as one directional reserve`);}if(performance.now()>=cacheNoticeHideAt){cacheNoticeActive=false;hideLoading();}}}
 }
 const deferredDecorationJobs=[],deferredDecorationKeys=new Set(),bootResourceColumns=[];let deferredDecorationOrderDirty=false,lastDecorationFocusCX=Infinity,lastDecorationFocusCZ=Infinity,bootResourceCursor=0,bootResourceLogStep=-1,bootResourceFinalized=false,nextResourceCommitAt=0,resourceCommitTask=null;const RESOURCE_COMMIT_RADIUS=2;let clipmapProgressFloor=0;
-function queueDeferredDecoration(job){const chunk=chunkKey(...job);if(!baseOnlyChunks.has(chunk))return;const key=`${job[0]},${job[2]}`;if(deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push([job[0],job[2]]);deferredDecorationOrderDirty=true;}
+function queueDeferredDecoration(job){
+  const chunk=chunkKey(...job);if(!hasEnteredWorld||!baseOnlyChunks.has(chunk))return;
+  // Far prediction is terrain-only. Ecology remains a deterministic equation
+  // until its column reaches the resident ring, avoiding 25-column Resource
+  // transactions for scenery the player cannot yet inspect.
+  const b=residentChunkBounds(),guard=1;if(job[0]<b.minCX-guard||job[0]>b.maxCX+guard||job[2]<b.minCZ-guard||job[2]>b.maxCZ+guard)return;
+  const key=`${job[0]},${job[2]}`;if(deferredDecorationKeys.has(key))return;deferredDecorationKeys.add(key);deferredDecorationJobs.push([job[0],job[2]]);deferredDecorationOrderDirty=true;
+}
 function decorationFocusChunk(){if(hasEnteredWorld&&playerPos)return {cx:Math.floor(playerPos.x/VS/CHUNK_SIZE),cz:Math.floor(playerPos.z/VS/CHUNK_SIZE)};return {cx:Math.floor((windowMinX+activeGridSizeX*.5)/CHUNK_SIZE),cz:Math.floor((windowMinZ+activeGridSizeZ*.5)/CHUNK_SIZE)};}
 function takeNearestDeferredDecoration(){
   if(!deferredDecorationJobs.length)return null;const focus=decorationFocusChunk();
@@ -4536,7 +4644,7 @@ function beginMapFastTravel(targetWX,targetWZ){
   windowMinX=targetMinX;windowMinZ=targetMinZ;ringX=0;ringZ=0;streamTask=null;resourceCommitTask=null;prefetchJobs.length=0;prefetchSignature='';deferredDecorationJobs.length=0;deferredDecorationKeys.clear();loadedGrid.fill(0);chunkValidityGrid.fill(0);occupancyGrid.fill(0);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX,LOADED_SIZE_Y,activeGridSizeZ,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,loadedGrid);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_3D,chunkValidityTex);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX/CHUNK_SIZE,LOADED_CHUNKS_Y,activeGridSizeZ/CHUNK_SIZE,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,chunkValidityGrid);gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_3D,occupancyTex);gl.texImage3D(gl.TEXTURE_3D,0,gl.R8UI,activeGridSizeX/OCCUPANCY_BLOCK_SIZE,LOADED_SIZE_Y/OCCUPANCY_BLOCK_SIZE,activeGridSizeZ/OCCUPANCY_BLOCK_SIZE,0,gl.RED_INTEGER,gl.UNSIGNED_BYTE,occupancyGrid);
   assembleMathematicalTerrainWeatherGrid(8);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,terrainWeatherTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16UI,activeGridSizeX,activeGridSizeZ,0,gl.RG_INTEGER,gl.UNSIGNED_SHORT,terrainWeatherGrid);buildFarTerrainMap(targetWX,targetWZ);uploadFarTerrainControlField(farTerrainGrid);uploadFarHeightPyramid(farTerrainGrid);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_3D,tex3d);
-  playerPos={x:(targetWX+.5)*VS,y:(h+2)*VY,z:(targetWZ+.5)*VS};velY=0;grounded=false;buildHorizonProjection(targetWX,(playerPos.y+EYE_H)/VY,targetWZ);queueFullResidentRefinement();fastTravelInProgress=false;const biome=worldBiomeField(targetWX,targetWZ);loadingLog('Instant travel',`${biome.dominant.name.replaceAll('_',' ')} · seed ${biome.seed} · mathematical destination and full-island horizon published before voxel refinement`);renderWorldMap();
+  playerPos={x:(targetWX+.5)*VS,y:(h+2)*VY,z:(targetWZ+.5)*VS};velY=0;grounded=false;queueFullResidentRefinement();fastTravelInProgress=false;const biome=worldBiomeField(targetWX,targetWZ);loadingLog('Instant travel',`${biome.dominant.name.replaceAll('_',' ')} · seed ${biome.seed} · mathematical destination and 3D kilometer terrain published before voxel refinement`);renderWorldMap();
 }
 function residentChunkBounds(){const minCX=Math.floor(windowMinX/CHUNK_SIZE),minCY=Math.floor(windowMinY/CHUNK_SIZE),minCZ=Math.floor(windowMinZ/CHUNK_SIZE);return {minCX,minCY,minCZ,maxCX:minCX+activeGridSizeX/CHUNK_SIZE-1,maxCY:minCY+LOADED_CHUNKS_Y-1,maxCZ:minCZ+activeGridSizeZ/CHUNK_SIZE-1};}
 function chunkInsideResident(cx,cy,cz){const b=residentChunkBounds();return cx>=b.minCX&&cx<=b.maxCX&&cy>=b.minCY&&cy<=b.maxCY&&cz>=b.minCZ&&cz<=b.maxCZ;}

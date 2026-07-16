@@ -1,18 +1,34 @@
 # Dremplay One: Infinite Detail Voxel Engine
 
+## Autopilot navigation laboratory
+
+Autopilot is a client of the same world API as the human player. Its sensor stage samples the immutable terrain, slope, water margin, trail field, and current location at candidate headings. Its evaluator scores those observations according to a selected survey purpose while retaining universal safety penalties. Its steering stage turns and walks through the ordinary player collision, gravity, clipmap, water, and Resource systems. No mode teleports the observer or bypasses a late region.
+
+This separation is intentionally reusable for later actors. A bot may replace the current wandering objective with a destination planner while retaining the sensor contract, local evaluator, and physical steering. Deterministic coordinate queries mean the navigator can reason about unloaded terrain without generating its fine voxels.
+
+The laboratory samples its own consequences once per second. Position, travelled distance, frame time, GPU time, exact and known chunk counts, voxel bytes, provenance size, and stream time form a portable tab-separated report. This turns sustained walking from a visual impression into a repeatable renderer and cache test.
+
+## Continuous one-kilometer voxel horizon and atomic regions
+
+The distant landscape is rendered as geometry, not as a finite painted wall. A compact 10 m control atlas is sampled onto distance-dependent 1–16 m voxel cells and ray-intersected through the full 1 km view. The far trace begins where exact traversal actually ended, so it cannot re-enter terrain behind the ray and invent a vertical boundary. Atmospheric color and fog operate on spatial hits without replacing their quantized silhouettes. A miss is sky.
+
+The parent streamer works in world-aligned 100 × 100 m regions. Every scheduled region solves and commits its complete 10 × 10 control-cell square atomically; the atlas never advertises a row or column as a loaded region. Directional prediction crosses into the next region after the player passes a 35/65-percent threshold, providing early loading without oscillating when the camera turns.
+
+State zero in the resident chunk table means “immutable mathematical parent,” not empty space. Local rays query that parent until an exact child arrives. State two alone means proven-empty sky and may be skipped wholesale. This distinction guarantees a continuous walkable surface while the bounded microvoxel cache refines nearby detail.
+
 ## Sparse surface clipmap
 
 The editable near field is a 384 × 416 × 384 R8UI toroidal cache. It spans 38.4 m horizontally—enough for the complete 50-foot exact interaction tier with margin—while terrain beyond it remains the immutable mathematical height, hydrology, biome, and Resource field. The previous 768 × 416 × 768 volume represented the same source data with four times the resident memory and is retired.
 
-The cache carries two tiny acceleration layers. A chunk-state texture distinguishes exact children, authoritative empty sky, and an unrefined mathematical parent. A second R8UI texture stores one occupancy bit per 4 × 4 × 4 exact block. Rays skip empty exact blocks and whole sky chunks; they never infer world data from those bits. If a mathematical child has not arrived, local traversal hands the ray to the continuous heightfield pass rather than repeatedly evaluating that parent in every empty voxel. Exact terrain and Resources replace the parent atomically.
+The cache carries two tiny acceleration layers. A chunk-state texture distinguishes exact children, authoritative empty sky, and an unrefined mathematical parent. A second R8UI texture stores one occupancy bit per 4 × 4 × 4 exact block. Rays skip empty exact blocks and whole sky chunks; they never infer world data from those bits. If a mathematical child has not arrived, local traversal queries the immutable parent directly. Exact terrain and Resources replace the parent atomically.
 
-Only surface, shallow editable matter, and possible canopy chunks are materialized. Deep bedrock remains implicit until editing or visibility requests it. Incoming regions advance by complete 6.4 m sectors, and sparse CPU chunks may be discarded without changing terrain, Resource seeds, provenance, water, or edits. A WebGL disjoint timer query measures the actual GPU frame; nonurgent decoding receives no budget while the renderer exceeds its presentation target.
+Only surface children are predicted outside the resident ring. Shallow editable matter and canopies materialize after their mathematical column enters the ring; deep bedrock remains implicit until editing or visibility requests it. Incoming regions advance by complete 6.4 m sectors, and sparse CPU chunks may be discarded without changing terrain, Resource seeds, provenance, water, or edits. The collector runs during sustained travel and defers only while an atomic upload is active. A WebGL disjoint timer query measures the actual GPU frame; nonurgent decoding receives no budget while the renderer exceeds its presentation target.
 
-## Full-island horizon panorama
+## Retired full-island horizon panorama
 
-The local far atlas covers 2.6 km and renders editable-world continuity to one kilometer. It cannot prove that a blank ray has no mountain elsewhere on the 7.5 km island. A separate 2 KiB panorama therefore stores maximum terrain elevation angle for 512 world azimuths across three bands: 0.7–1.8 km, 1.8–3.2 km, and 3.2–5.5 km. Every value is sampled from the shipped immutable heightmap.
+The earlier renderer built a 2 KiB maximum-elevation panorama for 512 azimuths. Although sourced from the immutable heightmap, it was a screen-direction cache and could appear as a flat mountain wall. It is no longer generated at startup, fast travel, or during play, and the fragment renderer does not composite it.
 
-The panorama is a projection cache, never world data. The fragment shader tests local voxels and the one-kilometer atlas first; only a ray which misses both may reveal the panorama's broad near, middle, and far silhouettes. Sixfold cartographic vertical relief makes the long island's physically low mountain angles readable without changing physical elevations. Refresh work is incremental and a complete new panorama replaces the old one atomically after 500 m of observer travel or 10 m of elevation change.
+The old functions remain temporarily as dormant reference code while background options are consolidated. They are not world data and are not a renderer fallback. Terrain inside the configured kilometer must come from the spatial atlas; a ray that misses it sees atmosphere and sky.
 
 World refinement is gated by measured JavaScript and WebGL GPU work, not presentation interval alone. A browser may present a GPU-bound WebGL canvas while the main thread spends only one millisecond preparing each frame; the disjoint timer query still identifies the renderer as the limiting system. In that case optional decoding stops until the GPU is back inside budget. Rendering remains the only work inside `requestAnimationFrame`.
 

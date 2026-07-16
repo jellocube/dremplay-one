@@ -2,7 +2,7 @@
 
 **Infinite Detail Voxel Engine**
 
-Current release: **v0.0.1.6.6**
+Current release: **v0.0.1.6.6.2**
 
 ## Project overview
 
@@ -11,6 +11,23 @@ Dremplay One is a browser-first Infinite Detail Voxel Engine for explorable, edi
 The project combines a supplied 4.5 × 7.5 km island height field with mathematical biome rules, multiresolution voxel clipmaps, fractal Resource definitions, editable sparse overrides, water simulation, and atmospheric distance projections. It is designed to run directly on the web across laptops, iPads, and modern phones, with desktop, tablet-touch, and Dremplay Navigator interfaces sharing the same world model.
 
 The engine is an independent experimental work informed by public ideas around point and voxel detail streaming, including John Lin's Voxely writing, Euclideon's published patent material, and Atomontage demonstrations. It is not affiliated with those projects. The present build is a working research prototype: its priorities are a stable frame, deterministic ecology, smooth scale transitions, portable acceleration, accessible tools, and a world that remains visually coherent from the horizon down to an individual blade of grass.
+
+## v0.0.1.6.6.2 Autopilot Navigation Laboratory
+
+- Adds a movable Autopilot window under Tools with natural-trail, contour, water-edge, meander, regional circuit, and straight-traverse modes. Every mode uses ordinary terrain queries, collision, gravity, clipmap streaming, and Resource rendering rather than teleporting or replaying a camera path.
+- Separates navigation into deterministic sensors, scoring/evaluation, and steering. Safety scoring remains active in every mode, so scripted survey headings still turn away from water, abrupt elevation changes, and impassable terrain. This is the first reusable foundation for later bots.
+- Adds live one-second telemetry for position, travelled distance, FPS, CPU and GPU frame cost, exact/known chunk counts, voxel memory, Resource provenance, and streaming time. Copy report exports a tab-separated trace for sustained-walk regression testing.
+- Fixes the false flat horizon wall. The far terrain ray now continues from the exact ray's real exit distance and uses the spatial one-kilometer height/material atlas; a miss reveals sky, never the legacy azimuth mountain painting.
+- Bounds walking memory correctly. Exact prediction is reduced to a short surface-only reserve, distant Resource fields remain mathematical until they enter the resident ring, and the recycler runs during walking instead of waiting for movement and all prefetching to stop.
+- Removes the unused full-island panorama build from startup and fast travel. It remains dormant reference code, but no longer consumes loading time or replaces nearby 3D landscape.
+- Browser-verified a 1.28 km physical Autopilot traverse. The exact cache remained 767 chunks / 24.0 MiB, the known cache remained 1,057 chunks, and Resource provenance remained 247 chunks throughout, confirming that forward travel no longer expands retained world memory. The same run measured a remaining 24–44 FPS GPU-render bottleneck for the next optimization pass rather than hiding it behind a cache claim.
+
+## v0.0.1.6.6.1 One-Kilometer Voxel Horizon
+
+- Extends the efficient far-voxel landscape through the complete 1 km view. The balanced background mode keeps quantized geometry at every distance and applies atmosphere as shading and fog instead of dissolving the landscape into a flat projection near 150 m.
+- Restores immutable mathematical parent terrain while exact children are pending. Only proven-empty sky chunks are skipped, removing the voids, brown walls, and narrow path that followed the player in v0.0.1.6.6.
+- Makes far-field movement region-stable. The parent atlas advances in complete world-aligned 100 × 100 m squares using an early 35/65-percent directional threshold; small changes in heading no longer request alternating strips.
+- Keeps the exact editable 5–20 cm clipmap bounded around the player while its mathematical parent remains continuously visible. A 100 × 100 m region is therefore immediately explorable at its efficient parent resolution and resolves into exact voxels only where interaction needs them.
 
 ## v0.0.1.6.6 Sparse Surface Clipmap
 
